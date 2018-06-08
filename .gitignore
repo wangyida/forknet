@@ -1,0 +1,4 @@
+Checkpt
+*.pyc
+log
+train_vox*
