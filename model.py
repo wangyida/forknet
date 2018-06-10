@@ -285,7 +285,7 @@ class FCR_aGAN():
         code_discrim_dep_loss = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_code_real, labels=tf.ones_like(h_code_real)), [1]))\
          + tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_code_encode_dep, labels=tf.zeros_like(h_code_encode_dep)), [1]))
         # depth--start
-        code_compare_loss = tf.reduce_mean(tf.reduce_sum(tf.squared_difference(h_code_encode_dep, h_code_encode), [1,2,3,4]))
+        code_compare_loss = tf.reduce_mean(tf.reduce_sum(tf.squared_difference(Z_encode_dep, Z_encode), [1,2,3,4]))
         # depth--end
 
         #reconstruction
