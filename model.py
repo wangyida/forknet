@@ -284,6 +284,9 @@ class FCR_aGAN():
         code_encode_dep_loss = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_code_encode_dep, labels=tf.ones_like(h_code_encode_dep)), [1]))
         code_discrim_dep_loss = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_code_real, labels=tf.ones_like(h_code_real)), [1]))\
          + tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_code_encode_dep, labels=tf.zeros_like(h_code_encode_dep)), [1]))
+        # depth--start
+        code_compare_loss = tf.reduce_mean(tf.reduce_sum(tf.squared_difference(h_code_encode_dep, h_code_encode), [1,2,3,4]))
+        # depth--end
 
         #reconstruction
         vox_gen_decode, _ = self.generate(Z_encode)
@@ -370,7 +373,7 @@ class FCR_aGAN():
           cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
          Z_encode_dep, dep_real, vox_gen_decode_dep,\
          recons_dep_loss, code_encode_dep_loss, gen_dep_loss, discrim_dep_loss,\
-          cost_enc_dep, cost_code_dep, cost_gen_dep, cost_discrim_dep
+          cost_enc_dep, cost_code_dep, cost_gen_dep, cost_discrim_dep, code_compare_loss
 
     def encoder(self, vox):
 

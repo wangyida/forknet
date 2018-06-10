@@ -47,7 +47,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
       cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
       z_enc_dep_tf, dep_tf, vox_gen_decode_dep_tf,\
       recons_dep_loss_tf, code_encode_dep_loss_tf, gen_dep_loss_tf, discrim_dep_loss_tf,\
-      cost_enc_dep_tf, cost_code_dep_tf, cost_gen_dep_tf, cost_discrim_dep_tf = fcr_agan_model.build_model()
+      cost_enc_dep_tf, cost_code_dep_tf, cost_gen_dep_tf, cost_discrim_dep_tf, cost_code_compare_tf = fcr_agan_model.build_model()
 
     sess = tf.InteractiveSession()
     global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -72,6 +72,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
     train_op_gen = tf.train.AdamOptimizer(learning_rate_G, beta1=beta_G, beta2=0.9).minimize(cost_gen_tf, var_list=gen_vars)
     train_op_code = tf.train.AdamOptimizer(lr_VAE, beta1=beta_G, beta2=0.9).minimize(cost_code_tf, var_list=code_vars)
     # depth--start
+    train_op_latent_depvox = tf.train.AdamOptimizer(lr_VAE, beta1=beta_G, beta2=0.9).minimize(cost_code_compare_tf, var_list=depth_vars)
     train_op_encode_dep=tf.train.AdamOptimizer(lr_VAE, beta1=beta_D, beta2=0.9).minimize(cost_enc_dep_tf, var_list=depth_vars)
     train_op_discrim_dep = tf.train.AdamOptimizer(learning_rate_D, beta1=beta_D, beta2=0.9).minimize(cost_discrim_dep_tf, var_list=discrim_vars)
     train_op_gen_dep = tf.train.AdamOptimizer(learning_rate_G, beta1=beta_G, beta2=0.9).minimize(cost_gen_dep_tf, var_list=gen_vars)
@@ -126,6 +127,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
                                 feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train, lr_VAE:lr},
                                 )
                     # depth--start
+                    _ = sess.run(
+                            [train_op_latent_depvox],
+                            feed_dict={vox_tf:batch_voxel_train, dep_tf:batch_depth_train, lr_VAE:lr},
+                            )
                     _, recons_dep_loss_val, code_encode_dep_loss_val, cost_enc_dep_val = sess.run(
                                 [train_op_encode_dep, recons_dep_loss_tf, code_encode_dep_loss_tf, cost_enc_dep_tf],
                                 feed_dict={vox_tf:batch_voxel_train, dep_tf:batch_depth_train, Z_tf:batch_z_var, lr_VAE:lr},
