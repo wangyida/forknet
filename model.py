@@ -201,9 +201,10 @@ class FCR_aGAN():
         self.encode_dep_W6 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.dim_W1,1920], stddev=0.02), name='depthproject_W6')
         self.encode_dep_bn_g6 = tf.Variable( tf.random_normal([1920], mean=1.0, stddev=0.02), name='depthproject_bn_g6')
         self.encode_dep_bn_b6 = tf.Variable( tf.zeros([1920]), name='depthproject_bn_b6')
+        self.encode_dep_W7 = tf.Variable(tf.random_normal([self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1, self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1], stddev=0.02), name='depthproject_W7')
 
-        self.encode_dep_W7 = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='depthproject_W7')
-        self.encode_dep_W7_sigma = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='depthproject_W7_sigma')
+        self.encode_dep_W8 = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='depthproject_W8')
+        self.encode_dep_W8_sigma = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='depthproject_W8_sigma')
         # depth--end
         
         self.discrim_W1 = tf.Variable(tf.random_normal([self.kernel5[0],self.kernel5[1],self.kernel5[2],self.dim_W5,self.dim_W4], stddev=0.02), name='discrim_vox_W1')
@@ -420,11 +421,13 @@ class FCR_aGAN():
         h4 = lrelu( batchnormalize( tf.nn.conv2d( h3, self.encode_dep_W4, strides=self.stride_dep, padding='SAME'), g=self.encode_dep_bn_g4, b=self.encode_dep_bn_b4, batch_size=self.batch_size) )
         h5 = lrelu( batchnormalize( tf.nn.conv2d( h4, self.encode_dep_W5, strides=self.stride_dep, padding='SAME'), g=self.encode_dep_bn_g5, b=self.encode_dep_bn_b5, batch_size=self.batch_size) )
         h6 = lrelu( batchnormalize( tf.nn.conv2d( h5, self.encode_dep_W6, strides=self.stride_dep, padding='SAME'), g=self.encode_dep_bn_g6, b=self.encode_dep_bn_b6, batch_size=self.batch_size) )
-        h6 = tf.reshape(h6, [self.batch_size,self.start_vox_size[0],self.start_vox_size[1],self.start_vox_size[2],self.dim_W1])
-        h7 = tf.nn.conv3d( h6, self.encode_dep_W7, strides=[1,1,1,1,1], padding='SAME')
-        h7_sigma = tf.nn.conv3d( h6, self.encode_dep_W7_sigma, strides=[1,1,1,1,1], padding='SAME')
+        h6 = tf.reshape(h6, [self.batch_size, -1])
+        h7 = tf.matmul(h6, self.encode_dep_W7)
+        h7 = tf.reshape(h7, [self.batch_size,self.start_vox_size[0],self.start_vox_size[1],self.start_vox_size[2],self.dim_W1])
+        h8 = tf.nn.conv3d( h7, self.encode_dep_W8, strides=[1,1,1,1,1], padding='SAME')
+        h8_sigma = tf.nn.conv3d( h7, self.encode_dep_W8_sigma, strides=[1,1,1,1,1], padding='SAME')
 
-        return h7, h7_sigma
+        return h8, h8_sigma
 
     def discriminate(self, vox):
 
