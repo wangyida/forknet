@@ -301,10 +301,10 @@ class FCR_aGAN():
         code_discrim_loss = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_code_real, labels=tf.ones_like(h_code_real)), [1]))\
          + tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_code_encode, labels=tf.zeros_like(h_code_encode)), [1]))
         
+        # depth--start
         code_encode_dep_loss = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_code_encode_dep, labels=tf.ones_like(h_code_encode_dep)), [1]))
         code_discrim_dep_loss = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_code_real, labels=tf.ones_like(h_code_real)), [1]))\
          + tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_code_encode_dep, labels=tf.zeros_like(h_code_encode_dep)), [1]))
-        # depth--start
         code_compare_loss = tf.reduce_mean(tf.reduce_sum(tf.squared_difference(Z_encode_dep, Z_encode), [1,2,3,4]))
         # depth--end
 
@@ -355,7 +355,7 @@ class FCR_aGAN():
         discrim_dep_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_real_dep, labels=tf.ones_like(h_real_dep)))\
          + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dep, labels=tf.zeros_like(h_gen_dep))) + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dec_dep, labels=tf.zeros_like(h_gen_dec_dep)))
 
-        gen_dep_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen, labels=tf.ones_like(h_gen))) + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dec_dep, labels=tf.ones_like(h_gen_dec_dep)))
+        gen_dep_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dep, labels=tf.ones_like(h_gen_dep))) + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dec_dep, labels=tf.ones_like(h_gen_dec_dep)))
         # depth--end
         #for refine
         discrim_loss_refine = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_real, labels=tf.ones_like(h_real)))\

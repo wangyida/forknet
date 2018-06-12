@@ -128,8 +128,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
                                 feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train, lr_VAE:lr},
                                 )
                     # depth--start
-                    _ = sess.run(
-                            [train_op_latent_depvox],
+                    _, cost_code_compare_val = sess.run(
+                            [train_op_latent_depvox, cost_code_compare_tf],
                             feed_dict={vox_tf:batch_voxel_train, dep_tf:batch_depth_train, lr_VAE:lr},
                             )
                     _, recons_dep_loss_val, code_encode_dep_loss_val, cost_enc_dep_val = sess.run(
@@ -182,6 +182,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
                 print '            (depth):', cost_discrim_dep_val
                 print '          cost_code:', cost_code_val
                 print '            (depth):', cost_code_dep_val
+                print ' diff_codes_vox_dep:', cost_code_compare_val
                 print '   avarage of enc_z:', np.mean(np.mean(z_enc_val,4))
                 print '       std of enc_z:', np.mean(np.std(z_enc_val,4))
 
