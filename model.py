@@ -206,23 +206,43 @@ class FCR_aGAN():
         self.encode_dep_W7_sigma = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='depthproject_W7_sigma')
         # depth--end
         
-        self.discrim_W1 = tf.Variable(tf.random_normal([self.kernel5[0],self.kernel5[1],self.kernel5[2],self.dim_W5,self.dim_W4], stddev=0.02), name='discrim_W1')
-        self.discrim_bn_g1 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_bn_g1')
-        self.discrim_bn_b1 = tf.Variable( tf.zeros([1]), name='discrim_bn_b1')
+        self.discrim_W1 = tf.Variable(tf.random_normal([self.kernel5[0],self.kernel5[1],self.kernel5[2],self.dim_W5,self.dim_W4], stddev=0.02), name='discrim_vox_W1')
+        self.discrim_bn_g1 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_vox_bn_g1')
+        self.discrim_bn_b1 = tf.Variable( tf.zeros([1]), name='discrim_vox_bn_b1')
 
-        self.discrim_W2 = tf.Variable(tf.random_normal([self.kernel4[0],self.kernel4[1],self.kernel4[2],self.dim_W4,self.dim_W3], stddev=0.02), name='discrim_W2')
-        self.discrim_bn_g2 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_bn_g2')
-        self.discrim_bn_b2 = tf.Variable( tf.zeros([1]), name='discrim_bn_b2')
+        self.discrim_W2 = tf.Variable(tf.random_normal([self.kernel4[0],self.kernel4[1],self.kernel4[2],self.dim_W4,self.dim_W3], stddev=0.02), name='discrim_vox_W2')
+        self.discrim_bn_g2 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_vox_bn_g2')
+        self.discrim_bn_b2 = tf.Variable( tf.zeros([1]), name='discrim_vox_bn_b2')
 
-        self.discrim_W3 = tf.Variable(tf.random_normal([self.kernel3[0],self.kernel3[1],self.kernel3[2],self.dim_W3,self.dim_W2], stddev=0.02), name='discrim_W3')
-        self.discrim_bn_g3 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_bn_g3')
-        self.discrim_bn_b3 = tf.Variable( tf.zeros([1]), name='discrim_bn_b3')
+        self.discrim_W3 = tf.Variable(tf.random_normal([self.kernel3[0],self.kernel3[1],self.kernel3[2],self.dim_W3,self.dim_W2], stddev=0.02), name='discrim_vox_W3')
+        self.discrim_bn_g3 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_vox_bn_g3')
+        self.discrim_bn_b3 = tf.Variable( tf.zeros([1]), name='discrim_vox_bn_b3')
 
-        self.discrim_W4 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.kernel2[2],self.dim_W2,self.dim_W1], stddev=0.02), name='discrim_W4')
-        self.discrim_bn_g4 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_bn_g4')
-        self.discrim_bn_b4 = tf.Variable( tf.zeros([1]), name='discrim_bn_b4')
+        self.discrim_W4 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.kernel2[2],self.dim_W2,self.dim_W1], stddev=0.02), name='discrim_vox_W4')
+        self.discrim_bn_g4 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_vox_bn_g4')
+        self.discrim_bn_b4 = tf.Variable( tf.zeros([1]), name='discrim_vox_bn_b4')
 
-        self.discrim_W5 = tf.Variable(tf.random_normal([self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1,1], stddev=0.02), name='discrim_W5')
+        self.discrim_W5 = tf.Variable(tf.random_normal([self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1,1], stddev=0.02), name='discrim_vox_W5')
+
+        # depth--start
+        self.discrim_dep_W1 = tf.Variable(tf.random_normal([self.kernel5[0],self.kernel5[1],self.kernel5[2],self.dim_W5,self.dim_W4], stddev=0.02), name='discrim_dep_W1')
+        self.discrim_dep_bn_g1 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_dep_bn_g1')
+        self.discrim_dep_bn_b1 = tf.Variable( tf.zeros([1]), name='discrim_dep_bn_b1')
+
+        self.discrim_dep_W2 = tf.Variable(tf.random_normal([self.kernel4[0],self.kernel4[1],self.kernel4[2],self.dim_W4,self.dim_W3], stddev=0.02), name='discrim_dep_W2')
+        self.discrim_dep_bn_g2 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_dep_bn_g2')
+        self.discrim_dep_bn_b2 = tf.Variable( tf.zeros([1]), name='discrim_dep_bn_b2')
+
+        self.discrim_dep_W3 = tf.Variable(tf.random_normal([self.kernel3[0],self.kernel3[1],self.kernel3[2],self.dim_W3,self.dim_W2], stddev=0.02), name='discrim_dep_W3')
+        self.discrim_dep_bn_g3 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_dep_bn_g3')
+        self.discrim_dep_bn_b3 = tf.Variable( tf.zeros([1]), name='discrim_dep_bn_b3')
+
+        self.discrim_dep_W4 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.kernel2[2],self.dim_W2,self.dim_W1], stddev=0.02), name='discrim_dep_W4')
+        self.discrim_dep_bn_g4 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_dep_bn_g4')
+        self.discrim_dep_bn_b4 = tf.Variable( tf.zeros([1]), name='discrim_dep_bn_b4')
+
+        self.discrim_dep_W5 = tf.Variable(tf.random_normal([self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1,1], stddev=0.02), name='discrim_dep_W5')
+        # depth--end
 
         self.cod_W1 = tf.Variable(tf.random_normal([self.dim_z*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2], self.dim_code], stddev=0.02), name='cod_W1')
         self.cod_bn_g1 = tf.Variable( tf.random_normal([dim_code], mean=1.0, stddev=0.02), name='cod_bn_g1')
@@ -316,7 +336,11 @@ class FCR_aGAN():
         p_real, h_real = self.discriminate(vox_real)
         p_gen, h_gen = self.discriminate(vox_gen)
         p_gen_dec, h_gen_dec = self.discriminate(vox_gen_decode)
-        p_gen_dec_dep, h_gen_dec_dep = self.discriminate(vox_gen_decode_dep)
+        # depth--start
+        p_real_dep, h_real_dep = self.discriminate_dep(vox_real)
+        p_gen_dep, h_gen_dep = self.discriminate_dep(vox_gen)
+        p_gen_dec_dep, h_gen_dec_dep = self.discriminate_dep(vox_gen_decode_dep)
+        # depth--end
         p_gen_ref, h_gen_ref = self.discriminate(vox_after_refine_gen)
         p_gen_dec_ref, h_gen_dec_ref = self.discriminate(vox_after_refine_dec)
         
@@ -327,10 +351,12 @@ class FCR_aGAN():
 
         gen_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen, labels=tf.ones_like(h_gen))) + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dec, labels=tf.ones_like(h_gen_dec)))
 
-        discrim_dep_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_real, labels=tf.ones_like(h_real)))\
-         + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen, labels=tf.zeros_like(h_gen))) + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dec_dep, labels=tf.zeros_like(h_gen_dec_dep)))
+        # depth--start
+        discrim_dep_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_real_dep, labels=tf.ones_like(h_real_dep)))\
+         + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dep, labels=tf.zeros_like(h_gen_dep))) + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dec_dep, labels=tf.zeros_like(h_gen_dec_dep)))
 
         gen_dep_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen, labels=tf.ones_like(h_gen))) + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dec_dep, labels=tf.ones_like(h_gen_dec_dep)))
+        # depth--end
         #for refine
         discrim_loss_refine = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_real, labels=tf.ones_like(h_real)))\
          + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_ref, labels=tf.zeros_like(h_gen_ref))) + tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=h_gen_dec_ref, labels=tf.zeros_like(h_gen_dec_ref)))
@@ -408,6 +434,18 @@ class FCR_aGAN():
         h4 = lrelu( layernormalize( tf.nn.conv3d( h3, self.discrim_W4, strides=self.stride, padding='SAME'), g=self.discrim_bn_g4, b=self.discrim_bn_b4) )
         h4 = tf.reshape(h4, [self.batch_size, -1])
         h5 = tf.matmul( h4, self.discrim_W5 )
+        y = tf.nn.sigmoid(h5)
+
+        return y, h5    
+
+    def discriminate_dep(self, vox):
+
+        h1 = lrelu( tf.nn.conv3d( vox, self.discrim_dep_W1, strides=self.stride, padding='SAME' ))
+        h2 = lrelu( layernormalize( tf.nn.conv3d( h1, self.discrim_dep_W2, strides=self.stride, padding='SAME'), g=self.discrim_dep_bn_g2, b=self.discrim_dep_bn_b2) )
+        h3 = lrelu( layernormalize( tf.nn.conv3d( h2, self.discrim_dep_W3, strides=self.stride, padding='SAME'), g=self.discrim_dep_bn_g3, b=self.discrim_dep_bn_b3) )
+        h4 = lrelu( layernormalize( tf.nn.conv3d( h3, self.discrim_dep_W4, strides=self.stride, padding='SAME'), g=self.discrim_dep_bn_g4, b=self.discrim_dep_bn_b4) )
+        h4 = tf.reshape(h4, [self.batch_size, -1])
+        h5 = tf.matmul( h4, self.discrim_dep_W5 )
         y = tf.nn.sigmoid(h5)
 
         return y, h5    

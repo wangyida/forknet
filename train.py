@@ -58,10 +58,11 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
     data_process = DataProcess(data_paths, batch_size, repeat = True)
 
     encode_vars = filter(lambda x: x.name.startswith('enc'), tf.trainable_variables())
+    discrim_vars = filter(lambda x: x.name.startswith('discrim_vox'), tf.trainable_variables())
     # depth--start
     depth_vars = filter(lambda x: x.name.startswith('dep'), tf.trainable_variables())
+    discrim_dep_vars = filter(lambda x: x.name.startswith('discrim_dep'), tf.trainable_variables())
     # depth--end
-    discrim_vars = filter(lambda x: x.name.startswith('discrim'), tf.trainable_variables())
     gen_vars = filter(lambda x: x.name.startswith('gen'), tf.trainable_variables())
     code_vars = filter(lambda x: x.name.startswith('cod'), tf.trainable_variables())
     refine_vars = filter(lambda x: x.name.startswith('refine'), tf.trainable_variables())
@@ -74,7 +75,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
     # depth--start
     train_op_latent_depvox = tf.train.AdamOptimizer(lr_VAE, beta1=beta_G, beta2=0.9).minimize(cost_code_compare_tf, var_list=depth_vars)
     train_op_encode_dep=tf.train.AdamOptimizer(lr_VAE, beta1=beta_D, beta2=0.9).minimize(cost_enc_dep_tf, var_list=depth_vars)
-    train_op_discrim_dep = tf.train.AdamOptimizer(learning_rate_D, beta1=beta_D, beta2=0.9).minimize(cost_discrim_dep_tf, var_list=discrim_vars)
+    train_op_discrim_dep = tf.train.AdamOptimizer(learning_rate_D, beta1=beta_D, beta2=0.9).minimize(cost_discrim_dep_tf, var_list=discrim_dep_vars)
     train_op_gen_dep = tf.train.AdamOptimizer(learning_rate_G, beta1=beta_G, beta2=0.9).minimize(cost_gen_dep_tf, var_list=gen_vars)
     train_op_code_dep = tf.train.AdamOptimizer(lr_VAE, beta1=beta_G, beta2=0.9).minimize(cost_code_dep_tf, var_list=code_vars)
     # depth--end
@@ -168,19 +169,19 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
     	    
 
                 print 'reconstruction loss:', recons_loss_val
-                print '    (depth) version:', recons_dep_loss_val
+                print '            (depth):', recons_dep_loss_val
                 print '   code encode loss:', code_encode_loss_val
-                print '    (depth) version:', code_encode_dep_loss_val
+                print '            (depth):', code_encode_dep_loss_val
                 print '           gen loss:', gen_loss_val
-                print '    (depth) version:', gen_dep_loss_val
+                print '            (depth):', gen_dep_loss_val
                 print '       cost_encoder:', cost_enc_val
-                print '    (depth) version:', cost_enc_dep_val
+                print '            (depth):', cost_enc_dep_val
                 print '     cost_generator:', cost_gen_val
-                print '    (depth) version:', cost_gen_dep_val
+                print '            (depth):', cost_gen_dep_val
                 print ' cost_discriminator:', cost_discrim_val
-                print '    (depth) version:', cost_discrim_dep_val
+                print '            (depth):', cost_discrim_dep_val
                 print '          cost_code:', cost_code_val
-                print '    (depth) version:', cost_code_dep_val
+                print '            (depth):', cost_code_dep_val
                 print '   avarage of enc_z:', np.mean(np.mean(z_enc_val,4))
                 print '       std of enc_z:', np.mean(np.std(z_enc_val,4))
 
