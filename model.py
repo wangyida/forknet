@@ -198,10 +198,10 @@ class FCR_aGAN():
         self.encode_dep_bn_g5 = tf.Variable( tf.random_normal([self.dim_W1], mean=1.0, stddev=0.02), name='depthproject_bn_g5')
         self.encode_dep_bn_b5 = tf.Variable( tf.zeros([self.dim_W1]), name='depthproject_bn_b5')
 
-        self.encode_dep_W6 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.dim_W1,1920], stddev=0.02), name='depthproject_W6')
-        self.encode_dep_bn_g6 = tf.Variable( tf.random_normal([1920], mean=1.0, stddev=0.02), name='depthproject_bn_g6')
-        self.encode_dep_bn_b6 = tf.Variable( tf.zeros([1920]), name='depthproject_bn_b6')
-        self.encode_dep_W7 = tf.Variable(tf.random_normal([self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1, self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1], stddev=0.02), name='depthproject_W7')
+        self.encode_dep_W6 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.dim_W1,256], stddev=0.02), name='depthproject_W6')
+        self.encode_dep_bn_g6 = tf.Variable( tf.random_normal([256], mean=1.0, stddev=0.02), name='depthproject_bn_g6')
+        self.encode_dep_bn_b6 = tf.Variable( tf.zeros([256]), name='depthproject_bn_b6')
+        self.encode_dep_W7 = tf.Variable(tf.random_normal([5*4*256, self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1], stddev=0.02), name='depthproject_W7')
 
         self.encode_dep_W8 = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='depthproject_W8')
         self.encode_dep_W8_sigma = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='depthproject_W8_sigma')
