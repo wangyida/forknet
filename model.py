@@ -136,139 +136,563 @@ class FCR_aGAN():
         self.refine_ch = refine_ch
         self.refine_kernel = refine_kernel
         
-        self.gen_W1 = tf.Variable(tf.random_normal([self.dim_z*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2], self.dim_W1*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]], stddev=0.02), name='gen_W1')
-        self.gen_bn_g1 = tf.Variable( tf.random_normal([self.dim_W1*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]], mean=1.0, stddev=0.02), name='gen_bn_g1')
-        self.gen_bn_b1 = tf.Variable( tf.zeros([self.dim_W1*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]]), name='gen_bn_b1')
+        self.gen_W1 = tf.Variable(
+                tf.random_normal([
+                    self.dim_z*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2], 
+                    self.dim_W1*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]], 
+                    stddev=0.02), 
+                name='gen_W1')
+        self.gen_bn_g1 = tf.Variable( 
+                tf.random_normal([
+                    self.dim_W1*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]], 
+                    mean=1.0, stddev=0.02), 
+                name='gen_bn_g1')
+        self.gen_bn_b1 = tf.Variable( 
+                tf.zeros([
+                    self.dim_W1*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]]), 
+                name='gen_bn_b1')
 
-        self.gen_W2 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.kernel2[2],self.dim_W2, self.dim_W1], stddev=0.02), name='gen_W2')
-        self.gen_bn_g2 = tf.Variable( tf.random_normal([self.dim_W2], mean=1.0, stddev=0.02), name='gen_bn_g2')
-        self.gen_bn_b2 = tf.Variable( tf.zeros([self.dim_W2]), name='gen_bn_b2')
+        self.gen_W2 = tf.Variable(
+                tf.random_normal([
+                    self.kernel2[0],
+                    self.kernel2[1],
+                    self.kernel2[2],
+                    self.dim_W2, 
+                    self.dim_W1], 
+                    stddev=0.02), 
+                name='gen_W2')
+        self.gen_bn_g2 = tf.Variable( 
+                tf.random_normal(
+                    [self.dim_W2], 
+                    mean=1.0, stddev=0.02), 
+                name='gen_bn_g2')
+        self.gen_bn_b2 = tf.Variable( 
+                tf.zeros([self.dim_W2]), 
+                name='gen_bn_b2')
 
-        self.gen_W3 = tf.Variable(tf.random_normal([self.kernel3[0],self.kernel3[1],self.kernel3[2],self.dim_W3, self.dim_W2], stddev=0.02), name='gen_W3')
-        self.gen_bn_g3 = tf.Variable( tf.random_normal([self.dim_W3], mean=1.0, stddev=0.02), name='gen_bn_g3')
-        self.gen_bn_b3 = tf.Variable( tf.zeros([self.dim_W3]), name='gen_bn_b3')
+        self.gen_W3 = tf.Variable(
+                tf.random_normal([
+                    self.kernel3[0], 
+                    self.kernel3[1], 
+                    self.kernel3[2], 
+                    self.dim_W3, 
+                    self.dim_W2], 
+                    stddev=0.02), 
+                name='gen_W3')
+        self.gen_bn_g3 = tf.Variable( 
+                tf.random_normal([
+                    self.dim_W3], 
+                    mean=1.0, 
+                    stddev=0.02), 
+                name='gen_bn_g3')
+        self.gen_bn_b3 = tf.Variable( 
+                tf.zeros([self.dim_W3]), 
+                name='gen_bn_b3')
 
-        self.gen_W4 = tf.Variable(tf.random_normal([self.kernel4[0],self.kernel4[1],self.kernel4[2],self.dim_W4, self.dim_W3], stddev=0.02), name='gen_W4')
-        self.gen_bn_g4 = tf.Variable( tf.random_normal([self.dim_W4], mean=1.0, stddev=0.02), name='gen_bn_g4')
-        self.gen_bn_b4 = tf.Variable( tf.zeros([self.dim_W4]), name='gen_bn_b4')
+        self.gen_W4 = tf.Variable(
+                tf.random_normal([
+                    self.kernel4[0],
+                    self.kernel4[1],
+                    self.kernel4[2],
+                    self.dim_W4, 
+                    self.dim_W3], 
+                    stddev=0.02), 
+                name='gen_W4')
+        self.gen_bn_g4 = tf.Variable( 
+                tf.random_normal([self.dim_W4], 
+                    mean=1.0, stddev=0.02), 
+                name='gen_bn_g4')
+        self.gen_bn_b4 = tf.Variable( 
+                tf.zeros([self.dim_W4]), 
+                name='gen_bn_b4')
 
-        self.gen_W5 = tf.Variable(tf.random_normal([self.kernel5[0],self.kernel5[1],self.kernel5[2],self.dim_W5, self.dim_W4], stddev=0.02), name='gen_W5')
-        self.gen_bn_g5 = tf.Variable( tf.random_normal([self.dim_W5], mean=1.0, stddev=0.02), name='gen_bn_g5')
-        self.gen_bn_b5 = tf.Variable( tf.zeros([self.dim_W5]), name='gen_bn_b5')
+        self.gen_W5 = tf.Variable(
+                tf.random_normal([
+                    self.kernel5[0],
+                    self.kernel5[1],
+                    self.kernel5[2],
+                    self.dim_W5, 
+                    self.dim_W4], 
+                    stddev=0.02), 
+                name='gen_W5')
+        self.gen_bn_g5 = tf.Variable( 
+                tf.random_normal([self.dim_W5], 
+                    mean=1.0, stddev=0.02), 
+                name='gen_bn_g5')
+        self.gen_bn_b5 = tf.Variable( 
+                tf.zeros([self.dim_W5]), 
+                name='gen_bn_b5')
 
 
 
-        self.encode_W1 = tf.Variable(tf.random_normal([self.kernel5[0],self.kernel5[1],self.kernel5[2],self.dim_W5,self.dim_W4], stddev=0.02), name='encode_W1')
-        self.encode_bn_g1 = tf.Variable( tf.random_normal([self.dim_W4], mean=1.0, stddev=0.02), name='encode_bn_g1')
-        self.encode_bn_b1 = tf.Variable( tf.zeros([self.dim_W4]), name='encode_bn_b1')
+        self.encode_W1 = tf.Variable(
+                tf.random_normal([
+                    self.kernel5[0],
+                    self.kernel5[1],
+                    self.kernel5[2],
+                    self.dim_W5,
+                    self.dim_W4], 
+                    stddev=0.02), 
+                name='encode_W1')
+        self.encode_bn_g1 = tf.Variable( 
+                tf.random_normal([self.dim_W4], 
+                    mean=1.0, stddev=0.02), 
+                name='encode_bn_g1')
+        self.encode_bn_b1 = tf.Variable( 
+                tf.zeros([self.dim_W4]), 
+                name='encode_bn_b1')
 
-        self.encode_W2 = tf.Variable(tf.random_normal([self.kernel4[0],self.kernel4[1],self.kernel4[2],self.dim_W4,self.dim_W3], stddev=0.02), name='encode_W2')
-        self.encode_bn_g2 = tf.Variable( tf.random_normal([self.dim_W3], mean=1.0, stddev=0.02), name='encode_bn_g2')
-        self.encode_bn_b2 = tf.Variable( tf.zeros([self.dim_W3]), name='encode_bn_b2')
+        self.encode_W2 = tf.Variable(
+                tf.random_normal([
+                    self.kernel4[0],
+                    self.kernel4[1],
+                    self.kernel4[2],
+                    self.dim_W4,
+                    self.dim_W3], 
+                    stddev=0.02), 
+                name='encode_W2')
+        self.encode_bn_g2 = tf.Variable( 
+                tf.random_normal([self.dim_W3], 
+                    mean=1.0, stddev=0.02), 
+                name='encode_bn_g2')
+        self.encode_bn_b2 = tf.Variable( 
+                tf.zeros([self.dim_W3]), 
+                name='encode_bn_b2')
 
-        self.encode_W3 = tf.Variable(tf.random_normal([self.kernel3[0],self.kernel3[1],self.kernel3[2],self.dim_W3,self.dim_W2], stddev=0.02), name='encode_W3')
-        self.encode_bn_g3 = tf.Variable( tf.random_normal([self.dim_W2], mean=1.0, stddev=0.02), name='encode_bn_g3')
-        self.encode_bn_b3 = tf.Variable( tf.zeros([self.dim_W2]), name='encode_bn_b3')
+        self.encode_W3 = tf.Variable(
+                tf.random_normal([
+                    self.kernel3[0],
+                    self.kernel3[1],
+                    self.kernel3[2],
+                    self.dim_W3,
+                    self.dim_W2], 
+                    stddev=0.02), 
+                name='encode_W3')
+        self.encode_bn_g3 = tf.Variable( 
+                tf.random_normal([self.dim_W2], 
+                    mean=1.0, stddev=0.02), 
+                name='encode_bn_g3')
+        self.encode_bn_b3 = tf.Variable( 
+                tf.zeros([self.dim_W2]), 
+                name='encode_bn_b3')
 
-        self.encode_W4 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.kernel2[2],self.dim_W2,self.dim_W1], stddev=0.02), name='encode_W4')
-        self.encode_bn_g4 = tf.Variable( tf.random_normal([self.dim_W1], mean=1.0, stddev=0.02), name='encode_bn_g4')
-        self.encode_bn_b4 = tf.Variable( tf.zeros([self.dim_W1]), name='encode_bn_b4')
+        self.encode_W4 = tf.Variable(
+                tf.random_normal([
+                    self.kernel2[0],
+                    self.kernel2[1],
+                    self.kernel2[2],
+                    self.dim_W2,
+                    self.dim_W1], 
+                    stddev=0.02), 
+                name='encode_W4')
+        self.encode_bn_g4 = tf.Variable( 
+                tf.random_normal([self.dim_W1], 
+                    mean=1.0, stddev=0.02), 
+                name='encode_bn_g4')
+        self.encode_bn_b4 = tf.Variable( 
+                tf.zeros([self.dim_W1]), 
+                name='encode_bn_b4')
 
-        self.encode_W5 = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='encode_W5')
-        self.encode_W5_sigma = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='encode_W5_sigma')
+        self.encode_W5 = tf.Variable(
+                tf.random_normal([1,1,1,self.dim_W1,self.dim_z], 
+                    stddev=0.02), 
+                name='encode_W5')
+        self.encode_W5_sigma = tf.Variable(
+                tf.random_normal([1,1,1,self.dim_W1,self.dim_z], 
+                    stddev=0.02), 
+                name='encode_W5_sigma')
 
         # depth--start
-        self.encode_dep_W1 = tf.Variable(tf.random_normal([self.kernel5[0],self.kernel5[1],1,self.dim_W4], stddev=0.02), name='depthproject_W1')
-        self.encode_dep_bn_g1 = tf.Variable( tf.random_normal([self.dim_W4], mean=1.0, stddev=0.02), name='depthproject_bn_g1')
-        self.encode_dep_bn_b1 = tf.Variable( tf.zeros([self.dim_W4]), name='depthproject_bn_b1')
+        self.encode_dep_W1 = tf.Variable(
+                tf.random_normal([
+                    self.kernel5[0],
+                    self.kernel5[1],
+                    1,
+                    self.dim_W4], 
+                    stddev=0.02), 
+                name='depthproject_W1')
+        self.encode_dep_bn_g1 = tf.Variable( 
+                tf.random_normal([self.dim_W4], 
+                    mean=1.0, stddev=0.02), 
+                name='depthproject_bn_g1')
+        self.encode_dep_bn_b1 = tf.Variable( 
+                tf.zeros([self.dim_W4]), 
+                name='depthproject_bn_b1')
 
-        self.encode_dep_W2 = tf.Variable(tf.random_normal([self.kernel4[0],self.kernel4[1],self.dim_W4,self.dim_W3], stddev=0.02), name='depthproject_W2')
-        self.encode_dep_bn_g2 = tf.Variable( tf.random_normal([self.dim_W3], mean=1.0, stddev=0.02), name='depthproject_bn_g2')
-        self.encode_dep_bn_b2 = tf.Variable( tf.zeros([self.dim_W3]), name='depthproject_bn_b2')
+        self.encode_dep_W2 = tf.Variable(
+                tf.random_normal([
+                    self.kernel4[0],
+                    self.kernel4[1],
+                    self.dim_W4,
+                    self.dim_W3], 
+                    stddev=0.02), 
+                name='depthproject_W2')
+        self.encode_dep_bn_g2 = tf.Variable( 
+                tf.random_normal([self.dim_W3], 
+                    mean=1.0, stddev=0.02), 
+                name='depthproject_bn_g2')
+        self.encode_dep_bn_b2 = tf.Variable( 
+                tf.zeros([self.dim_W3]), 
+                name='depthproject_bn_b2')
 
-        self.encode_dep_W3 = tf.Variable(tf.random_normal([self.kernel3[0],self.kernel3[1],self.dim_W3,self.dim_W2], stddev=0.02), name='depthproject_W3')
-        self.encode_dep_bn_g3 = tf.Variable( tf.random_normal([self.dim_W2], mean=1.0, stddev=0.02), name='depthproject_bn_g3')
-        self.encode_dep_bn_b3 = tf.Variable( tf.zeros([self.dim_W2]), name='depthproject_bn_b3')
+        self.encode_dep_W3 = tf.Variable(
+                tf.random_normal([
+                    self.kernel3[0],
+                    self.kernel3[1],
+                    self.dim_W3,
+                    self.dim_W2], 
+                    stddev=0.02), 
+                name='depthproject_W3')
+        self.encode_dep_bn_g3 = tf.Variable( 
+                tf.random_normal([self.dim_W2], 
+                    mean=1.0, stddev=0.02), 
+                name='depthproject_bn_g3')
+        self.encode_dep_bn_b3 = tf.Variable( 
+                tf.zeros([self.dim_W2]), 
+                name='depthproject_bn_b3')
 
-        self.encode_dep_W4 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.dim_W2,self.dim_W1], stddev=0.02), name='depthproject_W4')
-        self.encode_dep_bn_g4 = tf.Variable( tf.random_normal([self.dim_W1], mean=1.0, stddev=0.02), name='depthproject_bn_g4')
-        self.encode_dep_bn_b4 = tf.Variable( tf.zeros([self.dim_W1]), name='depthproject_bn_b4')
+        self.encode_dep_W4 = tf.Variable(
+                tf.random_normal([
+                    self.kernel2[0],
+                    self.kernel2[1],
+                    self.dim_W2,
+                    self.dim_W1], 
+                    stddev=0.02), 
+                name='depthproject_W4')
+        self.encode_dep_bn_g4 = tf.Variable( 
+                tf.random_normal([self.dim_W1], 
+                    mean=1.0, stddev=0.02), 
+                name='depthproject_bn_g4')
+        self.encode_dep_bn_b4 = tf.Variable( 
+                tf.zeros([self.dim_W1]), 
+                name='depthproject_bn_b4')
 
-        self.encode_dep_W5 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.dim_W1,self.dim_W1], stddev=0.02), name='depthproject_W5')
-        self.encode_dep_bn_g5 = tf.Variable( tf.random_normal([self.dim_W1], mean=1.0, stddev=0.02), name='depthproject_bn_g5')
-        self.encode_dep_bn_b5 = tf.Variable( tf.zeros([self.dim_W1]), name='depthproject_bn_b5')
+        self.encode_dep_W5 = tf.Variable(
+                tf.random_normal([
+                    self.kernel2[0],
+                    self.kernel2[1],
+                    self.dim_W1,
+                    self.dim_W1], 
+                    stddev=0.02), 
+                name='depthproject_W5')
+        self.encode_dep_bn_g5 = tf.Variable( 
+                tf.random_normal([self.dim_W1], 
+                    mean=1.0, stddev=0.02), 
+                name='depthproject_bn_g5')
+        self.encode_dep_bn_b5 = tf.Variable( 
+                tf.zeros([self.dim_W1]), 
+                name='depthproject_bn_b5')
 
-        self.encode_dep_W6 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.dim_W1,256], stddev=0.02), name='depthproject_W6')
-        self.encode_dep_bn_g6 = tf.Variable( tf.random_normal([256], mean=1.0, stddev=0.02), name='depthproject_bn_g6')
-        self.encode_dep_bn_b6 = tf.Variable( tf.zeros([256]), name='depthproject_bn_b6')
-        self.encode_dep_W7 = tf.Variable(tf.random_normal([5*4*256, self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1], stddev=0.02), name='depthproject_W7')
+        self.encode_dep_W6 = tf.Variable(
+                tf.random_normal([
+                    self.kernel2[0],
+                    self.kernel2[1],
+                    self.dim_W1,
+                    256], 
+                    stddev=0.02), 
+                name='depthproject_W6')
+        self.encode_dep_bn_g6 = tf.Variable( 
+                tf.random_normal([256], 
+                    mean=1.0, stddev=0.02), 
+                name='depthproject_bn_g6')
+        self.encode_dep_bn_b6 = tf.Variable( 
+                tf.zeros([256]), 
+                name='depthproject_bn_b6')
+        self.encode_dep_W7 = tf.Variable(
+                tf.random_normal([
+                    5*4*256, 
+                    self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1], 
+                    stddev=0.02), 
+                name='depthproject_W7')
 
-        self.encode_dep_W8 = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='depthproject_W8')
-        self.encode_dep_W8_sigma = tf.Variable(tf.random_normal([1,1,1,self.dim_W1,self.dim_z], stddev=0.02), name='depthproject_W8_sigma')
+        self.encode_dep_W8 = tf.Variable(
+                tf.random_normal([
+                    1,1,1,self.dim_W1,self.dim_z], 
+                    stddev=0.02), 
+                name='depthproject_W8')
+        self.encode_dep_W8_sigma = tf.Variable(
+                tf.random_normal([
+                    1,1,1,self.dim_W1,self.dim_z], 
+                    stddev=0.02), 
+                name='depthproject_W8_sigma')
         # depth--end
         
-        self.discrim_W1 = tf.Variable(tf.random_normal([self.kernel5[0],self.kernel5[1],self.kernel5[2],self.dim_W5,self.dim_W4], stddev=0.02), name='discrim_vox_W1')
-        self.discrim_bn_g1 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_vox_bn_g1')
-        self.discrim_bn_b1 = tf.Variable( tf.zeros([1]), name='discrim_vox_bn_b1')
+        self.discrim_W1 = tf.Variable(
+                tf.random_normal([
+                    self.kernel5[0],
+                    self.kernel5[1],
+                    self.kernel5[2],
+                    self.dim_W5,
+                    self.dim_W4], 
+                    stddev=0.02), 
+                name='discrim_vox_W1')
+        self.discrim_bn_g1 = tf.Variable( 
+                tf.random_normal([1], 
+                    mean=1.0, stddev=0.02), 
+                name='discrim_vox_bn_g1')
+        self.discrim_bn_b1 = tf.Variable( 
+                tf.zeros([1]), 
+                name='discrim_vox_bn_b1')
 
-        self.discrim_W2 = tf.Variable(tf.random_normal([self.kernel4[0],self.kernel4[1],self.kernel4[2],self.dim_W4,self.dim_W3], stddev=0.02), name='discrim_vox_W2')
-        self.discrim_bn_g2 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_vox_bn_g2')
-        self.discrim_bn_b2 = tf.Variable( tf.zeros([1]), name='discrim_vox_bn_b2')
+        self.discrim_W2 = tf.Variable(
+                tf.random_normal([
+                    self.kernel4[0],
+                    self.kernel4[1],
+                    self.kernel4[2],
+                    self.dim_W4,
+                    self.dim_W3], 
+                    stddev=0.02), 
+                name='discrim_vox_W2')
+        self.discrim_bn_g2 = tf.Variable( 
+                tf.random_normal([1], 
+                    mean=1.0, stddev=0.02), 
+                name='discrim_vox_bn_g2')
+        self.discrim_bn_b2 = tf.Variable( 
+                tf.zeros([1]), 
+                name='discrim_vox_bn_b2')
 
-        self.discrim_W3 = tf.Variable(tf.random_normal([self.kernel3[0],self.kernel3[1],self.kernel3[2],self.dim_W3,self.dim_W2], stddev=0.02), name='discrim_vox_W3')
-        self.discrim_bn_g3 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_vox_bn_g3')
-        self.discrim_bn_b3 = tf.Variable( tf.zeros([1]), name='discrim_vox_bn_b3')
+        self.discrim_W3 = tf.Variable(
+                tf.random_normal([
+                    self.kernel3[0],
+                    self.kernel3[1],
+                    self.kernel3[2],
+                    self.dim_W3,
+                    self.dim_W2], 
+                    stddev=0.02), 
+                name='discrim_vox_W3')
+        self.discrim_bn_g3 = tf.Variable( 
+                tf.random_normal([1], 
+                    mean=1.0, stddev=0.02), 
+                name='discrim_vox_bn_g3')
+        self.discrim_bn_b3 = tf.Variable( 
+                tf.zeros([1]), 
+                name='discrim_vox_bn_b3')
 
-        self.discrim_W4 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.kernel2[2],self.dim_W2,self.dim_W1], stddev=0.02), name='discrim_vox_W4')
-        self.discrim_bn_g4 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_vox_bn_g4')
-        self.discrim_bn_b4 = tf.Variable( tf.zeros([1]), name='discrim_vox_bn_b4')
+        self.discrim_W4 = tf.Variable(
+                tf.random_normal([
+                    self.kernel2[0],
+                    self.kernel2[1],
+                    self.kernel2[2],
+                    self.dim_W2,
+                    self.dim_W1], 
+                    stddev=0.02), 
+                name='discrim_vox_W4')
+        self.discrim_bn_g4 = tf.Variable( 
+                tf.random_normal([1], 
+                    mean=1.0, stddev=0.02), 
+                name='discrim_vox_bn_g4')
+        self.discrim_bn_b4 = tf.Variable( 
+                tf.zeros([1]), 
+                name='discrim_vox_bn_b4')
 
-        self.discrim_W5 = tf.Variable(tf.random_normal([self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1,1], stddev=0.02), name='discrim_vox_W5')
+        self.discrim_W5 = tf.Variable(
+                tf.random_normal([
+                    self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1,
+                    1], 
+                    stddev=0.02), 
+                name='discrim_vox_W5')
 
         # depth--start
-        self.discrim_dep_W1 = tf.Variable(tf.random_normal([self.kernel5[0],self.kernel5[1],self.kernel5[2],self.dim_W5,self.dim_W4], stddev=0.02), name='discrim_dep_W1')
-        self.discrim_dep_bn_g1 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_dep_bn_g1')
-        self.discrim_dep_bn_b1 = tf.Variable( tf.zeros([1]), name='discrim_dep_bn_b1')
+        self.discrim_dep_W1 = tf.Variable(
+                tf.random_normal([
+                    self.kernel5[0],
+                    self.kernel5[1],
+                    self.kernel5[2],
+                    self.dim_W5,
+                    self.dim_W4], 
+                    stddev=0.02), 
+                name='discrim_dep_W1')
+        self.discrim_dep_bn_g1 = tf.Variable( 
+                tf.random_normal([1], 
+                    mean=1.0, stddev=0.02), 
+                name='discrim_dep_bn_g1')
+        self.discrim_dep_bn_b1 = tf.Variable( 
+                tf.zeros([1]), 
+                name='discrim_dep_bn_b1')
 
-        self.discrim_dep_W2 = tf.Variable(tf.random_normal([self.kernel4[0],self.kernel4[1],self.kernel4[2],self.dim_W4,self.dim_W3], stddev=0.02), name='discrim_dep_W2')
-        self.discrim_dep_bn_g2 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_dep_bn_g2')
-        self.discrim_dep_bn_b2 = tf.Variable( tf.zeros([1]), name='discrim_dep_bn_b2')
+        self.discrim_dep_W2 = tf.Variable(
+                tf.random_normal([
+                    self.kernel4[0],
+                    self.kernel4[1],
+                    self.kernel4[2],
+                    self.dim_W4,
+                    self.dim_W3], 
+                    stddev=0.02), 
+                name='discrim_dep_W2')
+        self.discrim_dep_bn_g2 = tf.Variable( 
+                tf.random_normal([1], 
+                    mean=1.0, stddev=0.02), 
+                name='discrim_dep_bn_g2')
+        self.discrim_dep_bn_b2 = tf.Variable( 
+                tf.zeros([1]), 
+                name='discrim_dep_bn_b2')
 
-        self.discrim_dep_W3 = tf.Variable(tf.random_normal([self.kernel3[0],self.kernel3[1],self.kernel3[2],self.dim_W3,self.dim_W2], stddev=0.02), name='discrim_dep_W3')
-        self.discrim_dep_bn_g3 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_dep_bn_g3')
-        self.discrim_dep_bn_b3 = tf.Variable( tf.zeros([1]), name='discrim_dep_bn_b3')
+        self.discrim_dep_W3 = tf.Variable(
+                tf.random_normal([
+                    self.kernel3[0],
+                    self.kernel3[1],
+                    self.kernel3[2],
+                    self.dim_W3,
+                    self.dim_W2], 
+                    stddev=0.02), 
+                name='discrim_dep_W3')
+        self.discrim_dep_bn_g3 = tf.Variable( 
+                tf.random_normal([1], 
+                    mean=1.0, stddev=0.02), 
+                name='discrim_dep_bn_g3')
+        self.discrim_dep_bn_b3 = tf.Variable( 
+                tf.zeros([1]), 
+                name='discrim_dep_bn_b3')
 
-        self.discrim_dep_W4 = tf.Variable(tf.random_normal([self.kernel2[0],self.kernel2[1],self.kernel2[2],self.dim_W2,self.dim_W1], stddev=0.02), name='discrim_dep_W4')
-        self.discrim_dep_bn_g4 = tf.Variable( tf.random_normal([1], mean=1.0, stddev=0.02), name='discrim_dep_bn_g4')
-        self.discrim_dep_bn_b4 = tf.Variable( tf.zeros([1]), name='discrim_dep_bn_b4')
+        self.discrim_dep_W4 = tf.Variable(
+                tf.random_normal([
+                    self.kernel2[0],
+                    self.kernel2[1],
+                    self.kernel2[2],
+                    self.dim_W2,
+                    self.dim_W1], 
+                    stddev=0.02), 
+                name='discrim_dep_W4')
+        self.discrim_dep_bn_g4 = tf.Variable( 
+                tf.random_normal([1], 
+                    mean=1.0, stddev=0.02), 
+                name='discrim_dep_bn_g4')
+        self.discrim_dep_bn_b4 = tf.Variable( 
+                tf.zeros([1]), 
+                name='discrim_dep_bn_b4')
 
-        self.discrim_dep_W5 = tf.Variable(tf.random_normal([self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1,1], stddev=0.02), name='discrim_dep_W5')
+        self.discrim_dep_W5 = tf.Variable(
+                tf.random_normal([
+                    self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2]*self.dim_W1,1], 
+                    stddev=0.02), 
+                name='discrim_dep_W5')
         # depth--end
 
-        self.cod_W1 = tf.Variable(tf.random_normal([self.dim_z*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2], self.dim_code], stddev=0.02), name='cod_W1')
-        self.cod_bn_g1 = tf.Variable( tf.random_normal([dim_code], mean=1.0, stddev=0.02), name='cod_bn_g1')
-        self.cod_bn_b1 = tf.Variable( tf.zeros([dim_code]), name='cod_bn_b1')
+        self.cod_W1 = tf.Variable(
+                tf.random_normal([
+                    self.dim_z*self.start_vox_size[0]*self.start_vox_size[1]*self.start_vox_size[2], 
+                    self.dim_code], 
+                    stddev=0.02), 
+                name='cod_W1')
+        self.cod_bn_g1 = tf.Variable( 
+                tf.random_normal([dim_code], 
+                    mean=1.0, stddev=0.02), 
+                name='cod_bn_g1')
+        self.cod_bn_b1 = tf.Variable( 
+                tf.zeros([dim_code]), 
+                name='cod_bn_b1')
 
-        self.cod_W2 = tf.Variable(tf.random_normal([dim_code, dim_code], stddev=0.02), name='cod_W2')
-        self.cod_bn_g2 = tf.Variable( tf.random_normal([dim_code], mean=1.0, stddev=0.02), name='cod_bn_g2')
-        self.cod_bn_b2 = tf.Variable( tf.zeros([dim_code]), name='cod_bn_b2')
+        self.cod_W2 = tf.Variable(
+                tf.random_normal([dim_code, dim_code], 
+                    stddev=0.02), 
+                name='cod_W2')
+        self.cod_bn_g2 = tf.Variable( 
+                tf.random_normal([dim_code], 
+                    mean=1.0, stddev=0.02), 
+                name='cod_bn_g2')
+        self.cod_bn_b2 = tf.Variable( 
+                tf.zeros([dim_code]), 
+                name='cod_bn_b2')
 
-        self.cod_W3 = tf.Variable(tf.random_normal([dim_code, 1], stddev=0.02), name='cod_W3')        
+        self.cod_W3 = tf.Variable(
+                tf.random_normal([dim_code, 1], 
+                    stddev=0.02), 
+                name='cod_W3')        
 
-        self.refine_W1 =tf.Variable(tf.random_normal([self.refine_kernel,self.refine_kernel,self.refine_kernel,self.dim_W5,self.refine_ch ], stddev=0.02), name='refine_W1')
-        self.refine_res1_W1 = tf.Variable(tf.random_normal([self.refine_kernel,self.refine_kernel,self.refine_kernel,self.refine_ch, self.refine_ch], stddev=0.02), name='refine__res1_W1')
-        self.refine_res1_W2 = tf.Variable(tf.random_normal([self.refine_kernel,self.refine_kernel,self.refine_kernel,self.refine_ch, self.refine_ch], stddev=0.02), name='refine__res1_W2')
+        self.refine_W1 =tf.Variable(
+                tf.random_normal([
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.dim_W5,
+                    self.refine_ch ], 
+                    stddev=0.02), 
+                name='refine_W1')
+        self.refine_res1_W1 = tf.Variable(
+                tf.random_normal([
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_ch, 
+                    self.refine_ch], 
+                    stddev=0.02), 
+                name='refine__res1_W1')
+        self.refine_res1_W2 = tf.Variable(
+                tf.random_normal([
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_ch, 
+                    self.refine_ch], 
+                    stddev=0.02), 
+                name='refine__res1_W2')
 
-        self.refine_res2_W1 = tf.Variable(tf.random_normal([self.refine_kernel,self.refine_kernel,self.refine_kernel,self.refine_ch, self.refine_ch], stddev=0.02), name='refine__res2_W1')
-        self.refine_res2_W2 = tf.Variable(tf.random_normal([self.refine_kernel,self.refine_kernel,self.refine_kernel,self.refine_ch, self.refine_ch], stddev=0.02), name='refine__res2_W2')
+        self.refine_res2_W1 = tf.Variable(
+                tf.random_normal([
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_ch, 
+                    self.refine_ch], 
+                    stddev=0.02), 
+                name='refine__res2_W1')
+        self.refine_res2_W2 = tf.Variable(
+                tf.random_normal([
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_ch, 
+                    self.refine_ch], 
+                    stddev=0.02), 
+                name='refine__res2_W2')
 
-        self.refine_res3_W1 = tf.Variable(tf.random_normal([self.refine_kernel,self.refine_kernel,self.refine_kernel,self.refine_ch, self.refine_ch], stddev=0.02), name='refine__res3_W1')
-        self.refine_res3_W2 = tf.Variable(tf.random_normal([self.refine_kernel,self.refine_kernel,self.refine_kernel,self.refine_ch, self.refine_ch], stddev=0.02), name='refine__res3_W2')
+        self.refine_res3_W1 = tf.Variable(
+                tf.random_normal([
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_ch, 
+                    self.refine_ch], 
+                    stddev=0.02), 
+                name='refine__res3_W1')
+        self.refine_res3_W2 = tf.Variable(
+                tf.random_normal([
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_ch, 
+                    self.refine_ch], 
+                    stddev=0.02), 
+                name='refine__res3_W2')
 
-        self.refine_res4_W1 = tf.Variable(tf.random_normal([self.refine_kernel,self.refine_kernel,self.refine_kernel,self.refine_ch, self.refine_ch], stddev=0.02), name='refine__res4_W1')
-        self.refine_res4_W2 = tf.Variable(tf.random_normal([self.refine_kernel,self.refine_kernel,self.refine_kernel,self.refine_ch, self.refine_ch], stddev=0.02), name='refine__res4_W2')
+        self.refine_res4_W1 = tf.Variable(
+                tf.random_normal([
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_ch, 
+                    self.refine_ch], 
+                    stddev=0.02), 
+                name='refine__res4_W1')
+        self.refine_res4_W2 = tf.Variable(
+                tf.random_normal([
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_ch, 
+                    self.refine_ch], 
+                    stddev=0.02), 
+                name='refine__res4_W2')
 
-        self.refine_W2 =tf.Variable(tf.random_normal([self.refine_kernel,self.refine_kernel,self.refine_kernel,self.refine_ch ,self.dim_W5], stddev=0.02), name='refine_W2')
+        self.refine_W2 =tf.Variable(
+                tf.random_normal([
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_kernel,
+                    self.refine_ch ,
+                    self.dim_W5], 
+                    stddev=0.02), 
+                name='refine_W2')
 
 
         self.saver = tf.train.Saver()
