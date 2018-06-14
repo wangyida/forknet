@@ -117,7 +117,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
             # batch_z_var = someencoder(batch_depth_train)
 
             if ite < refine_start:
-                for s in np.arange(2):
+                for s in np.arange(5):
                     _, recons_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
                                 [train_op_encode, recons_loss_tf, code_encode_loss_tf, cost_enc_tf],
                                 feed_dict={vox_tf:batch_voxel_train, dep_tf:batch_depth_train, Z_tf:batch_z_var, lr_VAE:lr},
@@ -194,7 +194,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
                     vox_models_cat = np.argmax(vox_models, axis=4)
                     record_vox = vox_models_cat[:record_vox_num]
                     np.save(cfg.DIR.TRAIN_OBJ_PATH + '/' + str(ite/freq) + '.npy', record_vox)
-                    save_path=saver.save(sess, cfg.DIR.CHECK_PT_PATH + str(ite/freq), global_step=global_step)
+                    save_path=saver.save(sess, cfg.DIR.CHECK_PT_PATH + str(ite/freq), global_step=None)
 
             else:
                 _, recons_loss_val, recons_loss_refine_val, gen_loss_refine_val, cost_gen_ref_val = sess.run(
@@ -227,7 +227,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
                     vox_models_cat = np.argmax(refined_models, axis=4)
                     record_vox = vox_models_cat[:record_vox_num]
                     np.save(cfg.DIR.TRAIN_OBJ_PATH + '/' + str(ite/freq) + '_refine.npy', record_vox)
-                    save_path=saver.save(sess, cfg.DIR.CHECK_PT_PATH + str(ite/freq), global_step=global_step)
+                    save_path=saver.save(sess, cfg.DIR.CHECK_PT_PATH + str(ite/freq), global_step=None)
 
 
             

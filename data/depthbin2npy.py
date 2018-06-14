@@ -9,6 +9,7 @@ from scipy import misc
 import os
 import argparse
 from progressbar import ProgressBar
+from skimage.measure import block_reduce
 
 def bin2array(file):
     start_time = time.time()
