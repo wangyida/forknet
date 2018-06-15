@@ -741,8 +741,7 @@ class FCR_aGAN():
                     tf.nn.sigmoid_cross_entropy_with_logits(
                         logits=h_code_real, 
                         labels=tf.ones_like(h_code_real)), 
-                    [1])) +\ 
-                tf.reduce_mean(
+                    [1])) + tf.reduce_mean(
                         tf.reduce_sum(
                             tf.nn.sigmoid_cross_entropy_with_logits(
                                 logits=h_code_encode, 
@@ -761,8 +760,7 @@ class FCR_aGAN():
                     tf.nn.sigmoid_cross_entropy_with_logits(
                         logits=h_code_real, 
                         labels=tf.ones_like(h_code_real)), 
-                    [1])) +\ 
-                tf.reduce_mean(
+                    [1])) + tf.reduce_mean(
                         tf.reduce_sum(
                             tf.nn.sigmoid_cross_entropy_with_logits(
                                 logits=h_code_encode_dep, 
@@ -827,12 +825,10 @@ class FCR_aGAN():
         discrim_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_real, 
-                    labels=tf.ones_like(h_real))) +\ 
-                tf.reduce_mean(
+                    labels=tf.ones_like(h_real))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_gen, 
-                            labels=tf.zeros_like(h_gen))) +\ 
-                        tf.reduce_mean(
+                            labels=tf.zeros_like(h_gen))) + tf.reduce_mean(
                                 tf.nn.sigmoid_cross_entropy_with_logits(
                                     logits=h_gen_dec, 
                                     labels=tf.zeros_like(h_gen_dec)))
@@ -840,8 +836,7 @@ class FCR_aGAN():
         gen_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_gen, 
-                    labels=tf.ones_like(h_gen))) +\ 
-                tf.reduce_mean(
+                    labels=tf.ones_like(h_gen))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_gen_dec, 
                             labels=tf.ones_like(h_gen_dec)))
@@ -850,12 +845,10 @@ class FCR_aGAN():
         discrim_dep_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_real_dep, 
-                    labels=tf.ones_like(h_real_dep))) +\ 
-                tf.reduce_mean(
+                    labels=tf.ones_like(h_real_dep))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_gen_dep, 
-                            labels=tf.zeros_like(h_gen_dep))) +\ 
-                        tf.reduce_mean(
+                            labels=tf.zeros_like(h_gen_dep))) + tf.reduce_mean(
                                 tf.nn.sigmoid_cross_entropy_with_logits(
                                     logits=h_gen_dec_dep, 
                                     labels=tf.zeros_like(h_gen_dec_dep)))
@@ -863,8 +856,7 @@ class FCR_aGAN():
         gen_dep_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_gen_dep, 
-                    labels=tf.ones_like(h_gen_dep))) +\ 
-                tf.reduce_mean(
+                    labels=tf.ones_like(h_gen_dep))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_gen_dec_dep, 
                             labels=tf.ones_like(h_gen_dec_dep)))
@@ -873,12 +865,10 @@ class FCR_aGAN():
         discrim_loss_refine = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_real, 
-                    labels=tf.ones_like(h_real))) +\ 
-                tf.reduce_mean(
+                    labels=tf.ones_like(h_real))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_gen_ref, 
-                            labels=tf.zeros_like(h_gen_ref))) +\ 
-                        tf.reduce_mean(
+                            labels=tf.zeros_like(h_gen_ref))) + tf.reduce_mean(
                                 tf.nn.sigmoid_cross_entropy_with_logits(
                                     logits=h_gen_dec_ref, 
                                     labels=tf.zeros_like(h_gen_dec_ref)))
@@ -886,8 +876,7 @@ class FCR_aGAN():
         gen_loss_refine = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_gen_ref, 
-                    labels=tf.ones_like(h_gen_ref))) +\ 
-                tf.reduce_mean(
+                    labels=tf.ones_like(h_gen_ref))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_gen_dec_ref, 
                             labels=tf.ones_like(h_gen_dec_ref)))
