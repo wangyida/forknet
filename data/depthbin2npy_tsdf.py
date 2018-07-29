@@ -20,18 +20,16 @@ def bin2array(file):
             cor = f.read(float_size*3)
             cors = unpack('fff', cor)
             # print("cors is {}",cors)
-            cam = f.read(float_size*16)
-            cams = unpack('ffffffffffffffff', cam)
+            tmp = f.read(float_size*5)
+            tmps = unpack('f'*5, tmp)
             # print("cams %16f",cams)
             vox = f.read()
-            numC = len(vox)/uint_size
+            numC = len(vox)/float_size
             # print('numC is {}'.format(numC))
-            checkVoxValIter = unpack('I'*numC, vox)
-            checkVoxVal = checkVoxValIter[0::2]
-            checkVoxIter = checkVoxValIter[1::2]
-            checkVox = [i for (val, repeat) in zip(checkVoxVal,checkVoxIter) for i in np.tile(val, repeat)]
+            checkVox = unpack('f'*numC, vox)
             # print('checkVox shape is {}'.format(len(checkVox)))
             checkVox = np.reshape(checkVox, (240,144,240))
+            checkVox = np.where(checkVox < 1.0, 1, 0)
             checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
     f.close()
     # print "reading voxel file takes {} mins".format((time.time()-start_time)/60)

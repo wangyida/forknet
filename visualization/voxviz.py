@@ -245,6 +245,10 @@ if __name__ == "__main__":
     # vis for 3D FGAN
     pbar = ProgressBar()
     arr = np.load(results.dir_vox)
+    arr = np.expand_dims(arr, axis=0)
+    arr[arr == 255] = 0
     for idx in pbar(range(0, arr.shape[0])):#([37, 69, 73, 76, 91, 93, 100, 121, 154, 156]):
-        resized = resize(normalize(arr[idx, :, :, :]), (48, 80, 80), mode='constant')
+        resized = arr[idx, :, :, :]
+        # resized = normalize(resized)
+        resized = resize(resized, (48, 80, 80), mode='constant')
         plot_cube(np.flip(np.rollaxis(arr[idx, :, :, :], 2, 0), 1), name = target_folder+'/'+str(idx))

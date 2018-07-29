@@ -21,7 +21,7 @@ def evaluate(batch_size, checknum, mode):
     refine_kernel = cfg.NET.REFINE_KERNEL
 
     save_path = cfg.DIR.EVAL_PATH
-    chckpt_path = cfg.DIR.CHECK_PT_PATH + str(checknum) + '-' + str(checknum * freq)
+    chckpt_path = cfg.DIR.CHECK_PT_PATH + str(checknum) #+ '-' + str(checknum * freq)
 
     fcr_agan_model = FCR_aGAN(
                 batch_size=batch_size,
@@ -118,7 +118,7 @@ def evaluate(batch_size, checknum, mode):
         vox_models_cat = np.argmax(generated_voxs, axis=4)
         np.save(save_path + '/recons.npy', vox_models_cat)
         vox_models_cat = np.argmax(generated_deps, axis=4)
-        np.save(save_path + '/recons_dep.npy', vox_models_cat)
+        np.save(save_path + '/gens_dep.npy', vox_models_cat)
         vox_models_cat = np.argmax(refined_voxs, axis=4)
         np.save(save_path + '/recons_refine.npy', vox_models_cat)
         np.save(save_path + '/decode_z.npy', enc_Z)
@@ -129,6 +129,7 @@ def evaluate(batch_size, checknum, mode):
         #numerical evalutation
         on_real = onehot(voxel_test,vox_shape[3])
         on_recons = onehot(np.argmax(generated_voxs, axis=4),vox_shape[3])
+        on_gens_dep = onehot(np.argmax(generated_deps, axis=4),vox_shape[3])
 
         #calc_IoU
         IoU_class = np.zeros([vox_shape[3]+1])
