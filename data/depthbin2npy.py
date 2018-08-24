@@ -111,7 +111,7 @@ if __name__=="__main__":
         os.mkdir(dir_voxel) 
 
     
-    """
+    
     pbar1 = ProgressBar()
     # save depth as npy files
     for file_png in pbar1(files_png):
@@ -119,7 +119,7 @@ if __name__=="__main__":
         name_start = int(file_png.rfind('/'))
         name_end = int(file_png.find('.', name_start))
         np.save(dir_depth + file_png[name_start: name_end] + '.npy', depth)
-    """
+    
     # save voxel as npy files
     pbar2 = ProgressBar()
     for file_bin in pbar2(files_bin):

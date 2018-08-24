@@ -136,7 +136,7 @@ def plot_image(arr, name='depth.png'):
     plt.close(fig)
 
 
-def plot_cube(cube, name='voxel', angle=-40, IMG_DIM=80):
+def plot_cube(cube, name='voxel', angle=0, IMG_DIM=80):
     from mpl_toolkits.mplot3d import Axes3D
 
     # cube = normalize(cube)
@@ -149,13 +149,13 @@ def plot_cube(cube, name='voxel', angle=-40, IMG_DIM=80):
     x, y, z = expand_coordinates(np.indices(np.array(filled.shape) + 1))
 
     # Here is a loop for generating demo files
-    for idx, val in enumerate(np.arange(-40, -35, 5)):
+    for idx, val in enumerate(np.arange(0, 120, 10)):
         fig = plt.figure(figsize=(30/2.54, 30/2.54))# , dpi=150)
         # plot
         ax1 = fig.add_subplot(111, projection='3d')
         # For samples in SUNCG, 20, -40 is a good choice for visualization
         # ax1.view_init(np.abs(90-val/2), val)
-        ax1.view_init(20, val)
+        ax1.view_init(angle, val)
         ax1.set_xlim(right=IMG_DIM*2)
         ax1.set_ylim(top=IMG_DIM*2)
         ax1.set_zlim(top=48*2)

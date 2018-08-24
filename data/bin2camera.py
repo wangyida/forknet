@@ -1,5 +1,4 @@
 from struct import *
-from subprocess import call
 import numpy as np
 # I considered using multiprocessing package, but I find this code version is fine.
 # Welcome for your version with multiprocessing to make the reading faster.
@@ -12,7 +11,7 @@ import argparse
 from progressbar import ProgressBar
 from skimage.measure import block_reduce
 
-def bin2array(file):
+def bin2camera(file):
     start_time = time.time()
     with open(file,'r') as f:
             float_size = 4
@@ -21,29 +20,15 @@ def bin2array(file):
             cor = f.read(float_size*3)
             cors = unpack('fff', cor)
             # print("cors is {}",cors)
-            tmp = f.read(float_size*5)
-            tmps = unpack('f'*5, tmp)
+            cam = f.read(float_size*16)
+            cams = unpack('ffffffffffffffff', cam)
+            cams = np.array(cams)
+            cams = np.reshape(cams, [4, 4])
+            # cams = np.linalg.inv(cams)
             # print("cams %16f",cams)
-            vox = f.read()
-            numC = len(vox)/float_size
-            # print('numC is {}'.format(numC))
-            checkVox = unpack('I'*numC, vox)
-            # print('checkVox shape is {}'.format(len(checkVox)))
-            checkVox = np.reshape(checkVox, (144,240,240))
-            checkVox = np.swapaxes(checkVox, 0, 1)
-            checkVox = np.swapaxes(checkVox, 0, 2)
-            # checkVox = np.flip(checkVox, 0)
-            # import ipdb; ipdb.set_trace()
-            checkVox = np.where(checkVox < 1.0, 1, 0)
-            checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
     f.close()
     # print "reading voxel file takes {} mins".format((time.time()-start_time)/60)
-    return checkVox
-
-def png2array(file):
-    image = misc.imread(file)
-    image = misc.imresize(image, 50)
-    return image
+    return cams, cors
 
 class ScanFile(object):
     def __init__(self,directory,prefix=None,postfix='.bin'):
@@ -85,7 +70,7 @@ if __name__=="__main__":
     parser.add_argument('-t',
         action="store",
         dest="dir_tar",
-        default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
+        default="/media/wangyida/D0-P1/database/SUNCG_Yida/train",
         help='for storing generated npy')
     parser.print_help()
     results = parser.parse_args()
@@ -95,29 +80,29 @@ if __name__=="__main__":
     # for storing generated npy
     dir_tar=results.dir_tar
     
-    # scan for depth files
-    dir_voxel = dir_tar
-    scan_png = ScanFile(directory=dir_src, postfix='.png')
-    files_png = scan_png.scan_files()
-    
+    # scan for semantic voxel files 
+    dir_camera = dir_tar + '/camera/'
+    dir_origin = dir_tar + '/origin/'
+    scan_bin = ScanFile(directory=dir_src, postfix='.bin')
+    files_bin = scan_bin.scan_files()
 
     # making directories
     try:
-        os.stat(dir_voxel)
+        os.stat(dir_camera)
     except:
-        os.mkdir(dir_voxel) 
+        os.mkdir(dir_camera) 
 
+    try:
+        os.stat(dir_origin)
+    except:
+        os.mkdir(dir_origin) 
+
+    
     # save voxel as npy files
-    pbar = ProgressBar()
-    for file_depth in pbar(files_png):
-        img_path = file_depth
-        camera_intrinsic = "./tsdf-fusion/data/camera-intrinsics.txt"
-        camera_extrinsic = img_path.replace("depth_real_png", "camera")
-        camera_extrinsic = camera_extrinsic.replace(".png", ".txt")
-        camera_origin = camera_extrinsic.replace("camera", "origin")
-        # import ipdb; ipdb.set_trace()
-        call(["./tsdf-fusion/demo", camera_intrinsic, camera_origin, camera_extrinsic, img_path])
-        voxel = bin2array(file="./tsdf-fusion/tsdf.bin")
-        name_start = int(img_path.rfind('/'))
-        name_end = int(img_path.find('.', name_start))
-        np.save(dir_voxel + img_path[name_start: name_end] + '.npy', voxel)
+    pbar1 = ProgressBar()
+    for file_bin in pbar1(files_bin):
+        cams, cors = bin2camera(file=file_bin)
+        name_start = int(file_bin.rfind('/'))
+        name_end = int(file_bin.find('.', name_start))
+        np.savetxt(dir_camera + file_bin[name_start: name_end] + '.txt', cams)
+        np.savetxt(dir_origin + file_bin[name_start: name_end] + '.txt', cors)
