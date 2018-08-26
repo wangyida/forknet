@@ -59,6 +59,19 @@ class DataProcess():
             batch_depth[batch_id, :, :, :] = np.reshape(depth_data, [self.n_dep[0], self.n_dep[1], self.n_dep[2]])
         return batch_depth
 
+    def get_tsdf(self, db_inds):
+        batch_tsdf = np.zeros(
+                    (self.batch_size, self.n_vox[0], self.n_vox[1], self.n_vox[2]), dtype=np.float32)
+    
+        for batch_id, db_ind in enumerate(db_inds):
+            sceneId, model_id = self.data_paths[db_ind]
+
+            tsdf_fn = cfg.DIR.TSDF_PATH % (sceneId, model_id)
+            tsdf_data = np.load(tsdf_fn)
+
+            batch_tsdf[batch_id, :, :, :] = tsdf_data
+        return batch_tsdf
+
 
 def scene_model_id_pair(dataset_portion=[]):
     '''

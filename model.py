@@ -709,6 +709,13 @@ class FCR_aGAN():
                 tf.float32, 
                 [self.batch_size, self.dep_shape[0], self.dep_shape[1], self.dep_shape[2]])
         # depth--end
+        # tsdf--start
+        tsdf_real_ = tf.placeholder(
+                tf.int32, 
+                [self.batch_size, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
+        tsdf_real = tf.one_hot(tsdf_real_, 1)
+        tsdf_real = tf.cast(tsdf_real, tf.float32)
+        # tsdf--end
         Z = tf.placeholder(
                 tf.float32, 
                 [self.batch_size, self.start_vox_size[0], self.start_vox_size[1], self.start_vox_size[2], self.dim_z])
@@ -716,7 +723,7 @@ class FCR_aGAN():
         filter_bilateral = tf.placeholder(
                 tf.float32, 
                 [self.batch_size] + [self.vox_shape[0], self.vox_shape[1], self.vox_shape[2], 4])
-        mean, sigma = self.encoder(vox_real)
+        mean, sigma = self.encoder(tsdf_real)
     	Z_encode = mean
         # depth--start
         mean_dep, sigma_dep = self.encoder_dep(dep_real)
@@ -917,7 +924,8 @@ class FCR_aGAN():
           cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
          Z_encode_dep, dep_real, vox_gen_decode_dep,\
          recons_dep_loss, code_encode_dep_loss, gen_dep_loss, discrim_dep_loss,\
-          cost_enc_dep, cost_code_dep, cost_gen_dep, cost_discrim_dep, code_compare_loss
+          cost_enc_dep, cost_code_dep, cost_gen_dep, cost_discrim_dep, code_compare_loss,\
+          tsdf_real
 
     def encoder(self, vox):
 
