@@ -136,7 +136,7 @@ def plot_image(arr, name='depth.png'):
     plt.close(fig)
 
 
-def plot_cube(cube, name='voxel', angle=0, IMG_DIM=80):
+def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80):
     from mpl_toolkits.mplot3d import Axes3D
 
     # cube = normalize(cube)
@@ -149,7 +149,7 @@ def plot_cube(cube, name='voxel', angle=0, IMG_DIM=80):
     x, y, z = expand_coordinates(np.indices(np.array(filled.shape) + 1))
 
     # Here is a loop for generating demo files
-    for idx, val in enumerate(np.arange(0, 120, 10)):
+    for idx, val in enumerate(np.arange(-40, 0, 10)):
         fig = plt.figure(figsize=(30/2.54, 30/2.54))# , dpi=150)
         # plot
         ax1 = fig.add_subplot(111, projection='3d')
@@ -245,10 +245,11 @@ if __name__ == "__main__":
     # vis for 3D FGAN
     pbar = ProgressBar()
     arr = np.load(results.dir_vox)
-    arr = np.expand_dims(arr, axis=0)
+    # arr = np.expand_dims(arr, axis=0)
     arr[arr == 255] = 0
     for idx in pbar(range(0, arr.shape[0])):#([37, 69, 73, 76, 91, 93, 100, 121, 154, 156]):
         resized = arr[idx, :, :, :]
         # resized = normalize(resized)
-        resized = resize(resized, (48, 80, 80), mode='constant')
-        plot_cube(np.flip(np.rollaxis(arr[idx, :, :, :], 2, 0), 1), name = target_folder+'/'+str(idx))
+        resized = np.squeeze(resized)
+        # resized = resize(resized, (48, 80, 80), mode='constant')
+        plot_cube(np.flip(np.rollaxis(resized[:, :, :], 2, 0), 1), name = target_folder+'/'+str(idx))
