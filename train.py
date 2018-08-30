@@ -71,19 +71,41 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
     refine_vars = filter(lambda x: x.name.startswith('refine'), tf.trainable_variables())
 
     lr_VAE=tf.placeholder(tf.float32, shape=[])
-    train_op_encode=tf.train.AdamOptimizer(lr_VAE, beta1=beta_D, beta2=0.9).minimize(cost_enc_tf, var_list=encode_vars)
-    train_op_discrim = tf.train.AdamOptimizer(learning_rate_D, beta1=beta_D, beta2=0.9).minimize(cost_discrim_tf, var_list=discrim_vars, global_step=global_step)
-    train_op_gen = tf.train.AdamOptimizer(learning_rate_G, beta1=beta_G, beta2=0.9).minimize(cost_gen_tf, var_list=gen_vars)
-    train_op_code = tf.train.AdamOptimizer(lr_VAE, beta1=beta_G, beta2=0.9).minimize(cost_code_tf, var_list=code_vars)
+    train_op_encode=tf.train.AdamOptimizer(
+            lr_VAE, beta1=beta_D, beta2=0.9).minimize(
+                    cost_enc_tf, var_list=encode_vars)
+    train_op_discrim = tf.train.AdamOptimizer(
+            learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
+                    cost_discrim_tf, var_list=discrim_vars, global_step=global_step)
+    train_op_gen = tf.train.AdamOptimizer(
+            learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
+                    cost_gen_tf, var_list=gen_vars)
+    train_op_code = tf.train.AdamOptimizer(
+            lr_VAE, beta1=beta_G, beta2=0.9).minimize(
+                    cost_code_tf, var_list=code_vars)
     # depth--start
-    train_op_latent_depvox = tf.train.AdamOptimizer(lr_VAE, beta1=beta_G, beta2=0.9).minimize(cost_code_compare_tf, var_list=depth_vars)
-    train_op_encode_dep=tf.train.AdamOptimizer(lr_VAE, beta1=beta_D, beta2=0.9).minimize(cost_enc_dep_tf, var_list=depth_vars)
-    train_op_discrim_dep = tf.train.AdamOptimizer(learning_rate_D, beta1=beta_D, beta2=0.9).minimize(cost_discrim_dep_tf, var_list=discrim_dep_vars)
-    train_op_gen_dep = tf.train.AdamOptimizer(learning_rate_G, beta1=beta_G, beta2=0.9).minimize(cost_gen_dep_tf, var_list=gen_vars)
-    train_op_code_dep = tf.train.AdamOptimizer(lr_VAE, beta1=beta_G, beta2=0.9).minimize(cost_code_dep_tf, var_list=code_vars)
+    train_op_latent_depvox = tf.train.AdamOptimizer(
+            lr_VAE, beta1=beta_G, beta2=0.9).minimize(
+                    cost_code_compare_tf, var_list=depth_vars)
+    train_op_encode_dep=tf.train.AdamOptimizer(
+            lr_VAE, beta1=beta_D, beta2=0.9).minimize(
+                    ]cost_enc_dep_tf, var_list=depth_vars)
+    train_op_discrim_dep = tf.train.AdamOptimizer(
+            learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
+                    cost_discrim_dep_tf, var_list=discrim_dep_vars)
+    train_op_gen_dep = tf.train.AdamOptimizer(
+            learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
+                    cost_gen_dep_tf, var_list=gen_vars)
+    train_op_code_dep = tf.train.AdamOptimizer(
+            lr_VAE, beta1=beta_G, beta2=0.9).minimize(
+                    cost_code_dep_tf, var_list=code_vars)
     # depth--end
-    train_op_refine = tf.train.AdamOptimizer(lr_VAE, beta1=beta_G, beta2=0.9).minimize(cost_gen_ref_tf, var_list=refine_vars)
-    train_op_discrim_refine = tf.train.AdamOptimizer(learning_rate_D, beta1=beta_D, beta2=0.9).minimize(cost_discrim_ref_tf, var_list=discrim_vars, global_step=global_step)
+    train_op_refine = tf.train.AdamOptimizer(
+            lr_VAE, beta1=beta_G, beta2=0.9).minimize(
+                    cost_gen_ref_tf, var_list=refine_vars)
+    train_op_discrim_refine = tf.train.AdamOptimizer(
+            learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
+                    cost_discrim_ref_tf, var_list=discrim_vars, global_step=global_step)
 
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(visual_size=batch_size)
     sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator(visual_size=batch_size)
@@ -121,7 +143,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
             # batch_z_var = someencoder(batch_depth_train)
 
             if ite < refine_start:
-                for s in np.arange(10):
+                for s in np.arange(2):
                     _, recons_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
                                 [train_op_encode, recons_loss_tf, code_encode_loss_tf, cost_enc_tf],
                                 feed_dict={vox_tf:batch_voxel_train, dep_tf:batch_depth_train, tsdf_tf:batch_tsdf_train, Z_tf:batch_z_var, lr_VAE:lr},
@@ -227,15 +249,14 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
                     save_path=saver.save(sess, cfg.DIR.CHECK_PT_PATH + str(ite/freq), global_step=None)
 
             else:
-                """
                 _, recons_loss_val, recons_loss_refine_val, gen_loss_refine_val, cost_gen_ref_val = sess.run(
                             [train_op_refine, recons_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, cost_gen_ref_tf],
-                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train, lr_VAE:lr},
+                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train, tsdf_tf:batch_tsdf_train, lr_VAE:lr},
                             )
 
                 _, discrim_loss_refine_val, cost_discrim_ref_val, summary = sess.run(
                             [train_op_discrim_refine, discrim_loss_refine_tf, cost_discrim_ref_tf, summary_tf],
-                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train},
+                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train, tsdf_tf:batch_tsdf_train},
                             )
 
                 print 'reconstruction loss:', recons_loss_val
@@ -259,7 +280,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
                     record_vox = vox_models_cat[:record_vox_num]
                     np.save(cfg.DIR.TRAIN_OBJ_PATH + '/' + str(ite/freq) + '_refine.npy', record_vox)
                     save_path=saver.save(sess, cfg.DIR.CHECK_PT_PATH + str(ite/freq), global_step=None)
-                """
 
 
             
