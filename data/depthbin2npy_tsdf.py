@@ -73,6 +73,18 @@ class ScanFile(object):
             subdir_list.append(dirpath)
         return subdir_list
 
+def process_data(file_depth):
+    img_path = file_depth
+    camera_intrinsic = "./tsdf-fusion/data/camera-intrinsics.txt"
+    camera_extrinsic = img_path.replace("depth_real_png", "camera")
+    camera_extrinsic = camera_extrinsic.replace(".png", ".txt")
+    camera_origin = camera_extrinsic.replace("camera", "origin")
+    # import ipdb; ipdb.set_trace()
+    call(["./tsdf-fusion/demo", camera_intrinsic, camera_origin, camera_extrinsic, img_path])
+    voxel = bin2array(file="./tsdf.bin")
+    name_start = int(img_path.rfind('/'))
+    name_end = int(img_path.find('.', name_start))
+    np.save(dir_voxel + img_path[name_start: name_end] + '.npy', voxel)
 
 if __name__=="__main__":
 
@@ -109,15 +121,11 @@ if __name__=="__main__":
 
     # save voxel as npy files
     pbar = ProgressBar()
+    """
+    from joblib import Parallel, delayed
+    import multiprocessing
+    num_cores = multiprocessing.cpu_count()
+    Parallel(n_jobs=num_cores)(delayed(process_data(file_depth)) for file_depth in pbar(files_png))
+    """
     for file_depth in pbar(files_png):
-        img_path = file_depth
-        camera_intrinsic = "./tsdf-fusion/data/camera-intrinsics.txt"
-        camera_extrinsic = img_path.replace("depth_real_png", "camera")
-        camera_extrinsic = camera_extrinsic.replace(".png", ".txt")
-        camera_origin = camera_extrinsic.replace("camera", "origin")
-        # import ipdb; ipdb.set_trace()
-        call(["./tsdf-fusion/demo", camera_intrinsic, camera_origin, camera_extrinsic, img_path])
-        voxel = bin2array(file="./tsdf-fusion/tsdf.bin")
-        name_start = int(img_path.rfind('/'))
-        name_end = int(img_path.find('.', name_start))
-        np.save(dir_voxel + img_path[name_start: name_end] + '.npy', voxel)
+        process_data(file_depth)

@@ -34,11 +34,11 @@ __C.DIR = edict()
 # Path where taxonomy.json is stored
 # __C.DIR.SCENE_ID_PATH = '../3D-FCR-alphaGAN/Scenevox'
 # __C.DIR.VOXEL_PATH = '../3D-FCR-alphaGAN/Scenevox/%s/%s' 
-__C.DIR.SCENE_ID_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/voxel'
-__C.DIR.VOXEL_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/voxel/%s/%s' 
+__C.DIR.ROOT_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/test/voxel_semantic_npy'
+__C.DIR.VOXEL_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/test/voxel_semantic_npy/%s' 
 # depth--start
-__C.DIR.DEPTH_ID_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/depth'
-__C.DIR.DEPTH_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/depth/%s/%s'
+__C.DIR.DEPTH_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/test/depth_npy/%s'
+__C.DIR.TSDF_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/test/depth_tsdf_npy/%s'
 # depth--end
 __C.DIR.CHECK_POINT_PATH = './Checkpt'
 __C.DIR.CHECK_PT_PATH = './Checkpt/checkpoint' 
@@ -51,8 +51,8 @@ __C.DIR.LOG_PATH = './log'
 #
 __C.TRAIN = edict()
 
-__C.TRAIN.DATASET_PORTION = [0, 0.95] 
-__C.TRAIN.NUM_EPOCH = 15  # maximum number of training epochs 
+__C.TRAIN.DATASET_PORTION = [0, 0.9] 
+__C.TRAIN.NUM_EPOCH = 50  # maximum number of training epochs 
 
 # Learning
 __C.LEARNING_RATE_G = 0.0001 

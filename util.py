@@ -33,6 +33,19 @@ class DataProcess():
         self.cur += self.batch_size
         return db_inds, flag
 
+    def get_tsdf(self, db_inds):
+        batch_tsdf = np.zeros(
+                    (self.batch_size, self.n_vox[0], self.n_vox[1], self.n_vox[2]), dtype=np.float32)
+    
+        for batch_id, db_ind in enumerate(db_inds):
+            sceneId, model_id = self.data_paths[db_ind]
+
+            tsdf_fn = cfg.DIR.TSDF_PATH % (model_id)
+            tsdf_data = np.load(tsdf_fn)
+
+            batch_tsdf[batch_id, :, :, :] = tsdf_data
+        return batch_tsdf
+
     def get_voxel(self, db_inds):
         batch_voxel = np.zeros(
                     (self.batch_size, self.n_vox[0], self.n_vox[1], self.n_vox[2]), dtype=np.float32)
@@ -40,7 +53,7 @@ class DataProcess():
         for batch_id, db_ind in enumerate(db_inds):
             sceneId, model_id = self.data_paths[db_ind]
 
-            voxel_fn = cfg.DIR.VOXEL_PATH % (sceneId, model_id)
+            voxel_fn = cfg.DIR.VOXEL_PATH % ( model_id)
             voxel_data = np.load(voxel_fn)
 
             batch_voxel[batch_id, :, :, :] = voxel_data
@@ -53,24 +66,11 @@ class DataProcess():
         for batch_id, db_ind in enumerate(db_inds):
             sceneId, model_id = self.data_paths[db_ind]
 
-            depth_fn = cfg.DIR.DEPTH_PATH % (sceneId.replace('voxel','depth'), model_id)
+            depth_fn = cfg.DIR.DEPTH_PATH % (model_id)
             depth_data = np.load(depth_fn)
 
             batch_depth[batch_id, :, :, :] = np.reshape(depth_data, [self.n_dep[0], self.n_dep[1], self.n_dep[2]])
         return batch_depth
-
-    def get_tsdf(self, db_inds):
-        batch_tsdf = np.zeros(
-                    (self.batch_size, self.n_vox[0], self.n_vox[1], self.n_vox[2]), dtype=np.float32)
-    
-        for batch_id, db_ind in enumerate(db_inds):
-            sceneId, model_id = self.data_paths[db_ind]
-
-            tsdf_fn = cfg.DIR.TSDF_PATH % (sceneId, model_id)
-            tsdf_data = np.load(tsdf_fn)
-
-            batch_tsdf[batch_id, :, :, :] = tsdf_data
-        return batch_tsdf
 
 
 def scene_model_id_pair(dataset_portion=[]):
@@ -79,13 +79,11 @@ def scene_model_id_pair(dataset_portion=[]):
     '''
 
     scene_name_pair = []  # full path of the objs files
-    sceneIds = os.listdir(cfg.DIR.SCENE_ID_PATH)
     
-    for k, sceneId in enumerate(sceneIds):  # load by sceneIds
-        model_path = os.path.join(cfg.DIR.SCENE_ID_PATH, sceneId)
-        models = os.listdir(model_path)
+    model_path = cfg.DIR.ROOT_PATH
+    models = os.listdir(model_path)
 
-        scene_name_pair.extend([(sceneId, model_id) for model_id in models])
+    scene_name_pair.extend([(model_path, model_id) for model_id in models])
 
     num_models = len(scene_name_pair)
     portioned_scene_name_pair = scene_name_pair[int(num_models * dataset_portion[0]):int(num_models * dataset_portion[1])]
@@ -98,13 +96,11 @@ def scene_model_id_pair_test(dataset_portion=[]):
     amount_of_test_sample = 200
 
     scene_name_pair = []  # full path of the objs files
-    sceneIds = os.listdir(cfg.DIR.SCENE_ID_PATH)
 
-    for k, sceneId in enumerate(sceneIds):  # load by sceneIds
-        model_path = os.path.join(cfg.DIR.SCENE_ID_PATH, sceneId)
-        models = os.listdir(model_path)
+    model_path = cfg.DIR.ROOT_PATH
+    models = os.listdir(model_path)
 
-        scene_name_pair.extend([(sceneId, model_id) for model_id in models])
+    scene_name_pair.extend([(model_path, model_id) for model_id in models])
 
     num_models = len(scene_name_pair)
     data_paths_test = scene_name_pair[int(num_models * dataset_portion[1])+1:]
@@ -124,22 +120,28 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
     batch_depth = np.zeros(
                 (num_models, n_dep[0], n_dep[1], n_dep[2]), dtype=np.float32)
+    batch_tsdf = np.zeros(
+                (num_models, n_vox[0], n_vox[1], n_vox[2], 1), dtype=np.float32)
     # depth--end
 
     for i in np.arange(num_models):
         sceneId, model_id = data_paths[i]
 
-        voxel_fn = cfg.DIR.VOXEL_PATH % (sceneId, model_id)
+        voxel_fn = cfg.DIR.VOXEL_PATH % (model_id)
         voxel_data = np.load(voxel_fn)
 
         batch_voxel[i, :, :, :] = voxel_data
         # depth--start
-        depth_fn = cfg.DIR.DEPTH_PATH % (sceneId.replace('voxel','depth'), model_id)
+        depth_fn = cfg.DIR.DEPTH_PATH % (model_id)
         depth_data = np.load(depth_fn)
         batch_depth[i, :, :, :] = np.reshape(depth_data, [n_dep[0], n_dep[1], n_dep[2]])
+
+        tsdf_fn = cfg.DIR.TSDF_PATH % (model_id)
+        tsdf_data = np.load(tsdf_fn)
+        batch_tsdf[i, :, :, :, :] = np.reshape(tsdf_data, [n_vox[0], n_vox[1], n_vox[2], 1])
         # depth--end
 
-    return batch_voxel, batch_depth, num_models
+    return batch_voxel, batch_depth, batch_tsdf, num_models
 
 
 def onehot(voxel, class_num):

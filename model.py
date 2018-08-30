@@ -230,7 +230,7 @@ class FCR_aGAN():
                     self.kernel5[0],
                     self.kernel5[1],
                     self.kernel5[2],
-                    self.dim_W5,
+                    1,
                     self.dim_W4], 
                     stddev=0.02), 
                 name='encode_W1')

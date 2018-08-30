@@ -41,7 +41,8 @@ def evaluate(batch_size, checknum, mode):
       cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
       z_enc_dep_tf, dep_tf, vox_gen_decode_dep_tf,\
       recons_dep_loss_tf, code_encode_dep_loss_tf, gen_dep_loss_tf, discrim_dep_loss_tf,\
-      cost_enc_dep_tf, cost_code_dep_tf, cost_gen_dep_tf, cost_discrim_dep_tf, cost_code_compare_tf = fcr_agan_model.build_model()
+      cost_enc_dep_tf, cost_code_dep_tf, cost_gen_dep_tf, cost_discrim_dep_tf, cost_code_compare_tf,\
+      tsdf_tf = fcr_agan_model.build_model()
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(visual_size=batch_size)
     sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator(visual_size=batch_size)
     sess = tf.InteractiveSession()
@@ -76,18 +77,19 @@ def evaluate(batch_size, checknum, mode):
         np.save(save_path + '/generate_refine.npy', vox_models_cat)
 
         #evaluation for reconstruction
-        voxel_test, depth_test, num = scene_model_id_pair_test(dataset_portion=cfg.TRAIN.DATASET_PORTION)
+        voxel_test, depth_test, tsdf_test, num = scene_model_id_pair_test(dataset_portion=cfg.TRAIN.DATASET_PORTION)
         num = voxel_test.shape[0]
         print("test voxels loaded")
         for i in np.arange(int(num/batch_size)):
             batch_voxel_test = voxel_test[i*batch_size:i*batch_size+batch_size]
             # depth--start
             batch_depth_test = depth_test[i*batch_size:i*batch_size+batch_size]
+            batch_tsdf_test = tsdf_test[i*batch_size:i*batch_size+batch_size]
             # depth--end
 
             batch_generated_voxs, batch_enc_Z = sess.run(
                 [vox_gen_decode_tf, z_enc_tf],
-                feed_dict={vox_tf:batch_voxel_test})
+                feed_dict={tsdf_tf:batch_tsdf_test})
             # depth--start
             batch_dep_generated_voxs, batch_enc_dep_Z = sess.run(
                 [vox_gen_decode_dep_tf, z_enc_dep_tf],
@@ -113,6 +115,8 @@ def evaluate(batch_size, checknum, mode):
         #real
         vox_models_cat = voxel_test
         np.save(save_path + '/real.npy', vox_models_cat)
+        tsdf_models_cat = tsdf_test
+        np.save(save_path + '/tsdf.npy', tsdf_models_cat)
 
         #decoded
         vox_models_cat = np.argmax(generated_voxs, axis=4)

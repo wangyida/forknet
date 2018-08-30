@@ -79,9 +79,14 @@ if __name__=="__main__":
         dest="dir_src",
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000",
         help='folder of paired depth and voxel')
-    parser.add_argument('-t',
+    parser.add_argument('-td',
         action="store",
-        dest="dir_tar",
+        dest="dir_tar_depth",
+        default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
+        help='for storing generated npy')
+    parser.add_argument('-tv',
+        action="store",
+        dest="dir_tar_voxel",
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
         help='for storing generated npy')
     parser.print_help()
@@ -90,25 +95,26 @@ if __name__=="__main__":
     # folder of paired depth and voxel
     dir_src=results.dir_src
     # for storing generated npy
-    dir_tar=results.dir_tar
+    dir_tar_depth=results.dir_tar_depth
+    dir_tar_voxel=results.dir_tar_voxel
     
     # scan for depth files
-    dir_depth = dir_tar + '_depth'
     scan_png = ScanFile(directory=dir_src, postfix='.png')
     files_png = scan_png.scan_files()
     
     # scan for semantic voxel files 
-    dir_voxel = dir_tar + '_voxel'
     scan_bin = ScanFile(directory=dir_src, postfix='.bin')
     files_bin = scan_bin.scan_files()
 
     # making directories
     try:
-        os.stat(dir_depth)
-        os.stat(dir_voxel)
+        os.stat(dir_tar_voxel)
     except:
-        os.mkdir(dir_depth) 
-        os.mkdir(dir_voxel) 
+        os.mkdir(dir_tar_voxel) 
+    try:
+        os.stat(dir_tar_depth)
+    except:
+        os.mkdir(dir_tar_depth) 
 
     
     
@@ -118,7 +124,7 @@ if __name__=="__main__":
         depth = png2array(file=file_png)
         name_start = int(file_png.rfind('/'))
         name_end = int(file_png.find('.', name_start))
-        np.save(dir_depth + file_png[name_start: name_end] + '.npy', depth)
+        np.save(dir_tar_depth + file_png[name_start: name_end] + '.npy', depth)
     
     # save voxel as npy files
     pbar2 = ProgressBar()
@@ -126,4 +132,4 @@ if __name__=="__main__":
         voxel = bin2array(file=file_bin)
         name_start = int(file_bin.rfind('/'))
         name_end = int(file_bin.find('.', name_start))
-        np.save(dir_voxel + file_bin[name_start: name_end] + '.npy', voxel)
+        np.save(dir_tar_voxel + file_bin[name_start: name_end] + '.npy', voxel)
