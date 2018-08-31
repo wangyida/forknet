@@ -89,7 +89,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
                     cost_code_compare_tf, var_list=depth_vars)
     train_op_encode_dep=tf.train.AdamOptimizer(
             lr_VAE, beta1=beta_D, beta2=0.9).minimize(
-                    ]cost_enc_dep_tf, var_list=depth_vars)
+                    cost_enc_dep_tf, var_list=depth_vars)
     train_op_discrim_dep = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                     cost_discrim_dep_tf, var_list=discrim_dep_vars)

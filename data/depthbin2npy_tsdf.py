@@ -79,12 +79,13 @@ def process_data(file_depth):
     camera_extrinsic = img_path.replace("depth_real_png", "camera")
     camera_extrinsic = camera_extrinsic.replace(".png", ".txt")
     camera_origin = camera_extrinsic.replace("camera", "origin")
-    # import ipdb; ipdb.set_trace()
     call(["./tsdf-fusion/demo", camera_intrinsic, camera_origin, camera_extrinsic, img_path])
     voxel = bin2array(file="./tsdf.bin")
     name_start = int(img_path.rfind('/'))
     name_end = int(img_path.find('.', name_start))
     np.save(dir_voxel + img_path[name_start: name_end] + '.npy', voxel)
+    
+    call(["mv", "./tsdf.ply", dir_ply + img_path[name_start: name_end] + '.ply'])
 
 if __name__=="__main__":
 
@@ -94,9 +95,14 @@ if __name__=="__main__":
         dest="dir_src",
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000",
         help='folder of paired depth and voxel')
-    parser.add_argument('-t',
+    parser.add_argument('-tv',
         action="store",
         dest="dir_tar",
+        default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
+        help='for storing generated npy')
+    parser.add_argument('-tp',
+        action="store",
+        dest="dir_ply",
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
         help='for storing generated npy')
     parser.print_help()
@@ -105,10 +111,10 @@ if __name__=="__main__":
     # folder of paired depth and voxel
     dir_src=results.dir_src
     # for storing generated npy
-    dir_tar=results.dir_tar
+    dir_voxel=results.dir_tar
+    dir_ply=results.dir_ply
     
     # scan for depth files
-    dir_voxel = dir_tar
     scan_png = ScanFile(directory=dir_src, postfix='.png')
     files_png = scan_png.scan_files()
     
@@ -118,6 +124,11 @@ if __name__=="__main__":
         os.stat(dir_voxel)
     except:
         os.mkdir(dir_voxel) 
+
+    try:
+        os.stat(dir_ply)
+    except:
+        os.mkdir(dir_ply) 
 
     # save voxel as npy files
     pbar = ProgressBar()
