@@ -83,9 +83,11 @@ def process_data(file_depth):
     voxel = bin2array(file="./tsdf.bin")
     name_start = int(img_path.rfind('/'))
     name_end = int(img_path.find('.', name_start))
+    # save numpy
     np.save(dir_voxel + img_path[name_start: name_end] + '.npy', voxel)
     
-    call(["mv", "./tsdf.ply", dir_ply + img_path[name_start: name_end] + '.ply'])
+    # save ply
+    call(["cp", "./tsdf.ply", dir_ply + img_path[name_start: name_end] + '.ply'])
 
 if __name__=="__main__":
 
@@ -104,7 +106,7 @@ if __name__=="__main__":
         action="store",
         dest="dir_ply",
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
-        help='for storing generated npy')
+        help='for storing generated ply')
     parser.print_help()
     results = parser.parse_args()
 
