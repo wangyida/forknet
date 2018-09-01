@@ -18,24 +18,25 @@ def bin2array(file):
             float_size = 4
             uint_size = 4
             total_count = 0
+            """
             cor = f.read(float_size*3)
             cors = unpack('fff', cor)
-            # print("cors is {}",cors)
+            print("cors is {}",cors)
             tmp = f.read(float_size*5)
             tmps = unpack('f'*5, tmp)
-            # print("cams %16f",cams)
+            print("cams %16f",cams)
+            """
             vox = f.read()
             numC = len(vox)/float_size
             # print('numC is {}'.format(numC))
             checkVox = unpack('I'*numC, vox)
             # print('checkVox shape is {}'.format(len(checkVox)))
-            checkVox = np.reshape(checkVox, (144,240,240))
+            checkVox = np.reshape(checkVox, (48,80,80))
             checkVox = np.swapaxes(checkVox, 0, 1)
             checkVox = np.swapaxes(checkVox, 0, 2)
             # checkVox = np.flip(checkVox, 0)
-            # import ipdb; ipdb.set_trace()
             checkVox = np.where(checkVox < 1.0, 1, 0)
-            checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
+            # checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
     f.close()
     # print "reading voxel file takes {} mins".format((time.time()-start_time)/60)
     return checkVox
@@ -87,7 +88,7 @@ def process_data(file_depth):
     np.save(dir_voxel + img_path[name_start: name_end] + '.npy', voxel)
     
     # save ply
-    call(["cp", "./tsdf.ply", dir_ply + img_path[name_start: name_end] + '.ply'])
+    # call(["mv", "./tsdf.ply", dir_ply + img_path[name_start: name_end] + '.ply'])
 
 if __name__=="__main__":
 

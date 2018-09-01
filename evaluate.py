@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from config import cfg
+from config_test import cfg
 from model import FCR_aGAN
 from util import DataProcess, scene_model_id_pair, onehot, scene_model_id_pair_test
 from sklearn.metrics import average_precision_score
