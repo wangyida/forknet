@@ -3,6 +3,7 @@ import numpy as np
 
 from train import train
 from config import cfg
+from config_test import cfg_test
 import tensorflow as tf
 
 flags = tf.app.flags
@@ -10,6 +11,7 @@ flags.DEFINE_integer("epoch", cfg.TRAIN.NUM_EPOCH, "Epoch to train [15]") #n_epo
 flags.DEFINE_float("learning_rate_G", cfg.LEARNING_RATE_G, "Learning rate for Generator of adam [0.0001]") #learning_rate_G = cfg.LEARNING_RATE_G
 flags.DEFINE_float("learning_rate_D", cfg.LEARNING_RATE_D, "Learning rate for Discriminator of adam [0.0001]") #learning_rate_D = cfg.LEARNING_RATE_D
 flags.DEFINE_integer("batch_size", cfg.CONST.BATCH_SIZE, "The size of batch voxels [100]") #batch_size = cfg.CONST.BATCH_SIZE
+flags.DEFINE_integer("batch_size_test", cfg_test.CONST.BATCH_SIZE, "The size of batch voxels [100]") #batch_size = cfg.CONST.BATCH_SIZE
 
 flags.DEFINE_boolean("middle_start", False, "True for starting from the middle [False]")
 flags.DEFINE_integer("ini_epoch", 0, "The number of initial epoch --if middle_start: False -> 0, True -> must assign the number [0]")
@@ -38,7 +40,7 @@ def main():
             mode = 'interpolate'
         else:
             mode = 'noise'
-        evaluate(FLAGS.batch_size, FLAGS.conf_epoch, mode)
+        evaluate(FLAGS.batch_size_test, FLAGS.conf_epoch, mode)
 
 
 if __name__ == '__main__':

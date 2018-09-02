@@ -45,11 +45,12 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
     Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
      recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, discrim_loss_refine_tf,\
       cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
-      z_enc_dep_tf, dep_tf, vox_gen_decode_dep_tf,\
-      recons_dep_loss_tf, code_encode_dep_loss_tf, gen_dep_loss_tf, discrim_dep_loss_tf,\
-      cost_enc_dep_tf, cost_code_dep_tf, cost_gen_dep_tf, cost_discrim_dep_tf, cost_code_compare_tf,\
       tsdf_tf = fcr_agan_model.build_model()
-
+    """
+    z_enc_dep_tf, dep_tf, vox_gen_decode_dep_tf,\
+    recons_dep_loss_tf, code_encode_dep_loss_tf, gen_dep_loss_tf, discrim_dep_loss_tf,\
+    cost_enc_dep_tf, cost_code_dep_tf, cost_gen_dep_tf, cost_discrim_dep_tf, cost_code_compare_tf,\
+    """
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     sess = tf.InteractiveSession(config=config)
@@ -63,8 +64,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
     encode_vars = filter(lambda x: x.name.startswith('enc'), tf.trainable_variables())
     discrim_vars = filter(lambda x: x.name.startswith('discrim_vox'), tf.trainable_variables())
     # depth--start
+    """
     depth_vars = filter(lambda x: x.name.startswith('dep'), tf.trainable_variables())
     discrim_dep_vars = filter(lambda x: x.name.startswith('discrim_dep'), tf.trainable_variables())
+    """
     # depth--end
     gen_vars = filter(lambda x: x.name.startswith('gen'), tf.trainable_variables())
     code_vars = filter(lambda x: x.name.startswith('cod'), tf.trainable_variables())
@@ -84,6 +87,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
             lr_VAE, beta1=beta_G, beta2=0.9).minimize(
                     cost_code_tf, var_list=code_vars)
     # depth--start
+    """
     train_op_latent_depvox = tf.train.AdamOptimizer(
             lr_VAE, beta1=beta_G, beta2=0.9).minimize(
                     cost_code_compare_tf, var_list=depth_vars)
@@ -99,6 +103,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
     train_op_code_dep = tf.train.AdamOptimizer(
             lr_VAE, beta1=beta_G, beta2=0.9).minimize(
                     cost_code_dep_tf, var_list=code_vars)
+    """
     # depth--end
     train_op_refine = tf.train.AdamOptimizer(
             lr_VAE, beta1=beta_G, beta2=0.9).minimize(
@@ -135,23 +140,24 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
             batch_voxel_train = batch_voxel
             batch_tsdf = data_process.get_tsdf(db_inds)
             batch_tsdf_train = np.expand_dims(batch_tsdf, axis=-1)
+            """
             batch_depth = data_process.get_depth(db_inds)
             batch_depth_train = batch_depth / 255.0
+            """
             lr=learning_rate(cfg.LEARNING_RATE_V, ite)
 
             batch_z_var = np.random.normal(size=(batch_size,start_vox_size[0],start_vox_size[1],start_vox_size[2],dim_z)).astype(np.float32)
-            # batch_z_var = someencoder(batch_depth_train)
 
             if ite < refine_start:
                 for s in np.arange(2):
                     _, recons_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
                                 [train_op_encode, recons_loss_tf, code_encode_loss_tf, cost_enc_tf],
-                                feed_dict={vox_tf:batch_voxel_train, dep_tf:batch_depth_train, tsdf_tf:batch_tsdf_train, Z_tf:batch_z_var, lr_VAE:lr},
+                                feed_dict={vox_tf:batch_voxel_train, tsdf_tf:batch_tsdf_train, Z_tf:batch_z_var, lr_VAE:lr},
                                 )
 
                     _, gen_loss_val, cost_gen_val = sess.run(
                                 [train_op_gen, gen_loss_tf, cost_gen_tf],
-                                feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train, tsdf_tf:batch_tsdf_train, lr_VAE:lr},
+                                feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, tsdf_tf:batch_tsdf_train, lr_VAE:lr},
                                 )
                     # depth--start
                     """
@@ -172,7 +178,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
                     """
                 _, discrim_loss_val, cost_discrim_val = sess.run(
                             [train_op_discrim, discrim_loss_tf, cost_discrim_tf],
-                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train, tsdf_tf:batch_tsdf_train},
+                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, tsdf_tf:batch_tsdf_train},
                             )
 
     	    
@@ -193,49 +199,49 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
                             feed_dict={Z_tf:batch_z_var, dep_tf:batch_depth_train, tsdf_tf:batch_tsdf_train, lr_VAE:lr},
                             )
                 """
+                # depth--end
                 summary = sess.run(
                             summary_tf,
-                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train, tsdf_tf:batch_tsdf_train, lr_VAE:lr},
+                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, tsdf_tf:batch_tsdf_train, lr_VAE:lr},
                             )
-                # depth--end
     	    
 
                 print 'reconstruction loss:', recons_loss_val if ('recons_loss_val' in locals()) else 'None'
-                print '            (depth):', recons_dep_loss_val if ('recons_dep_loss_val' in locals()) else 'None'
+                # print '            (depth):', recons_dep_loss_val if ('recons_dep_loss_val' in locals()) else 'None'
 
                 print '   code encode loss:', code_encode_loss_val if ('code_encode_loss_val' in locals()) else 'None'
 
-                print '            (depth):', code_encode_dep_loss_val if ('code_encode_dep_loss_val' in locals()) else 'None'
+                # print '            (depth):', code_encode_dep_loss_val if ('code_encode_dep_loss_val' in locals()) else 'None'
 
                 print '           gen loss:', gen_loss_val if ('gen_loss_val' in locals()) else 'None'
 
-                print '            (depth):', gen_dep_loss_val if ('gen_dep_loss_val' in locals()) else 'None'
+                # print '            (depth):', gen_dep_loss_val if ('gen_dep_loss_val' in locals()) else 'None'
 
                 print '       cost_encoder:', cost_enc_val if ('cost_enc_val' in locals()) else 'None'
 
-                print '            (depth):', cost_enc_dep_val if ('cost_enc_dep_val' in locals()) else 'None'
+                # print '            (depth):', cost_enc_dep_val if ('cost_enc_dep_val' in locals()) else 'None'
 
                 print '     cost_generator:', cost_gen_val if ('cost_gen_val' in locals()) else 'None'
 
-                print '            (depth):', cost_gen_dep_val if ('cost_gen_dep_val' in locals()) else 'None'
+                # print '            (depth):', cost_gen_dep_val if ('cost_gen_dep_val' in locals()) else 'None'
 
                 print ' cost_discriminator:', cost_discrim_val if ('cost_discrim_val' in locals()) else 'None'
 
-                print '            (depth):', cost_discrim_dep_val if ('cost_discrim_dep_val' in locals()) else 'None'
+                # print '            (depth):', cost_discrim_dep_val if ('cost_discrim_dep_val' in locals()) else 'None'
 
                 print '          cost_code:', cost_code_val if ('cost_code_val' in locals()) else 'None'
 
-                print '            (depth):', cost_code_dep_val if ('cost_code_dep_val' in locals()) else 'None'
+                # print '            (depth):', cost_code_dep_val if ('cost_code_dep_val' in locals()) else 'None'
 
-                print ' diff_codes_vox_dep:', cost_code_compare_val if ('cost_code_compare_val' in locals()) else 'None'
+                # print ' diff_codes_vox_dep:', cost_code_compare_val if ('cost_code_compare_val' in locals()) else 'None'
 
                 print '   avarage of enc_z:', np.mean(np.mean(z_enc_val,4)) if ('z_enc_val' in locals()) else 'None'
 
                 print '       std of enc_z:', np.mean(np.std(z_enc_val,4)) if ('z_enc_val' in locals()) else 'None'
 
-                print 'avarage of enc_z_dep:', np.mean(np.mean(z_enc_dep_val,4)) if ('z_enc_dep_val' in locals()) else 'None'
+                # print 'avarage of enc_z_dep:', np.mean(np.mean(z_enc_dep_val,4)) if ('z_enc_dep_val' in locals()) else 'None'
 
-                print '    std of enc_z_dep:', np.mean(np.std(z_enc_dep_val,4)) if ('z_enc_dep_val' in locals()) else 'None'
+                # print '    std of enc_z_dep:', np.mean(np.std(z_enc_dep_val,4)) if ('z_enc_dep_val' in locals()) else 'None'
 
 
                 if np.mod(ite, freq) == 0:
@@ -251,12 +257,12 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag, chec
             else:
                 _, recons_loss_val, recons_loss_refine_val, gen_loss_refine_val, cost_gen_ref_val = sess.run(
                             [train_op_refine, recons_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, cost_gen_ref_tf],
-                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train, tsdf_tf:batch_tsdf_train, lr_VAE:lr},
+                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, tsdf_tf:batch_tsdf_train, lr_VAE:lr},
                             )
 
                 _, discrim_loss_refine_val, cost_discrim_ref_val, summary = sess.run(
                             [train_op_discrim_refine, discrim_loss_refine_tf, cost_discrim_ref_tf, summary_tf],
-                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, dep_tf:batch_depth_train, tsdf_tf:batch_tsdf_train},
+                            feed_dict={Z_tf:batch_z_var, vox_tf:batch_voxel_train, tsdf_tf:batch_tsdf_train},
                             )
 
                 print 'reconstruction loss:', recons_loss_val

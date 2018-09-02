@@ -1,7 +1,7 @@
 from easydict import EasyDict as edict
 
 __C = edict()
-cfg = __C
+cfg_test = __C
 
 #
 # Common
