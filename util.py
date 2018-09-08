@@ -105,7 +105,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
     num_models = len(scene_name_pair)
     data_paths_test = scene_name_pair[int(num_models * dataset_portion[1])+1:]
-    random.shuffle(data_paths_test)
+    # random.shuffle(data_paths_test)
     #data_paths = scene_name_pair[int(num_models * dataset_portion[1])+1:int(num_models * dataset_portion[1])+amount_of_test_sample+1]
     data_paths = data_paths_test[:amount_of_test_sample]
 
