@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from config_test import cfg
+from config_test import cfg_test
 from model import FCR_aGAN
 from util import DataProcess, scene_model_id_pair, onehot, scene_model_id_pair_test
 from sklearn.metrics import average_precision_score
@@ -9,19 +9,19 @@ import copy
 
 def evaluate(batch_size, checknum, mode):
 
-    n_vox = cfg.CONST.N_VOX
-    dim = cfg.NET.DIM
+    n_vox = cfg_test.CONST.N_VOX
+    dim = cfg_test.NET.DIM
     vox_shape = [n_vox[0],n_vox[1],n_vox[2],dim[4]]
-    dim_z = cfg.NET.DIM_Z
-    start_vox_size = cfg.NET.START_VOX 
-    kernel = cfg.NET.KERNEL
-    stride = cfg.NET.STRIDE
-    freq = cfg.CHECK_FREQ
-    refine_ch = cfg.NET.REFINE_CH
-    refine_kernel = cfg.NET.REFINE_KERNEL
+    dim_z = cfg_test.NET.DIM_Z
+    start_vox_size = cfg_test.NET.START_VOX 
+    kernel = cfg_test.NET.KERNEL
+    stride = cfg_test.NET.STRIDE
+    freq = cfg_test.CHECK_FREQ
+    refine_ch = cfg_test.NET.REFINE_CH
+    refine_kernel = cfg_test.NET.REFINE_KERNEL
 
-    save_path = cfg.DIR.EVAL_PATH
-    chckpt_path = cfg.DIR.CHECK_PT_PATH + str(checknum) #+ '-' + str(checknum * freq)
+    save_path = cfg_test.DIR.EVAL_PATH
+    chckpt_path = cfg_test.DIR.CHECK_PT_PATH + str(checknum) #+ '-' + str(checknum * freq)
 
     fcr_agan_model = FCR_aGAN(
                 batch_size=batch_size,
@@ -37,12 +37,14 @@ def evaluate(batch_size, checknum, mode):
 
 
     Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
-     recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
-      cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
-      z_enc_dep_tf, dep_tf, vox_gen_decode_dep_tf,\
-      recons_dep_loss_tf, code_encode_dep_loss_tf, gen_dep_loss_tf, discrim_dep_loss_tf,\
-      cost_enc_dep_tf, cost_code_dep_tf, cost_gen_dep_tf, cost_discrim_dep_tf, cost_code_compare_tf,\
-      tsdf_tf = fcr_agan_model.build_model()
+        recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
+        cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
+        tsdf_tf = fcr_agan_model.build_model()
+    """
+    z_enc_dep_tf, dep_tf, vox_gen_decode_dep_tf,\
+    recons_dep_loss_tf, code_encode_dep_loss_tf, gen_dep_loss_tf, discrim_dep_loss_tf,\
+    cost_enc_dep_tf, cost_code_dep_tf, cost_gen_dep_tf, cost_discrim_dep_tf, cost_code_compare_tf,\
+    """
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(visual_size=batch_size)
     sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator(visual_size=batch_size)
     sess = tf.InteractiveSession()
@@ -77,23 +79,27 @@ def evaluate(batch_size, checknum, mode):
         np.save(save_path + '/generate_refine.npy', vox_models_cat)
 
         #evaluation for reconstruction
-        voxel_test, depth_test, tsdf_test, num = scene_model_id_pair_test(dataset_portion=cfg.TRAIN.DATASET_PORTION)
+        voxel_test, tsdf_test, num = scene_model_id_pair_test(dataset_portion=cfg_test.TRAIN.DATASET_PORTION)
         num = voxel_test.shape[0]
         print("test voxels loaded")
         for i in np.arange(int(num/batch_size)):
             batch_voxel_test = voxel_test[i*batch_size:i*batch_size+batch_size]
             # depth--start
+            """
             batch_depth_test = depth_test[i*batch_size:i*batch_size+batch_size]
-            batch_tsdf_test = tsdf_test[i*batch_size:i*batch_size+batch_size]
+            """
             # depth--end
+            batch_tsdf_test = tsdf_test[i*batch_size:i*batch_size+batch_size]
 
             batch_generated_voxs, batch_enc_Z = sess.run(
                 [vox_gen_decode_tf, z_enc_tf],
                 feed_dict={tsdf_tf:batch_tsdf_test})
             # depth--start
+            """
             batch_dep_generated_voxs, batch_enc_dep_Z = sess.run(
                 [vox_gen_decode_dep_tf, z_enc_dep_tf],
                 feed_dict={dep_tf:batch_depth_test})
+            """
             # depth--end
             batch_refined_vox = sess.run(
                 sample_refine_vox_tf,
@@ -101,12 +107,12 @@ def evaluate(batch_size, checknum, mode):
 
             if i == 0:
                 generated_voxs = batch_generated_voxs
-                generated_deps = batch_dep_generated_voxs
+                # generated_deps = batch_dep_generated_voxs
                 refined_voxs = batch_refined_vox
                 enc_Z = batch_enc_Z
             else:
                 generated_voxs = np.concatenate((generated_voxs, batch_generated_voxs), axis=0)
-                generated_deps = np.concatenate((generated_deps, batch_dep_generated_voxs), axis=0)
+                # generated_deps = np.concatenate((generated_deps, batch_dep_generated_voxs), axis=0)
                 refined_voxs = np.concatenate((refined_voxs, batch_refined_vox), axis=0)
                 enc_Z = np.concatenate((enc_Z, batch_enc_Z), axis=0)
 
@@ -121,8 +127,10 @@ def evaluate(batch_size, checknum, mode):
         #decoded
         vox_models_cat = np.argmax(generated_voxs, axis=4)
         np.save(save_path + '/recons.npy', vox_models_cat)
+        """
         vox_models_cat = np.argmax(generated_deps, axis=4)
         np.save(save_path + '/gens_dep.npy', vox_models_cat)
+        """
         vox_models_cat = np.argmax(refined_voxs, axis=4)
         np.save(save_path + '/recons_refine.npy', vox_models_cat)
         np.save(save_path + '/decode_z.npy', enc_Z)
@@ -133,7 +141,7 @@ def evaluate(batch_size, checknum, mode):
         #numerical evalutation
         on_real = onehot(voxel_test,vox_shape[3])
         on_recons = onehot(np.argmax(generated_voxs, axis=4),vox_shape[3])
-        on_gens_dep = onehot(np.argmax(generated_deps, axis=4),vox_shape[3])
+        # on_gens_dep = onehot(np.argmax(generated_deps, axis=4),vox_shape[3])
 
         #calc_IoU
         IoU_class = np.zeros([vox_shape[3]+1])

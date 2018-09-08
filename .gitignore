@@ -2,6 +2,5 @@ Checkpt
 *.pyc
 log
 train_vox*
-tsdf.ply
 tsdf.bin
 .DS*

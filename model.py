@@ -705,10 +705,12 @@ class FCR_aGAN():
         vox_real = tf.one_hot(vox_real_, self.n_class)
         vox_real = tf.cast(vox_real, tf.float32)
         # depth--start
+        """
         dep_real = tf.placeholder(
                 tf.float32, 
                 [self.batch_size, self.dep_shape[0], self.dep_shape[1], self.dep_shape[2]])
         # depth--end
+        """
         # tsdf--start
         tsdf_real_ = tf.placeholder(
                 tf.int32, 
@@ -726,15 +728,19 @@ class FCR_aGAN():
         mean, sigma = self.encoder(tsdf_real)
     	Z_encode = mean
         # depth--start
+        """
         mean_dep, sigma_dep = self.encoder_dep(dep_real)
     	Z_encode_dep = mean_dep
-        # depth--start
+        """
+        # depth--end
         
         #code_discriminator
         p_code_encode, h_code_encode = self.code_discriminator(Z_encode)
         p_code_real, h_code_real = self.code_discriminator(Z)
         # depth--start
+        """
         p_code_encode_dep, h_code_encode_dep = self.code_discriminator(Z_encode_dep)
+        """
         # depth--start
 
         code_encode_loss = tf.reduce_mean(
@@ -756,6 +762,7 @@ class FCR_aGAN():
                             [1]))
         
         # depth--start
+        """
         code_encode_dep_loss = tf.reduce_mean(
                 tf.reduce_sum(
                     tf.nn.sigmoid_cross_entropy_with_logits(
@@ -779,13 +786,14 @@ class FCR_aGAN():
                         Z_encode_dep, 
                         Z_encode), 
                     [1,2,3,4]))
+        """
         # depth--end
 
         #reconstruction
         vox_gen_decode, _ = self.generate(Z_encode)
-
+        """
         vox_gen_decode_dep, _ = self.generate(Z_encode_dep)
-
+        """
         batch_mean_vox_real = tf.reduce_mean(vox_real, [0,1,2,3])
         ones = tf.ones_like(batch_mean_vox_real)
         inverse = tf.div(ones, tf.add(batch_mean_vox_real, ones))
@@ -795,13 +803,14 @@ class FCR_aGAN():
                 [1,2,3]) 
         recons_loss = tf.reduce_mean(
                 tf.reduce_sum(recons_loss * weight, 1))
-
+        """
         recons_dep_loss = -tf.reduce_sum(
                 self.lamda_gamma *vox_real * tf.log(1e-6 + vox_gen_decode_dep) + (1- self.lamda_gamma) * (1-vox_real) * tf.log(1e-6 + 1-vox_gen_decode_dep), 
                 [1,2,3]) 
         recons_dep_loss = tf.reduce_mean(
                 tf.reduce_sum(
                     recons_dep_loss * weight, 1))
+        """
         #Refiner
         vox_after_refine_dec = self.refine(vox_gen_decode)
 
@@ -820,9 +829,11 @@ class FCR_aGAN():
         p_gen, h_gen = self.discriminate(vox_gen)
         p_gen_dec, h_gen_dec = self.discriminate(vox_gen_decode)
         # depth--start
+        """
         p_real_dep, h_real_dep = self.discriminate_dep(vox_real)
         p_gen_dep, h_gen_dep = self.discriminate_dep(vox_gen)
         p_gen_dec_dep, h_gen_dec_dep = self.discriminate_dep(vox_gen_decode_dep)
+        """
         # depth--end
         p_gen_ref, h_gen_ref = self.discriminate(vox_after_refine_gen)
         p_gen_dec_ref, h_gen_dec_ref = self.discriminate(vox_after_refine_dec)
@@ -849,6 +860,7 @@ class FCR_aGAN():
                             labels=tf.ones_like(h_gen_dec)))
 
         # depth--start
+        """
         discrim_dep_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_real_dep, 
@@ -867,6 +879,7 @@ class FCR_aGAN():
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_gen_dec_dep, 
                             labels=tf.ones_like(h_gen_dec_dep)))
+        """
         # depth--end
         #for refine
         discrim_loss_refine = tf.reduce_mean(
@@ -901,15 +914,17 @@ class FCR_aGAN():
 
         #Cost
         cost_enc = code_encode_loss + self.lamda_recons*recons_loss
-        cost_enc_dep = code_encode_dep_loss + self.lamda_recons*recons_dep_loss
         cost_gen = self.lamda_recons*recons_loss + gen_loss
-        cost_gen_dep = self.lamda_recons*recons_dep_loss + gen_dep_loss
         cost_discrim = discrim_loss
-        cost_discrim_dep = discrim_dep_loss
         cost_code = code_discrim_loss
-        cost_code_dep = code_discrim_dep_loss
         cost_gen_ref = self.lamda_recons*recons_loss_refine + gen_loss_refine
         cost_discrim_ref = discrim_loss_refine
+        """
+        cost_enc_dep = code_encode_dep_loss + self.lamda_recons*recons_dep_loss
+        cost_gen_dep = self.lamda_recons*recons_dep_loss + gen_dep_loss
+        cost_discrim_dep = discrim_dep_loss
+        cost_code_dep = code_discrim_dep_loss
+        """
 
         tf.summary.scalar("recons_loss", tf.reduce_mean(recons_loss))
         tf.summary.scalar("gen_loss", tf.reduce_mean(gen_loss))
@@ -920,12 +935,14 @@ class FCR_aGAN():
         summary_op = tf.summary.merge_all()
 
         return Z, Z_encode, vox_real_, vox_gen, vox_gen_decode, vox_after_refine_dec, vox_after_refine_gen,\
-         recons_loss, code_encode_loss, gen_loss, discrim_loss, recons_loss_refine, gen_loss_refine, discrim_loss_refine,\
-          cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
-         Z_encode_dep, dep_real, vox_gen_decode_dep,\
-         recons_dep_loss, code_encode_dep_loss, gen_dep_loss, discrim_dep_loss,\
-          cost_enc_dep, cost_code_dep, cost_gen_dep, cost_discrim_dep, code_compare_loss,\
-          tsdf_real
+        recons_loss, code_encode_loss, gen_loss, discrim_loss, recons_loss_refine, gen_loss_refine, discrim_loss_refine,\
+        cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
+        tsdf_real
+        """
+        Z_encode_dep, dep_real, vox_gen_decode_dep,\
+        recons_dep_loss, code_encode_dep_loss, gen_dep_loss, discrim_dep_loss,\
+        cost_enc_dep, cost_code_dep, cost_gen_dep, cost_discrim_dep, code_compare_loss,\
+        """
 
     def encoder(self, vox):
 

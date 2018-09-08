@@ -88,7 +88,7 @@ def process_data(file_depth):
     np.save(dir_voxel + img_path[name_start: name_end] + '.npy', voxel)
     
     # save ply
-    # call(["mv", "./tsdf.ply", dir_ply + img_path[name_start: name_end] + '.ply'])
+    call(["cp", "./tsdf.ply", dir_ply + img_path[name_start: name_end] + '.ply'])
 
 if __name__=="__main__":
 

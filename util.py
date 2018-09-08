@@ -13,7 +13,7 @@ class DataProcess():
         self.batch_size = batch_size
         self.shuffle_db_inds()
         self.n_vox = cfg.CONST.N_VOX
-        self.n_dep = cfg.CONST.N_DEP
+        # self.n_dep = cfg.CONST.N_DEP
 
     def shuffle_db_inds(self):
         # Randomly permute the training roidb
@@ -59,6 +59,7 @@ class DataProcess():
             batch_voxel[batch_id, :, :, :] = voxel_data
         return batch_voxel
 
+    """
     def get_depth(self, db_inds):
         batch_depth = np.zeros(
                     (self.batch_size, self.n_dep[0], self.n_dep[1], self.n_dep[2]), dtype=np.float32)
@@ -71,7 +72,7 @@ class DataProcess():
 
             batch_depth[batch_id, :, :, :] = np.reshape(depth_data, [self.n_dep[0], self.n_dep[1], self.n_dep[2]])
         return batch_depth
-
+    """
 
 def scene_model_id_pair(dataset_portion=[]):
     '''
@@ -104,7 +105,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
     num_models = len(scene_name_pair)
     data_paths_test = scene_name_pair[int(num_models * dataset_portion[1])+1:]
-    random.shuffle(data_paths_test)
+    # random.shuffle(data_paths_test)
     #data_paths = scene_name_pair[int(num_models * dataset_portion[1])+1:int(num_models * dataset_portion[1])+amount_of_test_sample+1]
     data_paths = data_paths_test[:amount_of_test_sample]
 
@@ -116,13 +117,15 @@ def scene_model_id_pair_test(dataset_portion=[]):
     batch_voxel = np.zeros(
                     (num_models, n_vox[0], n_vox[1], n_vox[2]), dtype=np.float32)
     # depth--start
+    """
     n_dep = cfg.CONST.N_DEP
 
     batch_depth = np.zeros(
                 (num_models, n_dep[0], n_dep[1], n_dep[2]), dtype=np.float32)
+    """
+    # depth--end
     batch_tsdf = np.zeros(
                 (num_models, n_vox[0], n_vox[1], n_vox[2], 1), dtype=np.float32)
-    # depth--end
 
     for i in np.arange(num_models):
         sceneId, model_id = data_paths[i]
@@ -132,16 +135,18 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
         batch_voxel[i, :, :, :] = voxel_data
         # depth--start
+        """
         depth_fn = cfg.DIR.DEPTH_PATH % (model_id)
         depth_data = np.load(depth_fn)
         batch_depth[i, :, :, :] = np.reshape(depth_data, [n_dep[0], n_dep[1], n_dep[2]])
+        """
+        # depth--end
 
         tsdf_fn = cfg.DIR.TSDF_PATH % (model_id)
         tsdf_data = np.load(tsdf_fn)
         batch_tsdf[i, :, :, :, :] = np.reshape(tsdf_data, [n_vox[0], n_vox[1], n_vox[2], 1])
-        # depth--end
 
-    return batch_voxel, batch_depth, batch_tsdf, num_models
+    return batch_voxel, batch_tsdf, num_models
 
 
 def onehot(voxel, class_num):
