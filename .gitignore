@@ -4,3 +4,4 @@ log
 train_vox*
 tsdf.bin
 .DS*
+vis_samples*
