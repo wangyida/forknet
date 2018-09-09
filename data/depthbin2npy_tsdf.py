@@ -76,11 +76,11 @@ class ScanFile(object):
 
 def process_data(file_depth):
     img_path = file_depth
-    camera_intrinsic = "./tsdf-fusion/data/camera-intrinsics.txt"
+    camera_intrinsic = "./depth-tsdf/data/camera-intrinsics.txt"
     camera_extrinsic = img_path.replace("depth_real_png", "camera")
     camera_extrinsic = camera_extrinsic.replace(".png", ".txt")
     camera_origin = camera_extrinsic.replace("camera", "origin")
-    call(["./tsdf-fusion/demo", camera_intrinsic, camera_origin, camera_extrinsic, img_path])
+    call(["./depth-tsdf/demo", camera_intrinsic, camera_origin, camera_extrinsic, img_path])
     voxel = bin2array(file="./tsdf.bin")
     name_start = int(img_path.rfind('/'))
     name_end = int(img_path.find('.', name_start))

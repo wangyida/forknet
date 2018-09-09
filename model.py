@@ -795,14 +795,27 @@ class FCR_aGAN():
         vox_gen_decode_dep, _ = self.generate(Z_encode_dep)
         """
         batch_mean_vox_real = tf.reduce_mean(vox_real, [0,1,2,3])
+        # batch_mean_vox_real ranges from 0 to 1
         ones = tf.ones_like(batch_mean_vox_real)
+        # inverse ranges from 0.5 to 1
         inverse = tf.div(ones, tf.add(batch_mean_vox_real, ones))
+        # inverse ranges from 1/1.1 to 10
+        inverse = tf.div(ones, batch_mean_vox_real + 0.1)
         weight = inverse * tf.div(1., tf.reduce_sum(inverse))
         recons_loss = -tf.reduce_sum(
-                self.lamda_gamma *vox_real * tf.log(1e-6 + vox_gen_decode) + (1- self.lamda_gamma) * (1-vox_real) * tf.log(1e-6 + 1-vox_gen_decode), 
+                self.lamda_gamma * vox_real * tf.log(1e-6+vox_gen_decode) + (1-self.lamda_gamma) * (1-vox_real) * tf.log(1e-6+1-vox_gen_decode), 
                 [1,2,3]) 
         recons_loss = tf.reduce_mean(
                 tf.reduce_sum(recons_loss * weight, 1))
+        # Completion loss
+        vox_real_complete = tf.stack([vox_real[:,:,:,:,0], tf.reduce_sum(vox_real[:,:,:,:,1:], 4)], 4)
+        vox_gen_complete = tf.stack([vox_gen_decode[:,:,:,:,0], tf.reduce_sum(vox_gen_decode[:,:,:,:,1:], 4)], 4)
+        complete_loss = -tf.reduce_sum(
+                self.lamda_gamma * vox_real_complete * tf.log(1e-6+vox_gen_complete) + (1-self.lamda_gamma) * (1-vox_real_complete) * tf.log(1e-6+1-vox_gen_complete), 
+                [1,2,3]) 
+        weight_complete = tf.stack([weight[0], tf.reduce_sum(weight[1:])])
+        recons_loss += tf.reduce_mean(
+                tf.reduce_sum(complete_loss * weight_complete, 1))
         """
         recons_dep_loss = -tf.reduce_sum(
                 self.lamda_gamma *vox_real * tf.log(1e-6 + vox_gen_decode_dep) + (1- self.lamda_gamma) * (1-vox_real) * tf.log(1e-6 + 1-vox_gen_decode_dep), 
