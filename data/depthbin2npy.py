@@ -11,80 +11,89 @@ import argparse
 from progressbar import ProgressBar
 from skimage.measure import block_reduce
 
+
 def bin2array(file):
     start_time = time.time()
-    with open(file,'r') as f:
-            float_size = 4
-            uint_size = 4
-            total_count = 0
-            cor = f.read(float_size*3)
-            cors = unpack('fff', cor)
-            # print("cors is {}",cors)
-            cam = f.read(float_size*16)
-            cams = unpack('ffffffffffffffff', cam)
-            # print("cams %16f",cams)
-            vox = f.read()
-            numC = len(vox)/uint_size
-            # print('numC is {}'.format(numC))
-            checkVoxValIter = unpack('I'*numC, vox)
-            checkVoxVal = checkVoxValIter[0::2]
-            checkVoxIter = checkVoxValIter[1::2]
-            checkVox = [i for (val, repeat) in zip(checkVoxVal,checkVoxIter) for i in np.tile(val, repeat)]
-            # print('checkVox shape is {}'.format(len(checkVox)))
-            checkVox = np.reshape(checkVox, (240,144,240))
-            checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
+    with open(file, 'r') as f:
+        float_size = 4
+        uint_size = 4
+        total_count = 0
+        cor = f.read(float_size * 3)
+        cors = unpack('fff', cor)
+        # print("cors is {}",cors)
+        cam = f.read(float_size * 16)
+        cams = unpack('ffffffffffffffff', cam)
+        # print("cams %16f",cams)
+        vox = f.read()
+        numC = len(vox) / uint_size
+        # print('numC is {}'.format(numC))
+        checkVoxValIter = unpack('I' * numC, vox)
+        checkVoxVal = checkVoxValIter[0::2]
+        checkVoxIter = checkVoxValIter[1::2]
+        checkVox = [
+            i for (val, repeat) in zip(checkVoxVal, checkVoxIter)
+            for i in np.tile(val, repeat)
+        ]
+        # print('checkVox shape is {}'.format(len(checkVox)))
+        checkVox = np.reshape(checkVox, (240, 144, 240))
+        checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
     f.close()
     # print "reading voxel file takes {} mins".format((time.time()-start_time)/60)
     return checkVox
+
 
 def png2array(file):
     image = misc.imread(file)
     image = misc.imresize(image, 50)
     return image
 
+
 class ScanFile(object):
-    def __init__(self,directory,prefix=None,postfix='.bin'):
-        self.directory=directory
-        self.prefix=prefix
-        self.postfix=postfix
+    def __init__(self, directory, prefix=None, postfix='.bin'):
+        self.directory = directory
+        self.prefix = prefix
+        self.postfix = postfix
 
     def scan_files(self):
-        files_list=[]
+        files_list = []
 
-        for dirpath,dirnames,filenames in os.walk(self.directory):
+        for dirpath, dirnames, filenames in os.walk(self.directory):
             for special_file in filenames:
                 if self.postfix:
                     if special_file.endswith(self.postfix):
-                        files_list.append(os.path.join(dirpath,special_file))
+                        files_list.append(os.path.join(dirpath, special_file))
                 elif self.prefix:
                     if special_file.startswith(self.prefix):
-                        files_list.append(os.path.join(dirpath,special_file))
+                        files_list.append(os.path.join(dirpath, special_file))
                 else:
-                    files_list.append(os.path.join(dirpath,special_file))
+                    files_list.append(os.path.join(dirpath, special_file))
 
         return files_list
 
     def scan_subdir(self):
-        subdir_list=[]
-        for dirpath,dirnames,files in os.walk(self.directory):
+        subdir_list = []
+        for dirpath, dirnames, files in os.walk(self.directory):
             subdir_list.append(dirpath)
         return subdir_list
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Parser added')
-    parser.add_argument('-s',
+    parser.add_argument(
+        '-s',
         action="store",
         dest="dir_src",
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000",
         help='folder of paired depth and voxel')
-    parser.add_argument('-td',
+    parser.add_argument(
+        '-td',
         action="store",
         dest="dir_tar_depth",
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
         help='for storing generated npy')
-    parser.add_argument('-tv',
+    parser.add_argument(
+        '-tv',
         action="store",
         dest="dir_tar_voxel",
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
@@ -93,16 +102,16 @@ if __name__=="__main__":
     results = parser.parse_args()
 
     # folder of paired depth and voxel
-    dir_src=results.dir_src
+    dir_src = results.dir_src
     # for storing generated npy
-    dir_tar_depth=results.dir_tar_depth
-    dir_tar_voxel=results.dir_tar_voxel
-    
+    dir_tar_depth = results.dir_tar_depth
+    dir_tar_voxel = results.dir_tar_voxel
+
     # scan for depth files
     scan_png = ScanFile(directory=dir_src, postfix='.png')
     files_png = scan_png.scan_files()
-    
-    # scan for semantic voxel files 
+
+    # scan for semantic voxel files
     scan_bin = ScanFile(directory=dir_src, postfix='.bin')
     files_bin = scan_bin.scan_files()
 
@@ -110,26 +119,24 @@ if __name__=="__main__":
     try:
         os.stat(dir_tar_voxel)
     except:
-        os.mkdir(dir_tar_voxel) 
+        os.mkdir(dir_tar_voxel)
     try:
         os.stat(dir_tar_depth)
     except:
-        os.mkdir(dir_tar_depth) 
+        os.mkdir(dir_tar_depth)
 
-    
-    
     pbar1 = ProgressBar()
     # save depth as npy files
     for file_png in pbar1(files_png):
         depth = png2array(file=file_png)
         name_start = int(file_png.rfind('/'))
         name_end = int(file_png.find('.', name_start))
-        np.save(dir_tar_depth + file_png[name_start: name_end] + '.npy', depth)
-    
+        np.save(dir_tar_depth + file_png[name_start:name_end] + '.npy', depth)
+
     # save voxel as npy files
     pbar2 = ProgressBar()
     for file_bin in pbar2(files_bin):
         voxel = bin2array(file=file_bin)
         name_start = int(file_bin.rfind('/'))
         name_end = int(file_bin.find('.', name_start))
-        np.save(dir_tar_voxel + file_bin[name_start: name_end] + '.npy', voxel)
+        np.save(dir_tar_voxel + file_bin[name_start:name_end] + '.npy', voxel)

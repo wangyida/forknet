@@ -1,8 +1,8 @@
 import os
 import matplotlib as mpl
-if os.environ.get('DISPLAY','') == '':
-        print('no display found. Using non-interactive Agg backend')
-        mpl.use('Agg')
+if os.environ.get('DISPLAY', '') == '':
+    print('no display found. Using non-interactive Agg backend')
+    mpl.use('Agg')
 import matplotlib.pyplot as plt
 import os
 import numpy as np
@@ -48,7 +48,6 @@ class ScanFile(object):
         return subdir_list
 
 
-
 class ScanFile(object):
     def __init__(self, directory, prefix=None, postfix='.jpg'):
         self.directory = directory
@@ -87,7 +86,7 @@ class ScanFile(object):
 
 def normalize(arr):
     arr_min = np.min(arr)
-    return (arr-arr_min)/(np.max(arr)-arr_min)
+    return (arr - arr_min) / (np.max(arr) - arr_min)
 
 
 def show_histogram(values):
@@ -102,9 +101,9 @@ def show_histogram(values):
 
 def explode(data):
     shape_arr = np.array(data.shape)
-    size = shape_arr[:3]*2 - 1
+    size = shape_arr[:3] * 2 - 1
     exploded = np.zeros(
-            np.concatenate([size, shape_arr[3:]]), dtype=data.dtype)
+        np.concatenate([size, shape_arr[3:]]), dtype=data.dtype)
     exploded[::2, ::2, ::2] = data
     return exploded
 
@@ -119,14 +118,14 @@ def expand_coordinates(indices):
 
 def scale_by(arr, fac):
     mean = np.mean(arr)
-    return (arr-mean)*fac + mean
+    return (arr - mean) * fac + mean
 
 
 def plot_image(arr, name='depth.png'):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     # ax.set_axis_off()
-    arr = (arr-np.min(arr))/(np.max(arr) - np.min(arr)) * 255
+    arr = (arr - np.min(arr)) / (np.max(arr) - np.min(arr)) * 255
     arr = np.uint8(arr)
     ax.set_axis_off()
     # ax.set_aspect('equal')
@@ -141,7 +140,7 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80):
 
     # cube = normalize(cube)
     cube[np.where(cube > 11)] = 0
-    facecolors = cm.Paired((np.round(cube)/11))
+    facecolors = cm.Paired((np.round(cube) / 11))
     # make the alpha channel more similar to each others while 0 is still 0
     facecolors[:, :, :, -1] = 0.1 * np.tanh(cube * 1000)
     facecolors = explode(facecolors)
@@ -151,26 +150,31 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80):
 
     # Here is a loop for generating demo files
     for idx, val in enumerate(np.arange(-40, -30, 10)):
-        fig = plt.figure(figsize=(30/2.54, 30/2.54))# , dpi=150)
+        fig = plt.figure(figsize=(30 / 2.54, 30 / 2.54))  # , dpi=150)
         # plot
         ax1 = fig.add_subplot(111, projection='3d')
         # For samples in SUNCG, 20, -40 is a good choice for visualization
         # ax1.view_init(np.abs(90-val/2), val)
         ax1.view_init(angle, val)
-        ax1.set_xlim(right=IMG_DIM*2)
-        ax1.set_ylim(top=IMG_DIM*2)
-        ax1.set_zlim(top=48*2)
+        ax1.set_xlim(right=IMG_DIM * 2)
+        ax1.set_ylim(top=IMG_DIM * 2)
+        ax1.set_zlim(top=48 * 2)
         ax1.set_axis_off()
         ax1.voxels(
-                x, y, z, 
-                filled, 
-                facecolors=facecolors,
-                edgecolors=np.clip(2*facecolors- 0.5, 0, 1))
+            x,
+            y,
+            z,
+            filled,
+            facecolors=facecolors,
+            edgecolors=np.clip(2 * facecolors - 0.5, 0, 1))
 
         # plt.show()
-        plt.savefig(name+'_'+format(idx, '04d')+'.png', bbox_inches='tight', pad_inches=0, transparent=True)
+        plt.savefig(
+            name + '_' + format(idx, '04d') + '.png',
+            bbox_inches='tight',
+            pad_inches=0,
+            transparent=True)
         plt.close(fig)
-
     """
     objects_name = ['empty', 'ceiling', 'floor', 'wall', 'window', 'chair', 'bed', 'sofa', 'table', 'tvs', 'furnture', 'object']
     for x in range(1, 11):
@@ -191,12 +195,13 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80):
 
 
 def plot_depvox(dir_dep, dir_vox, target_folder):
-    label_start = dir_dep.rfind('/')+1
+    label_start = dir_dep.rfind('/') + 1
     label_end = dir_dep.find('.', label_start)
     arr = np.load(dir_dep)
     plot_image(
-            arr,
-            name=target_folder+'/depth/'+dir_dep[label_start:label_end]+'.png')
+        arr,
+        name=target_folder + '/depth/' + dir_dep[label_start:label_end] +
+        '.png')
 
     arr = np.load(dir_vox)
 
@@ -211,22 +216,32 @@ def plot_depvox(dir_dep, dir_vox, target_folder):
     """
     resized = resize(arr, (48, 80, 80), mode='constant')
     plot_cube(
-            np.rollaxis(resized[:, :, :], 2, 0),
-            name=target_folder+'/voxel/'+dir_dep[label_start:label_end]+'.png')
+        np.rollaxis(resized[:, :, :], 2, 0),
+        name=target_folder + '/voxel/' + dir_dep[label_start:label_end] +
+        '.png')
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Parser added')
     parser.add_argument(
-            '-d', action="store", dest="dir_dep",
-            default="./SUNCGtrain_3001_5000", help='npy file for depth')
+        '-d',
+        action="store",
+        dest="dir_dep",
+        default="./SUNCGtrain_3001_5000",
+        help='npy file for depth')
     parser.add_argument(
-            '-v', action="store", dest="dir_vox",
-            default="./SUNCGtrain_3001_5000", help='npy file for voxel')
+        '-v',
+        action="store",
+        dest="dir_vox",
+        default="./SUNCGtrain_3001_5000",
+        help='npy file for voxel')
     parser.add_argument(
-            '-t', action="store", dest="target_folder",
-            default="./target_folder", help='target folder for vis')
+        '-t',
+        action="store",
+        dest="target_folder",
+        default="./target_folder",
+        help='target folder for vis')
     parser.print_help()
     results = parser.parse_args()
 
@@ -236,7 +251,6 @@ if __name__ == "__main__":
     scan = ScanFile(dir_dep)
     subdirs = scan.scan_subdir()
     files = scan.scan_files()
-
     """
     pbar = ProgressBar()
     for file_dep in pbar(files):
@@ -248,9 +262,13 @@ if __name__ == "__main__":
     arr = np.load(results.dir_vox)
     # arr = np.expand_dims(arr, axis=0)
     arr[arr == 255] = 0
-    for idx in pbar(range(0, arr.shape[0])):#([37, 69, 73, 76, 91, 93, 100, 121, 154, 156]):
+    for idx in pbar(range(
+            0,
+            arr.shape[0])):  #([37, 69, 73, 76, 91, 93, 100, 121, 154, 156]):
         resized = arr[idx, :, :, :]
         # resized = normalize(resized)
         resized = np.squeeze(resized)
         # resized = resize(resized, (48, 80, 80), mode='constant')
-        plot_cube(np.flip(np.rollaxis(resized[:, :, :], 2, 0), 1), name = target_folder+'/'+str(idx))
+        plot_cube(
+            np.flip(np.rollaxis(resized[:, :, :], 2, 0), 1),
+            name=target_folder + '/' + str(idx))
