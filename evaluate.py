@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from config_test import cfg_test
+from config import cfg
 from model import FCR_aGAN
 from util import DataProcess, scene_model_id_pair, onehot, scene_model_id_pair_test
 from sklearn.metrics import average_precision_score
@@ -10,19 +10,20 @@ import copy
 
 def evaluate(batch_size, checknum, mode):
 
-    n_vox = cfg_test.CONST.N_VOX
-    dim = cfg_test.NET.DIM
+    n_vox = cfg.CONST.N_VOX
+    dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
-    dim_z = cfg_test.NET.DIM_Z
-    start_vox_size = cfg_test.NET.START_VOX
-    kernel = cfg_test.NET.KERNEL
-    stride = cfg_test.NET.STRIDE
-    freq = cfg_test.CHECK_FREQ
-    refine_ch = cfg_test.NET.REFINE_CH
-    refine_kernel = cfg_test.NET.REFINE_KERNEL
+    dim_z = cfg.NET.DIM_Z
+    start_vox_size = cfg.NET.START_VOX
+    kernel = cfg.NET.KERNEL
+    stride = cfg.NET.STRIDE
+    dilations = cfg.NET.DILATIONS
+    freq = cfg.CHECK_FREQ
+    refine_ch = cfg.NET.REFINE_CH
+    refine_kernel = cfg.NET.REFINE_KERNEL
 
-    save_path = cfg_test.DIR.EVAL_PATH
-    chckpt_path = cfg_test.DIR.CHECK_PT_PATH + str(
+    save_path = cfg.DIR.EVAL_PATH
+    chckpt_path = cfg.DIR.CHECK_PT_PATH + str(
         checknum)  #+ '-' + str(checknum * freq)
 
     fcr_agan_model = FCR_aGAN(
@@ -33,6 +34,7 @@ def evaluate(batch_size, checknum, mode):
         start_vox_size=start_vox_size,
         kernel=kernel,
         stride=stride,
+        dilations=dilations,
         refine_ch=refine_ch,
         refine_kernel=refine_kernel,
     )
@@ -86,7 +88,7 @@ def evaluate(batch_size, checknum, mode):
 
         #evaluation for reconstruction
         voxel_test, tsdf_test, num = scene_model_id_pair_test(
-            dataset_portion=cfg_test.TRAIN.DATASET_PORTION)
+            dataset_portion=cfg.TRAIN.DATASET_PORTION)
         num = voxel_test.shape[0]
         print("test voxels loaded")
         for i in np.arange(int(num / batch_size)):

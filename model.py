@@ -98,14 +98,15 @@ def softmax(X, batch_size, vox_shape):
 class FCR_aGAN():
     def __init__(
             self,
-            batch_size=20,
+            batch_size=16,
             vox_shape=[80, 48, 80, 12],
             dep_shape=[320, 240, 1],
             dim_z=16,
             dim=[512, 256, 128, 64, 12],
             start_vox_size=[5, 3, 5],
-            kernel=[[5, 5, 5, 5, 5], [3, 3, 3, 3, 3], [5, 5, 5, 5, 5]],
+            kernel=[[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]],
             stride=[1, 2, 2, 2, 1],
+            dilations=[1, 1, 1, 1, 1],
             dim_code=750,
             refine_ch=32,
             refine_kernel=3,
@@ -131,6 +132,7 @@ class FCR_aGAN():
         self.kernel4 = self.kernel[:, 3]
         self.kernel5 = self.kernel[:, 4]
         self.stride = stride
+        self.dilations = dilations
         # depth--start
         self.stride_dep = [1, 2, 2, 1]
         # depth--end
@@ -842,25 +844,25 @@ class FCR_aGAN():
 
         h1 = lrelu(
             tf.nn.conv3d(
-                vox, self.encode_W1, strides=self.stride, padding='SAME'))
+                vox, self.encode_W1, strides=self.stride, dilations=self.dilations, padding='SAME'))
         h2 = lrelu(
             batchnormalize(
                 tf.nn.conv3d(
-                    h1, self.encode_W2, strides=self.stride, padding='SAME'),
+                    h1, self.encode_W2, strides=self.stride, dilations=self.dilations,  padding='SAME'),
                 g=self.encode_bn_g2,
                 b=self.encode_bn_b2,
                 batch_size=self.batch_size))
         h3 = lrelu(
             batchnormalize(
                 tf.nn.conv3d(
-                    h2, self.encode_W3, strides=self.stride, padding='SAME'),
+                    h2, self.encode_W3, strides=self.stride, dilations=self.dilations,  padding='SAME'),
                 g=self.encode_bn_g3,
                 b=self.encode_bn_b3,
                 batch_size=self.batch_size))
         h4 = lrelu(
             batchnormalize(
                 tf.nn.conv3d(
-                    h3, self.encode_W4, strides=self.stride, padding='SAME'),
+                    h3, self.encode_W4, strides=self.stride, dilations=self.dilations,  padding='SAME'),
                 g=self.encode_bn_g4,
                 b=self.encode_bn_b4,
                 batch_size=self.batch_size))
@@ -949,23 +951,23 @@ class FCR_aGAN():
 
         h1 = lrelu(
             tf.nn.conv3d(
-                vox, self.discrim_W1, strides=self.stride, padding='SAME'))
+                vox, self.discrim_W1, strides=self.stride, dilations=self.dilations,  padding='SAME'))
         h2 = lrelu(
             layernormalize(
                 tf.nn.conv3d(
-                    h1, self.discrim_W2, strides=self.stride, padding='SAME'),
+                    h1, self.discrim_W2, strides=self.stride, dilations=self.dilations,  padding='SAME'),
                 g=self.discrim_bn_g2,
                 b=self.discrim_bn_b2))
         h3 = lrelu(
             layernormalize(
                 tf.nn.conv3d(
-                    h2, self.discrim_W3, strides=self.stride, padding='SAME'),
+                    h2, self.discrim_W3, strides=self.stride, dilations=self.dilations,  padding='SAME'),
                 g=self.discrim_bn_g3,
                 b=self.discrim_bn_b3))
         h4 = lrelu(
             layernormalize(
                 tf.nn.conv3d(
-                    h3, self.discrim_W4, strides=self.stride, padding='SAME'),
+                    h3, self.discrim_W4, strides=self.stride, dilations=self.dilations,  padding='SAME'),
                 g=self.discrim_bn_g4,
                 b=self.discrim_bn_b4))
         h4 = tf.reshape(h4, [self.batch_size, -1])

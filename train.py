@@ -25,6 +25,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
     stride = cfg.NET.STRIDE
+    dilations = cfg.NET.DILATIONS
     freq = cfg.CHECK_FREQ
     record_vox_num = cfg.RECORD_VOX_NUM
     refine_ch = cfg.NET.REFINE_CH
@@ -40,6 +41,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         start_vox_size=start_vox_size,
         kernel=kernel,
         stride=stride,
+        dilations=dilations,
         refine_ch=refine_ch,
         refine_kernel=refine_kernel,
     )
@@ -250,49 +252,30 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
                 print 'reconstruction loss:', recons_loss_val if (
                     'recons_loss_val' in locals()) else 'None'
-                # print '            (depth):', recons_dep_loss_val if ('recons_dep_loss_val' in locals()) else 'None'
 
                 print '   code encode loss:', code_encode_loss_val if (
                     'code_encode_loss_val' in locals()) else 'None'
 
-                # print '            (depth):', code_encode_dep_loss_val if ('code_encode_dep_loss_val' in locals()) else 'None'
-
                 print '           gen loss:', gen_loss_val if (
                     'gen_loss_val' in locals()) else 'None'
-
-                # print '            (depth):', gen_dep_loss_val if ('gen_dep_loss_val' in locals()) else 'None'
 
                 print '       cost_encoder:', cost_enc_val if (
                     'cost_enc_val' in locals()) else 'None'
 
-                # print '            (depth):', cost_enc_dep_val if ('cost_enc_dep_val' in locals()) else 'None'
-
                 print '     cost_generator:', cost_gen_val if (
                     'cost_gen_val' in locals()) else 'None'
-
-                # print '            (depth):', cost_gen_dep_val if ('cost_gen_dep_val' in locals()) else 'None'
 
                 print ' cost_discriminator:', cost_discrim_val if (
                     'cost_discrim_val' in locals()) else 'None'
 
-                # print '            (depth):', cost_discrim_dep_val if ('cost_discrim_dep_val' in locals()) else 'None'
-
                 print '          cost_code:', cost_code_val if (
                     'cost_code_val' in locals()) else 'None'
-
-                # print '            (depth):', cost_code_dep_val if ('cost_code_dep_val' in locals()) else 'None'
-
-                # print ' diff_codes_vox_dep:', cost_code_compare_val if ('cost_code_compare_val' in locals()) else 'None'
 
                 print '   avarage of enc_z:', np.mean(np.mean(
                     z_enc_val, 4)) if ('z_enc_val' in locals()) else 'None'
 
                 print '       std of enc_z:', np.mean(np.std(
                     z_enc_val, 4)) if ('z_enc_val' in locals()) else 'None'
-
-                # print 'avarage of enc_z_dep:', np.mean(np.mean(z_enc_dep_val,4)) if ('z_enc_dep_val' in locals()) else 'None'
-
-                # print '    std of enc_z_dep:', np.mean(np.std(z_enc_dep_val,4)) if ('z_enc_dep_val' in locals()) else 'None'
 
                 if np.mod(ite, freq) == 0:
                     vox_models = sess.run(
@@ -338,7 +321,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 print 'reconstruction loss:', recons_loss_val
                 print ' recons refine loss:', recons_loss_refine_val
                 print '           gen loss:', gen_loss_refine_val
-                print ' cost_discriminator:', cost_discrim_ref_val
+                print ' cost_discriminator:', cost_discrim_ref_val if (
+                    'cost_discriminator' in locals()) else 'None'
 
                 if np.mod(ite, freq) == 0:
                     vox_models = sess.run(
