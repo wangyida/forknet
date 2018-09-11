@@ -44,11 +44,6 @@ def evaluate(batch_size, checknum, mode):
         recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
         cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
         tsdf_tf = fcr_agan_model.build_model()
-    """
-    z_enc_dep_tf, dep_tf, vox_gen_decode_dep_tf,\
-    recons_dep_loss_tf, code_encode_dep_loss_tf, gen_dep_loss_tf, discrim_dep_loss_tf,\
-    cost_enc_dep_tf, cost_code_dep_tf, cost_gen_dep_tf, cost_discrim_dep_tf, cost_code_compare_tf,\
-    """
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
         visual_size=batch_size)
     sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator(
@@ -94,24 +89,12 @@ def evaluate(batch_size, checknum, mode):
         for i in np.arange(int(num / batch_size)):
             batch_voxel_test = voxel_test[i * batch_size:i * batch_size +
                                           batch_size]
-            # depth--start
-            """
-            batch_depth_test = depth_test[i*batch_size:i*batch_size+batch_size]
-            """
-            # depth--end
             batch_tsdf_test = tsdf_test[i * batch_size:i * batch_size +
                                         batch_size]
 
             batch_generated_voxs, batch_enc_Z = sess.run(
                 [vox_gen_decode_tf, z_enc_tf],
                 feed_dict={tsdf_tf: batch_tsdf_test})
-            # depth--start
-            """
-            batch_dep_generated_voxs, batch_enc_dep_Z = sess.run(
-                [vox_gen_decode_dep_tf, z_enc_dep_tf],
-                feed_dict={dep_tf:batch_depth_test})
-            """
-            # depth--end
             batch_refined_vox = sess.run(
                 sample_refine_vox_tf,
                 feed_dict={sample_vox_tf: batch_generated_voxs})
@@ -140,10 +123,6 @@ def evaluate(batch_size, checknum, mode):
         #decoded
         vox_models_cat = np.argmax(generated_voxs, axis=4)
         np.save(save_path + '/recons.npy', vox_models_cat)
-        """
-        vox_models_cat = np.argmax(generated_deps, axis=4)
-        np.save(save_path + '/gens_dep.npy', vox_models_cat)
-        """
         vox_models_cat = np.argmax(refined_voxs, axis=4)
         np.save(save_path + '/recons_refine.npy', vox_models_cat)
         np.save(save_path + '/decode_z.npy', enc_Z)

@@ -10,7 +10,6 @@ __C.SUB_CONFIG_FILE = []
 
 __C.CONST = edict()
 __C.CONST.N_VOX = [80, 48, 80]
-__C.CONST.N_DEP = [320, 240, 1]
 __C.CONST.BATCH_SIZE = 8
 __C.SAVER_MAX = 1000
 __C.CHECK_FREQ = 1000
@@ -37,10 +36,6 @@ __C.DIR = edict()
 # __C.DIR.VOXEL_PATH = '../3D-FCR-alphaGAN/Scenevox/%s/%s'
 __C.DIR.ROOT_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/voxel_semantic_npy'
 __C.DIR.VOXEL_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/voxel_semantic_npy/%s'
-# depth--start
-__C.DIR.DEPTH_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/depth_npy/%s'
-__C.DIR.TSDF_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/depth_tsdf_npy/%s'
-# depth--end
 __C.DIR.CHECK_POINT_PATH = './Checkpt'
 __C.DIR.CHECK_PT_PATH = './Checkpt/checkpoint'
 __C.DIR.TRAIN_OBJ_PATH = './train_vox'
