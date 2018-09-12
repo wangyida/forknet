@@ -14,12 +14,13 @@ __C.CONST.BATCH_SIZE = 8
 __C.SAVER_MAX = 1000
 __C.CHECK_FREQ = 1000
 __C.RECORD_VOX_NUM = 10
-__C.SWITCHING_ITE = 75001
+__C.SWITCHING_ITE = 501
 
 # Network
 __C.NET = edict()
-__C.NET.DIM_Z = 32
-__C.NET.DIM = [512, 256, 128, 64, 32]
+__C.NET.DIM_Z = 16
+# The last dimension of NET.DIM matters much for GPU consumption for loss function
+__C.NET.DIM = [512, 256, 128, 64, 12]
 __C.NET.START_VOX = [5, 3, 5]
 __C.NET.KERNEL = [[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
@@ -36,6 +37,7 @@ __C.DIR = edict()
 # __C.DIR.VOXEL_PATH = '../3D-FCR-alphaGAN/Scenevox/%s/%s'
 __C.DIR.ROOT_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/voxel_semantic_npy'
 __C.DIR.VOXEL_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/voxel_semantic_npy/%s'
+__C.DIR.TSDF_PATH = '/media/wangyida/D0-P1/database/SUNCG_Yida/train/depth_tsdf_npy/%s'
 __C.DIR.CHECK_POINT_PATH = './Checkpt'
 __C.DIR.CHECK_PT_PATH = './Checkpt/checkpoint'
 __C.DIR.TRAIN_OBJ_PATH = './train_vox'

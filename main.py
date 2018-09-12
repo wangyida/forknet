@@ -3,7 +3,6 @@ import numpy as np
 
 from train import train
 from config import cfg
-from config_test import cfg_test
 import tensorflow as tf
 
 flags = tf.app.flags
@@ -19,7 +18,7 @@ flags.DEFINE_integer(
     "batch_size", cfg.CONST.BATCH_SIZE,
     "The size of batch voxels [100]")  #batch_size = cfg.CONST.BATCH_SIZE
 flags.DEFINE_integer(
-    "batch_size_test", cfg_test.CONST.BATCH_SIZE,
+    "batch_size_test", cfg.CONST.BATCH_SIZE,
     "The size of batch voxels [100]")  #batch_size = cfg.CONST.BATCH_SIZE
 
 flags.DEFINE_boolean("middle_start", False,

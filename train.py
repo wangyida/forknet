@@ -50,10 +50,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
      recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, discrim_loss_refine_tf,\
       cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
       tsdf_tf = fcr_agan_model.build_model()
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    sess = tf.InteractiveSession(config=config)
     global_step = tf.Variable(0, name='global_step', trainable=False)
+    config_gpu = tf.ConfigProto()
+    config_gpu.gpu_options.allow_growth = True
+    sess = tf.Session(config=config_gpu)
     saver = tf.train.Saver(max_to_keep=cfg.SAVER_MAX)
 
     data_paths = scene_model_id_pair(dataset_portion=cfg.TRAIN.DATASET_PORTION)
@@ -98,7 +98,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator(
         visual_size=batch_size)
     writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
-    tf.initialize_all_variables().run()
+    tf.initialize_all_variables().run(session=sess)
 
     if mid_flag:
         chckpt_path = cfg.DIR.CHECK_PT_PATH + str(
