@@ -263,11 +263,17 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 if np.mod(ite, freq) == 0:
                     vox_models = sess.run(
                         vox_tf_sample,
-                        feed_dict={Z_tf_sample: Z_var_np_sample},
+                        feed_dict={
+                            Z_tf_sample: Z_var_np_sample,
+                            tsdf_tf: batch_tsdf_train
+                        },
                     )
                     refined_models = sess.run(
                         sample_refine_vox_tf,
-                        feed_dict={sample_vox_tf: vox_models})
+                        feed_dict={
+                            sample_vox_tf: vox_models,
+                            tsdf_tf: batch_tsdf_train
+                        })
                     vox_models_cat = np.argmax(vox_models, axis=4)
                     record_vox = vox_models_cat[:record_vox_num]
                     np.save(
