@@ -123,14 +123,6 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
     batch_voxel = np.zeros((num_models, n_vox[0], n_vox[1], n_vox[2]),
                            dtype=np.float32)
-    # depth--start
-    """
-    n_dep = cfg.CONST.N_DEP
-
-    batch_depth = np.zeros(
-                (num_models, n_dep[0], n_dep[1], n_dep[2]), dtype=np.float32)
-    """
-    # depth--end
     batch_tsdf = np.zeros((num_models, n_vox[0], n_vox[1], n_vox[2], 1),
                           dtype=np.float32)
 

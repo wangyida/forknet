@@ -21,6 +21,7 @@ def evaluate(batch_size, checknum, mode):
     freq = cfg.CHECK_FREQ
     refine_ch = cfg.NET.REFINE_CH
     refine_kernel = cfg.NET.REFINE_KERNEL
+    refiner = cfg.NET.REFINER
 
     save_path = cfg.DIR.EVAL_PATH
     chckpt_path = cfg.DIR.CHECK_PT_PATH + str(
@@ -37,17 +38,17 @@ def evaluate(batch_size, checknum, mode):
         dilations=dilations,
         refine_ch=refine_ch,
         refine_kernel=refine_kernel,
-    )
+        refiner=refiner)
 
 
-    Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
-        recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
-        cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
-        tsdf_tf = fcr_agan_model.build_model()
+    Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_refine_dec_tf, vox_refine_gen_tf,\ 
+    recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
+    cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
+    tsdf_tf = fcr_agan_model.build_model()
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
         visual_size=batch_size)
     sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator(
-        visual_size=batch_size)
+        visual_size=batch_size, tsdf=tsdf_tf)
     sess = tf.InteractiveSession()
     saver = tf.train.Saver()
 
