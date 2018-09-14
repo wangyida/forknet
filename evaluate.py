@@ -76,11 +76,13 @@ def evaluate(batch_size, checknum, mode):
         vox_models_cat = np.argmax(generated_voxs_fromrand, axis=4)
         np.save(save_path + '/generate.npy', vox_models_cat)
 
+        """
         refined_voxs_fromrand = sess.run(
             sample_refine_vox_tf,
             feed_dict={sample_vox_tf: generated_voxs_fromrand})
         vox_models_cat = np.argmax(refined_voxs_fromrand, axis=4)
         np.save(save_path + '/generate_refine.npy', vox_models_cat)
+        """
 
         #evaluation for reconstruction
         voxel_test, tsdf_test, num = scene_model_id_pair_test(
