@@ -98,7 +98,7 @@ def evaluate(batch_size, checknum, mode):
                 feed_dict={tsdf_tf: batch_tsdf_test})
             batch_refined_vox = sess.run(
                 sample_refine_vox_tf,
-                feed_dict={sample_vox_tf: batch_generated_voxs})
+                feed_dict={sample_vox_tf: batch_generated_voxs, tsdf_tf: batch_tsdf_test})
 
             if i == 0:
                 generated_voxs = batch_generated_voxs
