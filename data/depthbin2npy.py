@@ -9,7 +9,8 @@ from scipy import misc
 import os
 import argparse
 from progressbar import ProgressBar
-from skimage.measure import block_reduce
+# from skimage.measure import block_reduce
+from astropy.nddata.utils import block_reduce
 
 
 def bin2array(file):
@@ -34,9 +35,10 @@ def bin2array(file):
             i for (val, repeat) in zip(checkVoxVal, checkVoxIter)
             for i in np.tile(val, repeat)
         ]
-        # print('checkVox shape is {}'.format(len(checkVox)))
         checkVox = np.reshape(checkVox, (240, 144, 240))
-        checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
+        checkVox[checkVox == 0] = 255
+        checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.min)
+        checkVox[checkVox == 255] = 0
     f.close()
     # print "reading voxel file takes {} mins".format((time.time()-start_time)/60)
     return checkVox
@@ -124,7 +126,7 @@ if __name__ == "__main__":
         os.stat(dir_tar_depth)
     except:
         os.mkdir(dir_tar_depth)
-
+    """
     pbar1 = ProgressBar()
     # save depth as npy files
     for file_png in pbar1(files_png):
@@ -132,6 +134,7 @@ if __name__ == "__main__":
         name_start = int(file_png.rfind('/'))
         name_end = int(file_png.find('.', name_start))
         np.save(dir_tar_depth + file_png[name_start:name_end] + '.npy', depth)
+    """
 
     # save voxel as npy files
     pbar2 = ProgressBar()
