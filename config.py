@@ -14,7 +14,7 @@ __C.CONST.BATCH_SIZE = 8
 __C.SAVER_MAX = 1000
 __C.CHECK_FREQ = 1000
 __C.RECORD_VOX_NUM = 10
-__C.SWITCHING_ITE = 501
+__C.SWITCHING_ITE = 20001
 
 # Network
 __C.NET = edict()
@@ -27,6 +27,7 @@ __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
 __C.NET.REFINE_CH = 32
 __C.NET.REFINE_KERNEL = 3
+__C.NET.REFINER = 'resnet'
 
 #
 # Directories
