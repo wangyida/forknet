@@ -138,6 +138,7 @@ class FCR_aGAN():
         self.refine_kernel = refine_kernel
         self.refiner = refiner
 
+        # parameters of generator
         self.gen_W1 = tf.Variable(
             tf.random_normal([
                 self.dim_z * self.start_vox_size[0] * self.start_vox_size[1] *
@@ -209,6 +210,7 @@ class FCR_aGAN():
             name='gen_bn_g5')
         self.gen_bn_b5 = tf.Variable(tf.zeros([self.dim_W5]), name='gen_bn_b5')
 
+        # parameters of encoder
         self.encode_W1 = tf.Variable(
             tf.random_normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2], 1,
@@ -281,6 +283,7 @@ class FCR_aGAN():
         self.discrim_bn_b1 = tf.Variable(
             tf.zeros([1]), name='discrim_vox_bn_b1')
 
+        # parameters of discriminator
         self.discrim_W2 = tf.Variable(
             tf.random_normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
@@ -328,68 +331,7 @@ class FCR_aGAN():
                              stddev=0.02),
             name='discrim_vox_W5')
 
-        # depth--start
-        self.discrim_dep_W1 = tf.Variable(
-            tf.random_normal([
-                self.kernel5[0], self.kernel5[1], self.kernel5[2], self.dim_W5,
-                self.dim_W4
-            ],
-                             stddev=0.02),
-            name='discrim_dep_W1')
-        self.discrim_dep_bn_g1 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
-            name='discrim_dep_bn_g1')
-        self.discrim_dep_bn_b1 = tf.Variable(
-            tf.zeros([1]), name='discrim_dep_bn_b1')
-
-        self.discrim_dep_W2 = tf.Variable(
-            tf.random_normal([
-                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
-                self.dim_W3
-            ],
-                             stddev=0.02),
-            name='discrim_dep_W2')
-        self.discrim_dep_bn_g2 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
-            name='discrim_dep_bn_g2')
-        self.discrim_dep_bn_b2 = tf.Variable(
-            tf.zeros([1]), name='discrim_dep_bn_b2')
-
-        self.discrim_dep_W3 = tf.Variable(
-            tf.random_normal([
-                self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
-                self.dim_W2
-            ],
-                             stddev=0.02),
-            name='discrim_dep_W3')
-        self.discrim_dep_bn_g3 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
-            name='discrim_dep_bn_g3')
-        self.discrim_dep_bn_b3 = tf.Variable(
-            tf.zeros([1]), name='discrim_dep_bn_b3')
-
-        self.discrim_dep_W4 = tf.Variable(
-            tf.random_normal([
-                self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
-                self.dim_W1
-            ],
-                             stddev=0.02),
-            name='discrim_dep_W4')
-        self.discrim_dep_bn_g4 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
-            name='discrim_dep_bn_g4')
-        self.discrim_dep_bn_b4 = tf.Variable(
-            tf.zeros([1]), name='discrim_dep_bn_b4')
-
-        self.discrim_dep_W5 = tf.Variable(
-            tf.random_normal([
-                self.start_vox_size[0] * self.start_vox_size[1] *
-                self.start_vox_size[2] * self.dim_W1, 1
-            ],
-                             stddev=0.02),
-            name='discrim_dep_W5')
-        # depth--end
-
+        # parameters of codes discriminator
         self.cod_W1 = tf.Variable(
             tf.random_normal([
                 self.dim_z * self.start_vox_size[0] * self.start_vox_size[1] *
@@ -412,6 +354,7 @@ class FCR_aGAN():
         self.cod_W3 = tf.Variable(
             tf.random_normal([dim_code, 1], stddev=0.02), name='cod_W3')
 
+        # parameters of refiner
         self.refine_W1 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
