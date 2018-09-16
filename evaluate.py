@@ -104,13 +104,11 @@ def evaluate(batch_size, checknum, mode):
 
             if i == 0:
                 generated_voxs = batch_generated_voxs
-                # generated_deps = batch_dep_generated_voxs
                 refined_voxs = batch_refined_vox
                 enc_Z = batch_enc_Z
             else:
                 generated_voxs = np.concatenate(
                     (generated_voxs, batch_generated_voxs), axis=0)
-                # generated_deps = np.concatenate((generated_deps, batch_dep_generated_voxs), axis=0)
                 refined_voxs = np.concatenate(
                     (refined_voxs, batch_refined_vox), axis=0)
                 enc_Z = np.concatenate((enc_Z, batch_enc_Z), axis=0)
