@@ -126,6 +126,8 @@ def evaluate(batch_size, checknum, mode):
         np.save(save_path + '/real.npy', vox_models_cat)
         tsdf_models_cat = tsdf_test
         np.save(save_path + '/tsdf.npy', tsdf_models_cat)
+        real_surface = np.multiply(vox_models_cat, tsdf_models_cat)
+        np.save(save_path + '/real_surface.npy', real_surface)
 
         #decoded
         vox_models_cat = np.argmax(generated_voxs, axis=4)

@@ -146,7 +146,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         cost_enc_tf
                     ],
                     feed_dict={
-                        vox_tf: batch_voxel_train,
+                        vox_tf: np.multiply(batch_voxel_train,
+                                            batch_tsdf_train),
                         tsdf_tf: batch_tsdf_train,
                         Z_tf: batch_z_var,
                         lr_VAE: lr
@@ -157,7 +158,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     [train_op_gen, gen_loss_tf, cost_gen_tf],
                     feed_dict={
                         Z_tf: batch_z_var,
-                        vox_tf: batch_voxel_train,
+                        vox_tf: np.multiply(batch_voxel_train,
+                                            batch_tsdf_train),
                         tsdf_tf: batch_tsdf_train,
                         lr_VAE: lr
                     },
@@ -166,7 +168,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 [train_op_discrim, discrim_loss_tf, cost_discrim_tf],
                 feed_dict={
                     Z_tf: batch_z_var,
-                    vox_tf: batch_voxel_train,
+                    vox_tf: np.multiply(batch_voxel_train, batch_tsdf_train),
                     tsdf_tf: batch_tsdf_train
                 },
             )
@@ -175,7 +177,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 [train_op_code, cost_code_tf, z_enc_tf],
                 feed_dict={
                     Z_tf: batch_z_var,
-                    vox_tf: batch_voxel_train,
+                    vox_tf: np.multiply(batch_voxel_train, batch_tsdf_train),
                     tsdf_tf: batch_tsdf_train,
                     lr_VAE: lr
                 },
@@ -184,7 +186,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 summary_tf,
                 feed_dict={
                     Z_tf: batch_z_var,
-                    vox_tf: batch_voxel_train,
+                    vox_tf: np.multiply(batch_voxel_train, batch_tsdf_train),
                     tsdf_tf: batch_tsdf_train,
                     lr_VAE: lr
                 },
