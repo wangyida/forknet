@@ -476,7 +476,7 @@ class FCR_aGAN():
             name='refine_ssc_W13')
 
         self.refine_ssc_W14 = tf.Variable(
-            tf.random_normal([1, 1, 1, 64*3, 128], stddev=0.02),
+            tf.random_normal([1, 1, 1, 64 * 3, 128], stddev=0.02),
             name='refine_ssc_W14')
         self.refine_ssc_W15 = tf.Variable(
             tf.random_normal([1, 1, 1, 128, 128], stddev=0.02),
@@ -933,6 +933,7 @@ class FCR_aGAN():
         return x_refine
 
     def refine_sscnet(self, vox, tsdf):
+        """
         ssc1 = tf.nn.relu(
             tf.nn.conv3d(
                 tf.concat([vox, tsdf], -1),
@@ -1256,7 +1257,6 @@ class FCR_aGAN():
             reuse=tf.AUTO_REUSE)
 
         x_refine = softmax(base_9, self.batch_size, self.vox_shape)
-        """
 
         return x_refine
 
@@ -1330,7 +1330,7 @@ class FCR_aGAN():
         x = softmax(h5, visual_size, self.vox_shape)
         return Z, x
 
-    def refine_generator(self, visual_size, tsdf):
+    def refine_generator_resnet(self, visual_size, tsdf):
         vox = tf.placeholder(tf.float32, [
             visual_size, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2], self.vox_shape[3]
@@ -1409,7 +1409,12 @@ class FCR_aGAN():
 
         return vox, x_refine
 
-    def refine_generator_sscnet(self, vox, tsdf):
+    def refine_generator_sscnet(self, visual_size, tsdf):
+        vox = tf.placeholder(tf.float32, [
+            visual_size, self.vox_shape[0], self.vox_shape[1],
+            self.vox_shape[2], self.vox_shape[3]
+        ])
+        """
         ssc1 = tf.nn.relu(
             tf.nn.conv3d(
                 tf.concat([vox, tsdf], -1),
@@ -1728,6 +1733,5 @@ class FCR_aGAN():
             reuse=tf.AUTO_REUSE)
 
         x_refine = softmax(base_9, self.batch_size, self.vox_shape)
-        """
 
-        return x_refine
+        return vox, x_refine
