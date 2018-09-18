@@ -96,7 +96,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
         visual_size=batch_size)
-    if self.refiner is 'sscnet':
+    if refiner is 'sscnet':
         sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_sscnet(
             visual_size=batch_size, tsdf=tsdf_tf)
     else:
