@@ -476,7 +476,7 @@ class FCR_aGAN():
             name='refine_ssc_W13')
 
         self.refine_ssc_W14 = tf.Variable(
-            tf.random_normal([1, 1, 1, 64, 128], stddev=0.02),
+            tf.random_normal([1, 1, 1, 64*3, 128], stddev=0.02),
             name='refine_ssc_W14')
         self.refine_ssc_W15 = tf.Variable(
             tf.random_normal([1, 1, 1, 128, 128], stddev=0.02),
@@ -489,7 +489,7 @@ class FCR_aGAN():
             tf.random_normal([3, 3, 3, 128, 128], stddev=0.02),
             name='refine_ssc_W17')
         self.refine_ssc_W18 = tf.Variable(
-            tf.random_normal([3, 3, 3, 128, 12], stddev=0.02),
+            tf.random_normal([3, 3, 3, 12, 128], stddev=0.02),
             name='refine_ssc_W18')
 
         self.saver = tf.train.Saver()
@@ -960,7 +960,8 @@ class FCR_aGAN():
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME')),
             ksize = [1,3,3,3,1],
-            strides = [1,2,2,2,1])
+            strides = [1,2,2,2,1],
+            padding='SAME')
 
         ssc5 = tf.nn.relu(
             tf.nn.conv3d(
@@ -1002,15 +1003,20 @@ class FCR_aGAN():
                 ssc_add3,
                 self.refine_ssc_W10,
                 strides=[1, 1, 1, 1, 1],
-                dilations=[1, 2, 2, 2, 1],
+                dilations=[1, 1, 1, 1, 1],
                 padding='SAME'))
         ssc11 = tf.nn.relu(
             tf.nn.conv3d(
                 ssc10,
                 self.refine_ssc_W11,
                 strides=[1, 1, 1, 1, 1],
-                dilations=[1, 2, 2, 2, 1],
+                dilations=[1, 1, 1, 1, 1],
                 padding='SAME'))
+            # Should be 1 2 2 2 1
+            #
+            #
+            #
+            #
 
         ssc_add4 = ssc10 + ssc11 
 
@@ -1019,14 +1025,14 @@ class FCR_aGAN():
                 ssc_add4,
                 self.refine_ssc_W12,
                 strides=[1, 1, 1, 1, 1],
-                dilations=[1, 2, 2, 2, 1],
+                dilations=[1, 1, 1, 1, 1],
                 padding='SAME'))
         ssc13 = tf.nn.relu(
             tf.nn.conv3d(
                 ssc12,
                 self.refine_ssc_W13,
                 strides=[1, 1, 1, 1, 1],
-                dilations=[1, 2, 2, 2, 1],
+                dilations=[1, 1, 1, 1, 1],
                 padding='SAME'))
 
         ssc_add5 = ssc12 + ssc13 
@@ -1056,12 +1062,14 @@ class FCR_aGAN():
             tf.nn.conv3d_transpose(
                 ssc16,
                 self.refine_ssc_W17,
+                output_shape=[self.batch_size, 40, 24, 40, 128],
                 strides=[1, 2, 2, 2, 1],
                 padding='SAME'))
         ssc18 = tf.nn.relu(
             tf.nn.conv3d_transpose(
                 ssc17,
                 self.refine_ssc_W18,
+                output_shape=[self.batch_size, 80, 48, 80, 12],
                 strides=[1, 2, 2, 2, 1],
                 padding='SAME'))
 

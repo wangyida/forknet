@@ -27,7 +27,7 @@ __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
 __C.NET.REFINE_CH = 32
 __C.NET.REFINE_KERNEL = 3
-__C.NET.REFINER = 'resnet'
+__C.NET.REFINER = 'sscnet'
 
 #
 # Directories
