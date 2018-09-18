@@ -47,8 +47,12 @@ def evaluate(batch_size, checknum, mode):
     tsdf_tf = fcr_agan_model.build_model()
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
         visual_size=batch_size)
-    sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator(
-        visual_size=batch_size, tsdf=tsdf_tf)
+    if self.refiner is 'sscnet':
+        sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_sscnet(
+            visual_size=batch_size, tsdf=tsdf_tf)
+    else:
+        sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_resnet(
+            visual_size=batch_size, tsdf=tsdf_tf)
     sess = tf.InteractiveSession()
     saver = tf.train.Saver()
 
@@ -75,7 +79,6 @@ def evaluate(batch_size, checknum, mode):
             vox_tf_sample, feed_dict={Z_tf_sample: Z_var_np_sample})
         vox_models_cat = np.argmax(generated_voxs_fromrand, axis=4)
         np.save(save_path + '/generate.npy', vox_models_cat)
-
         """
         refined_voxs_fromrand = sess.run(
             sample_refine_vox_tf,
@@ -100,7 +103,10 @@ def evaluate(batch_size, checknum, mode):
                 feed_dict={tsdf_tf: batch_tsdf_test})
             batch_refined_vox = sess.run(
                 sample_refine_vox_tf,
-                feed_dict={sample_vox_tf: batch_generated_voxs, tsdf_tf: batch_tsdf_test})
+                feed_dict={
+                    sample_vox_tf: batch_generated_voxs,
+                    tsdf_tf: batch_tsdf_test
+                })
 
             if i == 0:
                 generated_voxs = batch_generated_voxs
