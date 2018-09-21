@@ -47,7 +47,7 @@ def evaluate(batch_size, checknum, mode):
     tsdf_tf = fcr_agan_model.build_model()
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
         visual_size=batch_size)
-    if self.refiner is 'sscnet':
+    if refiner is 'sscnet':
         sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_sscnet(
             visual_size=batch_size, tsdf=tsdf_tf)
     else:
@@ -108,6 +108,11 @@ def evaluate(batch_size, checknum, mode):
                     tsdf_tf: batch_tsdf_test
                 })
 
+            """
+            # This can eliminate some false positive
+            batch_refined_vox = np.multiply(batch_refined_vox, np.expand_dims(np.where(batch_voxel_test>0, 1, 0), -1))
+            """
+
             if i == 0:
                 generated_voxs = batch_generated_voxs
                 refined_voxs = batch_refined_vox
@@ -126,8 +131,8 @@ def evaluate(batch_size, checknum, mode):
         np.save(save_path + '/real.npy', vox_models_cat)
         tsdf_models_cat = tsdf_test
         np.save(save_path + '/tsdf.npy', tsdf_models_cat)
-        real_surface = np.multiply(vox_models_cat, tsdf_models_cat)
-        np.save(save_path + '/real_surface.npy', real_surface)
+        surface = np.multiply(vox_models_cat, np.squeeze(tsdf_models_cat))
+        np.save(save_path + '/surface.npy', surface)
 
         #decoded
         vox_models_cat = np.argmax(generated_voxs, axis=4)
@@ -159,6 +164,7 @@ def evaluate(batch_size, checknum, mode):
             IoU_calc = np.round(IoU_element / count, 3)
             IoU_class[class_n] = IoU_calc
             print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
+        print 'IoU average = ' + str(np.sum(IoU_calc[:vox_shape[3]-1]) / vox_shape[3])
 
         on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
         on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -190,6 +196,7 @@ def evaluate(batch_size, checknum, mode):
             AP = np.round(AP / num, 3)
             AP_class[class_n] = AP
             print 'AP class ' + str(class_n) + '=' + str(AP)
+        print 'AP average = ' + str(np.sum(AP_class[:vox_shape[3]-1]) / vox_shape[3])
 
         on_recons_ = generated_voxs[:, :, :, :, 1:vox_shape[3]]
         on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -224,6 +231,7 @@ def evaluate(batch_size, checknum, mode):
             IoU_calc = np.round(IoU_element / count, 3)
             IoU_class[class_n] = IoU_calc
             print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
+        print 'IoU average = ' + str(np.sum(IoU_calc[:vox_shape[3]-1]) / vox_shape[3])
 
         on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
         on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -255,6 +263,7 @@ def evaluate(batch_size, checknum, mode):
             AP = np.round(AP / num, 3)
             AP_class[class_n] = AP
             print 'AP class ' + str(class_n) + '=' + str(AP)
+        print 'AP average = ' + str(np.sum(AP_class[:vox_shape[3]-1]) / vox_shape[3])
 
         on_recons_ = refined_voxs[:, :, :, :, 1:vox_shape[3]]
         on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
