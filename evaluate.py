@@ -164,7 +164,7 @@ def evaluate(batch_size, checknum, mode):
             IoU_calc = np.round(IoU_element / count, 3)
             IoU_class[class_n] = IoU_calc
             print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
-        print 'IoU average = ' + str(np.sum(IoU_calc[:vox_shape[3]-1]) / vox_shape[3])
+        print 'IoU average = ' + str(np.sum(IoU_class[:vox_shape[3]-1]) / vox_shape[3])
 
         on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
         on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -231,7 +231,7 @@ def evaluate(batch_size, checknum, mode):
             IoU_calc = np.round(IoU_element / count, 3)
             IoU_class[class_n] = IoU_calc
             print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
-        print 'IoU average = ' + str(np.sum(IoU_calc[:vox_shape[3]-1]) / vox_shape[3])
+        print 'IoU average = ' + str(np.sum(IoU_class[:vox_shape[3]-1]) / vox_shape[3])
 
         on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
         on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
