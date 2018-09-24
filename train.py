@@ -47,7 +47,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         refine_kernel=refine_kernel,
         refiner=refiner)
 
-    Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
+    Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
     recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, discrim_loss_refine_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
     tsdf_tf = fcr_agan_model.build_model()
@@ -98,10 +98,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         visual_size=batch_size)
     if refiner is 'sscnet':
         sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_sscnet(
-            visual_size=batch_size, tsdf=tsdf_tf)
+            visual_size=batch_size)
     else:
         sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_resnet(
-            visual_size=batch_size, tsdf=tsdf_tf)
+            visual_size=batch_size)
     writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
     tf.initialize_all_variables().run(session=sess)
 
@@ -275,8 +275,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     refined_models = sess.run(
                         sample_refine_vox_tf,
                         feed_dict={
-                            sample_vox_tf: vox_models,
-                            tsdf_tf: batch_tsdf_train
+                            sample_vox_tf: vox_models
                         })
                     vox_models_cat = np.argmax(vox_models, axis=4)
                     record_vox = vox_models_cat[:record_vox_num]

@@ -41,7 +41,7 @@ def evaluate(batch_size, checknum, mode):
         refiner=refiner)
 
 
-    Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
+    Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
     recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
     tsdf_tf = fcr_agan_model.build_model()
@@ -49,10 +49,10 @@ def evaluate(batch_size, checknum, mode):
         visual_size=batch_size)
     if refiner is 'sscnet':
         sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_sscnet(
-            visual_size=batch_size, tsdf=tsdf_tf)
+            visual_size=batch_size)
     else:
         sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_resnet(
-            visual_size=batch_size, tsdf=tsdf_tf)
+            visual_size=batch_size)
     sess = tf.InteractiveSession()
     saver = tf.train.Saver()
 
@@ -79,13 +79,12 @@ def evaluate(batch_size, checknum, mode):
             vox_tf_sample, feed_dict={Z_tf_sample: Z_var_np_sample})
         vox_models_cat = np.argmax(generated_voxs_fromrand, axis=4)
         np.save(save_path + '/generate.npy', vox_models_cat)
-        """
+        
         refined_voxs_fromrand = sess.run(
             sample_refine_vox_tf,
             feed_dict={sample_vox_tf: generated_voxs_fromrand})
         vox_models_cat = np.argmax(refined_voxs_fromrand, axis=4)
         np.save(save_path + '/generate_refine.npy', vox_models_cat)
-        """
 
         #evaluation for reconstruction
         voxel_test, tsdf_test, num = scene_model_id_pair_test(
@@ -98,28 +97,42 @@ def evaluate(batch_size, checknum, mode):
             batch_tsdf_test = tsdf_test[i * batch_size:i * batch_size +
                                         batch_size]
 
-            batch_generated_voxs, batch_enc_Z = sess.run(
-                [vox_gen_decode_tf, z_enc_tf],
+            batch_generated_voxs, batch_generated_tsdf_seg, batch_generated_complete, batch_enc_Z = sess.run(
+                [
+                    vox_gen_decode_tf, tsdf_seg_tf, vox_gen_complete_tf,
+                    z_enc_tf
+                ],
                 feed_dict={tsdf_tf: batch_tsdf_test})
+
+            # This can eliminate some false positive
+            batch_generated_voxs = np.multiply(
+                batch_generated_voxs,
+                np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
+
             batch_refined_vox = sess.run(
                 sample_refine_vox_tf,
                 feed_dict={
-                    sample_vox_tf: batch_generated_voxs,
-                    tsdf_tf: batch_tsdf_test
+                    sample_vox_tf: batch_generated_voxs
                 })
 
-            """
             # This can eliminate some false positive
-            batch_refined_vox = np.multiply(batch_refined_vox, np.expand_dims(np.where(batch_voxel_test>0, 1, 0), -1))
-            """
+            batch_refined_vox = np.multiply(
+                batch_refined_vox,
+                np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
 
             if i == 0:
                 generated_voxs = batch_generated_voxs
+                generated_tsdf_seg = batch_generated_tsdf_seg
+                generated_complete = batch_generated_complete
                 refined_voxs = batch_refined_vox
                 enc_Z = batch_enc_Z
             else:
                 generated_voxs = np.concatenate(
                     (generated_voxs, batch_generated_voxs), axis=0)
+                generated_tsdf_seg = np.concatenate(
+                    (generated_tsdf_seg, batch_generated_tsdf_seg), axis=0)
+                generated_complete = np.concatenate(
+                    (generated_complete, batch_generated_complete), axis=0)
                 refined_voxs = np.concatenate(
                     (refined_voxs, batch_refined_vox), axis=0)
                 enc_Z = np.concatenate((enc_Z, batch_enc_Z), axis=0)
@@ -139,6 +152,10 @@ def evaluate(batch_size, checknum, mode):
         np.save(save_path + '/recons.npy', vox_models_cat)
         vox_models_cat = np.argmax(refined_voxs, axis=4)
         np.save(save_path + '/recons_refine.npy', vox_models_cat)
+        np.save(save_path + '/depth_segment.npy',
+                np.argmax(generated_tsdf_seg, axis=4))
+        np.save(save_path + '/complete.npy',
+                np.argmax(generated_complete, axis=4))
         np.save(save_path + '/decode_z.npy', enc_Z)
 
         print("voxels saved")
@@ -164,7 +181,8 @@ def evaluate(batch_size, checknum, mode):
             IoU_calc = np.round(IoU_element / count, 3)
             IoU_class[class_n] = IoU_calc
             print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
-        print 'IoU average = ' + str(np.sum(IoU_class[:vox_shape[3]-1]) / vox_shape[3])
+        print 'IoU average = ' + str(
+            np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3])
 
         on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
         on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -196,7 +214,8 @@ def evaluate(batch_size, checknum, mode):
             AP = np.round(AP / num, 3)
             AP_class[class_n] = AP
             print 'AP class ' + str(class_n) + '=' + str(AP)
-        print 'AP average = ' + str(np.sum(AP_class[:vox_shape[3]-1]) / vox_shape[3])
+        print 'AP average = ' + str(
+            np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3])
 
         on_recons_ = generated_voxs[:, :, :, :, 1:vox_shape[3]]
         on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -231,7 +250,8 @@ def evaluate(batch_size, checknum, mode):
             IoU_calc = np.round(IoU_element / count, 3)
             IoU_class[class_n] = IoU_calc
             print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
-        print 'IoU average = ' + str(np.sum(IoU_class[:vox_shape[3]-1]) / vox_shape[3])
+        print 'IoU average = ' + str(
+            np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3])
 
         on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
         on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -263,7 +283,8 @@ def evaluate(batch_size, checknum, mode):
             AP = np.round(AP / num, 3)
             AP_class[class_n] = AP
             print 'AP class ' + str(class_n) + '=' + str(AP)
-        print 'AP average = ' + str(np.sum(AP_class[:vox_shape[3]-1]) / vox_shape[3])
+        print 'AP average = ' + str(
+            np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3])
 
         on_recons_ = refined_voxs[:, :, :, :, 1:vox_shape[3]]
         on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]

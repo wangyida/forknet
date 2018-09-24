@@ -559,9 +559,8 @@ class FCR_aGAN():
                     + (1 - self.lamda_gamma) *
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_gen_decode),
                     [1, 2, 3]) * weight, 1))
-        # recons_loss = tf.reduce_mean(tf.reduce_sum(recons_loss * weight, 1))
+
         # Completion loss
-        """
         vox_real_complete = tf.stack([
             vox_real[:, :, :, :, 0],
             tf.reduce_sum(vox_real[:, :, :, :, 1:], 4)
@@ -576,20 +575,30 @@ class FCR_aGAN():
             (1 - vox_real_complete) * tf.log(1e-6 + 1 - vox_gen_complete),
             [1, 2, 3])
         weight_complete = tf.stack([weight[0], tf.reduce_sum(weight[1:])])
-        recons_loss += tf.reduce_mean(
+        complete_loss = tf.reduce_mean(
             tf.reduce_sum(complete_loss * weight_complete, 1))
-        """
+
+        # depth segmentation
+        tsdf_seg = tf.multiply(vox_gen_decode, tsdf_real)
+        tsdf_seg_loss = tf.reduce_mean(
+            tf.reduce_sum(
+                -tf.reduce_sum(
+                    self.lamda_gamma * tf.multiply(vox_real, tsdf_real) *
+                    tf.log(1e-6 + tsdf_seg) + (1 - self.lamda_gamma) *
+                    (1 - tf.multiply(vox_real, tsdf_real)) *
+                    tf.log(1e-6 + 1 - tsdf_seg), [1, 2, 3]) * weight, 1))
+
+        recons_loss = recons_loss + complete_loss + tsdf_seg_loss
+
         #Refiner
         vox_after_refine_dec = tf.placeholder(tf.float32, [
             self.batch_size, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2], self.n_class
         ])
         if self.refiner is 'sscnet':
-            vox_after_refine_dec = self.refine_sscnet(vox_gen_decode,
-                                                      tsdf_real)
+            vox_after_refine_dec = self.refine_sscnet(vox_gen_decode)
         else:
-            vox_after_refine_dec = self.refine_resnet(vox_gen_decode,
-                                                      tsdf_real)
+            vox_after_refine_dec = self.refine_resnet(vox_gen_decode)
 
         recons_loss_refine = tf.reduce_mean(
             tf.reduce_sum(
@@ -608,9 +617,9 @@ class FCR_aGAN():
             self.vox_shape[2], self.n_class
         ])
         if self.refiner is 'sscnet':
-            vox_after_refine_gen = self.refine_sscnet(vox_gen, tsdf_real)
+            vox_after_refine_gen = self.refine_sscnet(vox_gen)
         else:
-            vox_after_refine_gen = self.refine_resnet(vox_gen, tsdf_real)
+            vox_after_refine_gen = self.refine_resnet(vox_gen)
 
         h_real = self.discriminate(vox_real)
         h_gen = self.discriminate(vox_gen)
@@ -680,7 +689,7 @@ class FCR_aGAN():
 
         summary_op = tf.summary.merge_all()
 
-        return Z, Z_encode, vox_real_, vox_gen, vox_gen_decode, vox_after_refine_dec, vox_after_refine_gen,\
+        return Z, Z_encode, vox_real_, vox_gen, vox_gen_decode, vox_gen_complete, tsdf_seg, vox_after_refine_dec, vox_after_refine_gen,\
         recons_loss, code_encode_loss, gen_loss, discrim_loss, recons_loss_refine, gen_loss_refine, discrim_loss_refine,\
         cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
         tsdf_real
@@ -858,10 +867,10 @@ class FCR_aGAN():
         x = softmax(h5, self.batch_size, self.vox_shape)
         return x
 
-    def refine_resnet(self, vox, tsdf):
+    def refine_resnet(self, vox):
         base = tf.nn.relu(
             tf.nn.conv3d(
-                tf.concat([vox, tsdf], -1),
+                vox,
                 self.refine_W1,
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME'))
@@ -932,7 +941,7 @@ class FCR_aGAN():
 
         return x_refine
 
-    def refine_sscnet(self, vox, tsdf):
+    def refine_sscnet(self, vox):
         """
         ssc1 = tf.nn.relu(
             tf.nn.conv3d(
@@ -1077,7 +1086,7 @@ class FCR_aGAN():
         x_refine = softmax(ssc18, self.batch_size, self.vox_shape)
         """
         base_1 = tf.layers.conv3d(
-            tf.concat([vox, tsdf], -1),
+            vox,
             filters=16,
             kernel_size=(7, 7, 7),
             strides=(2, 2, 2),
@@ -1330,7 +1339,7 @@ class FCR_aGAN():
         x = softmax(h5, visual_size, self.vox_shape)
         return Z, x
 
-    def refine_generator_resnet(self, visual_size, tsdf):
+    def refine_generator_resnet(self, visual_size):
         vox = tf.placeholder(tf.float32, [
             visual_size, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2], self.vox_shape[3]
@@ -1338,7 +1347,7 @@ class FCR_aGAN():
 
         base = tf.nn.relu(
             tf.nn.conv3d(
-                tf.concat([vox, tsdf], -1),
+                vox,
                 self.refine_W1,
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME'))
@@ -1409,7 +1418,7 @@ class FCR_aGAN():
 
         return vox, x_refine
 
-    def refine_generator_sscnet(self, visual_size, tsdf):
+    def refine_generator_sscnet(self, visual_size):
         vox = tf.placeholder(tf.float32, [
             visual_size, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2], self.vox_shape[3]
@@ -1553,7 +1562,7 @@ class FCR_aGAN():
         x_refine = softmax(ssc18, self.batch_size, self.vox_shape)
         """
         base_1 = tf.layers.conv3d(
-            tf.concat([vox, tsdf], -1),
+            vox,
             filters=16,
             kernel_size=(7, 7, 7),
             strides=(2, 2, 2),
