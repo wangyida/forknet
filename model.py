@@ -358,7 +358,7 @@ class FCR_aGAN():
         self.refine_W1 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.dim_W5 + 1, self.refine_ch
+                self.dim_W5, self.refine_ch
             ],
                              stddev=0.02),
             name='refine_W1')
@@ -432,7 +432,7 @@ class FCR_aGAN():
 
         # parameters of refiner (sscnet)
         self.refine_ssc_W1 = tf.Variable(
-            tf.random_normal([7, 7, 7, self.dim_W5 + 1, 16], stddev=0.02),
+            tf.random_normal([7, 7, 7, self.dim_W5, 16], stddev=0.02),
             name='refine_ssc_W1')
         self.refine_ssc_W2 = tf.Variable(
             tf.random_normal([3, 3, 3, 16, 32], stddev=0.02),
