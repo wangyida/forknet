@@ -274,9 +274,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     )
                     refined_models = sess.run(
                         sample_refine_vox_tf,
-                        feed_dict={
-                            sample_vox_tf: vox_models
-                        })
+                        feed_dict={sample_vox_tf: vox_models})
                     vox_models_cat = np.argmax(vox_models, axis=4)
                     record_vox = vox_models_cat[:record_vox_num]
                     np.save(

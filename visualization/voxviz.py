@@ -271,4 +271,4 @@ if __name__ == "__main__":
         # resized = resize(resized, (48, 80, 80), mode='constant')
         plot_cube(
             np.flip(np.rollaxis(resized[:, :, :], 2, 0), 1),
-            name=target_folder + '/' + str(idx))
+            name=target_folder + '/' + format(idx, '03d'))

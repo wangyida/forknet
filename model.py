@@ -870,10 +870,7 @@ class FCR_aGAN():
     def refine_resnet(self, vox):
         base = tf.nn.relu(
             tf.nn.conv3d(
-                vox,
-                self.refine_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
+                vox, self.refine_W1, strides=[1, 1, 1, 1, 1], padding='SAME'))
 
         #res1
         res1_1 = tf.nn.relu(
@@ -1347,10 +1344,7 @@ class FCR_aGAN():
 
         base = tf.nn.relu(
             tf.nn.conv3d(
-                vox,
-                self.refine_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
+                vox, self.refine_W1, strides=[1, 1, 1, 1, 1], padding='SAME'))
 
         #res1
         res1_1 = tf.nn.relu(

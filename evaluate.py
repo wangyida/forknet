@@ -8,6 +8,73 @@ from sklearn.metrics import average_precision_score
 import copy
 
 
+def iou_ap_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
+                vox_shape):
+    # calc_IoU
+    num = on_real.shape[0]
+    for class_n in np.arange(vox_shape[3]):
+        on_recons_ = on_recons[:, :, :, :, class_n]
+        on_real_ = on_real[:, :, :, :, class_n]
+        mother = np.sum(np.clip(np.add(on_recons_, on_real_), 0, 1), (1, 2, 3))
+        child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3))
+        count = 0
+        IoU_element = 0
+        for i in np.arange(num):
+            if mother[i] != 0:
+                IoU_element += child[i] / mother[i]
+                count += 1
+        IoU_calc = np.round(IoU_element / count, 3)
+        IoU_class[class_n] = IoU_calc
+        print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
+    print 'IoU average = ' + str(
+        np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3])
+
+    on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
+    on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
+    mother = np.sum(np.add(on_recons_, on_real_), (1, 2, 3, 4))
+    child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3, 4))
+    count = 0
+    IoU_element = 0
+    for i in np.arange(num):
+        if mother[i] != 0:
+            IoU_element += child[i] / mother[i]
+            count += 1
+    IoU_calc = np.round(IoU_element / count, 3)
+    IoU_class[vox_shape[3]] = IoU_calc
+    print 'IoU all =' + str(IoU_calc)
+
+    #calc_AP
+    for class_n in np.arange(vox_shape[3]):
+        on_recons_ = generated_voxs[:, :, :, :, class_n]
+        on_real_ = on_real[:, :, :, :, class_n]
+
+        AP = 0.
+        for i in np.arange(num):
+            y_true = np.reshape(on_real_[i], [-1])
+            y_scores = np.reshape(on_recons_[i], [-1])
+            if np.sum(y_true) > 0.:
+                AP += average_precision_score(y_true, y_scores)
+        AP = np.round(AP / num, 3)
+        AP_class[class_n] = AP
+        print 'AP class ' + str(class_n) + '=' + str(AP)
+    print 'AP average = ' + str(
+        np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3])
+
+    on_recons_ = generated_voxs[:, :, :, :, 1:vox_shape[3]]
+    on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
+    AP = 0.
+    for i in np.arange(num):
+        y_true = np.reshape(on_real_[i], [-1])
+        y_scores = np.reshape(on_recons_[i], [-1])
+        if np.sum(y_true) > 0.:
+            AP += average_precision_score(y_true, y_scores)
+
+    AP = np.round(AP / num, 3)
+    AP_class[vox_shape[3]] = AP
+    print 'AP all =' + str(AP)
+    return IoU_class, AP_class
+
+
 def evaluate(batch_size, checknum, mode):
 
     n_vox = cfg.CONST.N_VOX
@@ -77,14 +144,14 @@ def evaluate(batch_size, checknum, mode):
 
         generated_voxs_fromrand = sess.run(
             vox_tf_sample, feed_dict={Z_tf_sample: Z_var_np_sample})
-        vox_models_cat = np.argmax(generated_voxs_fromrand, axis=4)
-        np.save(save_path + '/generate.npy', vox_models_cat)
-        
+        np.save(save_path + '/generate.npy',
+                np.argmax(generated_voxs_fromrand, axis=4))
+
         refined_voxs_fromrand = sess.run(
             sample_refine_vox_tf,
             feed_dict={sample_vox_tf: generated_voxs_fromrand})
-        vox_models_cat = np.argmax(refined_voxs_fromrand, axis=4)
-        np.save(save_path + '/generate_refine.npy', vox_models_cat)
+        np.save(save_path + '/generate_refine.npy',
+                np.argmax(refined_voxs_fromrand, axis=4))
 
         #evaluation for reconstruction
         voxel_test, tsdf_test, num = scene_model_id_pair_test(
@@ -111,9 +178,7 @@ def evaluate(batch_size, checknum, mode):
 
             batch_refined_vox = sess.run(
                 sample_refine_vox_tf,
-                feed_dict={
-                    sample_vox_tf: batch_generated_voxs
-                })
+                feed_dict={sample_vox_tf: batch_generated_voxs})
 
             # This can eliminate some false positive
             batch_refined_vox = np.multiply(
@@ -139,19 +204,17 @@ def evaluate(batch_size, checknum, mode):
 
         print("forwarded")
 
-        #real
-        vox_models_cat = voxel_test
-        np.save(save_path + '/real.npy', vox_models_cat)
+        # real
+        np.save(save_path + '/real.npy', voxel_test)
         tsdf_models_cat = tsdf_test
         np.save(save_path + '/tsdf.npy', tsdf_models_cat)
-        surface = np.multiply(vox_models_cat, np.squeeze(tsdf_models_cat))
+        surface = np.multiply(voxel_test, np.squeeze(tsdf_models_cat))
         np.save(save_path + '/surface.npy', surface)
 
-        #decoded
-        vox_models_cat = np.argmax(generated_voxs, axis=4)
-        np.save(save_path + '/recons.npy', vox_models_cat)
-        vox_models_cat = np.argmax(refined_voxs, axis=4)
-        np.save(save_path + '/recons_refine.npy', vox_models_cat)
+        # decoded
+        np.save(save_path + '/recons.npy', np.argmax(generated_voxs, axis=4))
+        np.save(save_path + '/recons_refine.npy',
+                np.argmax(refined_voxs, axis=4))
         np.save(save_path + '/depth_segment.npy',
                 np.argmax(generated_tsdf_seg, axis=4))
         np.save(save_path + '/complete.npy',
@@ -160,147 +223,38 @@ def evaluate(batch_size, checknum, mode):
 
         print("voxels saved")
 
-        #numerical evalutation
+        # numerical evalutation
         on_real = onehot(voxel_test, vox_shape[3])
+        on_depth = onehot(surface, vox_shape[3])
         on_recons = onehot(np.argmax(generated_voxs, axis=4), vox_shape[3])
-        # on_gens_dep = onehot(np.argmax(generated_deps, axis=4),vox_shape[3])
+        on_gens_dep = onehot(
+            np.multiply(
+                np.argmax(generated_tsdf_seg, axis=4), np.squeeze(
+                    tsdf_test, -1)), vox_shape[3])
 
-        #calc_IoU
+        # calc_IoU
         IoU_class = np.zeros([vox_shape[3] + 1])
-        for class_n in np.arange(vox_shape[3]):
-            on_recons_ = on_recons[:, :, :, :, class_n]
-            on_real_ = on_real[:, :, :, :, class_n]
-            mother = np.sum(np.add(on_recons_, on_real_), (1, 2, 3))
-            child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3))
-            count = 0
-            IoU_element = 0
-            for i in np.arange(num):
-                if mother[i] != 0:
-                    IoU_element += child[i] / mother[i]
-                    count += 1
-            IoU_calc = np.round(IoU_element / count, 3)
-            IoU_class[class_n] = IoU_calc
-            print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
-        print 'IoU average = ' + str(
-            np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3])
-
-        on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
-        on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
-        mother = np.sum(np.add(on_recons_, on_real_), (1, 2, 3, 4))
-        child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3, 4))
-        count = 0
-        IoU_element = 0
-        for i in np.arange(num):
-            if mother[i] != 0:
-                IoU_element += child[i] / mother[i]
-                count += 1
-        IoU_calc = np.round(IoU_element / count, 3)
-        IoU_class[vox_shape[3]] = IoU_calc
-        print 'IoU all =' + str(IoU_calc)
-        np.savetxt(save_path + '/IoU.csv', IoU_class, delimiter=",")
-
-        #calc_AP
         AP_class = np.zeros([vox_shape[3] + 1])
-        for class_n in np.arange(vox_shape[3]):
-            on_recons_ = generated_voxs[:, :, :, :, class_n]
-            on_real_ = on_real[:, :, :, :, class_n]
-
-            AP = 0.
-            for i in np.arange(num):
-                y_true = np.reshape(on_real_[i], [-1])
-                y_scores = np.reshape(on_recons_[i], [-1])
-                if np.sum(y_true) > 0.:
-                    AP += average_precision_score(y_true, y_scores)
-            AP = np.round(AP / num, 3)
-            AP_class[class_n] = AP
-            print 'AP class ' + str(class_n) + '=' + str(AP)
-        print 'AP average = ' + str(
-            np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3])
-
-        on_recons_ = generated_voxs[:, :, :, :, 1:vox_shape[3]]
-        on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
-        AP = 0.
-        for i in np.arange(num):
-            y_true = np.reshape(on_real_[i], [-1])
-            y_scores = np.reshape(on_recons_[i], [-1])
-            if np.sum(y_true) > 0.:
-                AP += average_precision_score(y_true, y_scores)
-
-        AP = np.round(AP / num, 3)
-        AP_class[vox_shape[3]] = AP
-        print 'AP all =' + str(AP)
+        IoU_class, AP_class = iou_ap_calc(on_depth, on_gens_dep,
+                                          generated_voxs, IoU_class, AP_class,
+                                          vox_shape)
+        IoU_class, AP_class = iou_ap_calc(on_real, on_recons, generated_voxs,
+                                          IoU_class, AP_class, vox_shape)
+        np.savetxt(save_path + '/IoU.csv', IoU_class, delimiter=",")
         np.savetxt(save_path + '/AP.csv', AP_class, delimiter=",")
 
-        #Refine
-        #calc_IoU
+        # refine
+        # calc_IoU
         on_recons = onehot(np.argmax(refined_voxs, axis=4), vox_shape[3])
 
         IoU_class = np.zeros([vox_shape[3] + 1])
-        for class_n in np.arange(vox_shape[3]):
-            on_recons_ = on_recons[:, :, :, :, class_n]
-            on_real_ = on_real[:, :, :, :, class_n]
-            mother = np.sum(np.add(on_recons_, on_real_), (1, 2, 3))
-            child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3))
-            count = 0
-            IoU_element = 0
-            for i in np.arange(num):
-                if mother[i] != 0:
-                    IoU_element += child[i] / mother[i]
-                    count += 1
-            IoU_calc = np.round(IoU_element / count, 3)
-            IoU_class[class_n] = IoU_calc
-            print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
-        print 'IoU average = ' + str(
-            np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3])
-
-        on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
-        on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
-        mother = np.sum(np.add(on_recons_, on_real_), (1, 2, 3, 4))
-        child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3, 4))
-        count = 0
-        IoU_element = 0
-        for i in np.arange(num):
-            if mother[i] != 0:
-                IoU_element += child[i] / mother[i]
-                count += 1
-        IoU_calc = np.round(IoU_element / count, 3)
-        IoU_class[vox_shape[3]] = IoU_calc
-        print 'IoU all =' + str(IoU_calc)
-        np.savetxt(save_path + '/IoU_refine.csv', IoU_class, delimiter=",")
-
-        #calc_AP
         AP_class = np.zeros([vox_shape[3] + 1])
-        for class_n in np.arange(vox_shape[3]):
-            on_recons_ = refined_voxs[:, :, :, :, class_n]
-            on_real_ = on_real[:, :, :, :, class_n]
-
-            AP = 0.
-            for i in np.arange(num):
-                y_true = np.reshape(on_real_[i], [-1])
-                y_scores = np.reshape(on_recons_[i], [-1])
-                if np.sum(y_true) > 0.:
-                    AP += average_precision_score(y_true, y_scores)
-            AP = np.round(AP / num, 3)
-            AP_class[class_n] = AP
-            print 'AP class ' + str(class_n) + '=' + str(AP)
-        print 'AP average = ' + str(
-            np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3])
-
-        on_recons_ = refined_voxs[:, :, :, :, 1:vox_shape[3]]
-        on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
-        AP = 0.
-        for i in np.arange(num):
-            y_true = np.reshape(on_real_[i], [-1])
-            y_scores = np.reshape(on_recons_[i], [-1])
-            if np.sum(y_true) > 0.:
-                AP += average_precision_score(y_true, y_scores)
-
-        AP = np.round(AP / num, 3)
-        AP_class[vox_shape[3]] = AP
-        print 'AP all =' + str(AP)
+        IoU_class, AP_class = iou_ap_calc(on_real, on_recons, refined_voxs,
+                                          IoU_class, AP_class, vox_shape)
+        np.savetxt(save_path + '/IoU_refine.csv', IoU_class, delimiter=",")
         np.savetxt(save_path + '/AP_refine.csv', AP_class, delimiter=",")
 
-    #interpolation evaluation
+    # interpolation evaluation
     if mode == 'interpolate':
         interpolate_num = 30
         #interpolatioin latent vectores
