@@ -251,6 +251,10 @@ if __name__ == "__main__":
     scan = ScanFile(dir_dep)
     subdirs = scan.scan_subdir()
     files = scan.scan_files()
+    try:
+        os.stat(target_folder )
+    except:
+        os.mkdir(target_folder )
     """
     pbar = ProgressBar()
     for file_dep in pbar(files):

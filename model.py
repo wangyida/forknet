@@ -521,9 +521,19 @@ class FCR_aGAN():
         mean, sigma = self.encoder(tsdf_real)
         Z_encode = mean
 
-        #code_discriminator
+        # code_discriminator
         h_code_encode = self.code_discriminator(Z_encode)
         h_code_real = self.code_discriminator(Z)
+
+        # empty space mask
+        empty_mask = tf.ones_like(vox_real)
+        empty_mask[:, :, :, :, 0] = tf.to_float(
+            tf.nn.relu(
+                tf.random_uniform(
+                    empty_mask[:, :, :, :, 0].get_shape(),
+                    minval=-4,
+                    maxval=1,
+                    dtype=tf.int32)))
 
         code_encode_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -540,7 +550,7 @@ class FCR_aGAN():
                             logits=h_code_encode,
                             labels=tf.zeros_like(h_code_encode)), [1]))
 
-        #reconstruction
+        # reconstruction
         vox_gen_decode = self.generate(Z_encode)
         batch_mean_vox_real = tf.reduce_mean(vox_real, [0, 1, 2, 3])
         # batch_mean_vox_real ranges from 0 to 1
@@ -549,8 +559,10 @@ class FCR_aGAN():
             tf.ones_like(batch_mean_vox_real),
             tf.add(batch_mean_vox_real, tf.ones_like(batch_mean_vox_real)))
         # inverse ranges from 1/1.1 to 10
+        """
         inverse = tf.div(
             tf.ones_like(batch_mean_vox_real), batch_mean_vox_real + 0.1)
+        """
         weight = inverse * tf.div(1., tf.reduce_sum(inverse))
         recons_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -560,7 +572,7 @@ class FCR_aGAN():
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_gen_decode),
                     [1, 2, 3]) * weight, 1))
 
-        # Completion loss
+        # completion loss
         vox_real_complete = tf.stack([
             vox_real[:, :, :, :, 0],
             tf.reduce_sum(vox_real[:, :, :, :, 1:], 4)
@@ -590,7 +602,7 @@ class FCR_aGAN():
 
         recons_loss = recons_loss + complete_loss + tsdf_seg_loss
 
-        #Refiner
+        # refiner
         vox_after_refine_dec = tf.placeholder(tf.float32, [
             self.batch_size, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2], self.n_class
@@ -608,9 +620,8 @@ class FCR_aGAN():
                     (1 - self.lamda_gamma) *
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_after_refine_dec),
                     [1, 2, 3]) * weight, 1))
-        # recons_loss_refine = tf.reduce_mean(tf.reduce_sum(recons_loss_refine * weight, 1))
 
-        #GAN_generate
+        # GAN_generate
         vox_gen = self.generate(Z)
         vox_after_refine_gen = tf.placeholder(tf.float32, [
             self.batch_size, self.vox_shape[0], self.vox_shape[1],
@@ -627,7 +638,7 @@ class FCR_aGAN():
         h_gen_ref = self.discriminate(vox_after_refine_gen)
         h_gen_dec_ref = self.discriminate(vox_after_refine_dec)
 
-        #Standard_GAN_Loss
+        # Standard_GAN_Loss
         discrim_loss = tf.reduce_mean(
             tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=h_real, labels=tf.ones_like(h_real))) + tf.reduce_mean(
@@ -644,7 +655,7 @@ class FCR_aGAN():
                     tf.nn.sigmoid_cross_entropy_with_logits(
                         logits=h_gen_dec, labels=tf.ones_like(h_gen_dec)))
 
-        #for refine
+        # for refine
         discrim_loss_refine = tf.reduce_mean(
             tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=h_real, labels=tf.ones_like(h_real))) + tf.reduce_mean(
@@ -672,7 +683,7 @@ class FCR_aGAN():
         gen_loss = tf.reduce_mean(0.5*((h_gen-c)**2) + 0.5*((h_gen_dec-c)**2))
         """
 
-        #Cost
+        # Cost
         cost_enc = code_encode_loss + self.lamda_recons * recons_loss
         cost_gen = self.lamda_recons * recons_loss + gen_loss
         cost_discrim = discrim_loss
