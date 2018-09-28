@@ -8,15 +8,16 @@ from sklearn.metrics import average_precision_score
 import copy
 
 
-def iou_ap_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
+def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
                 vox_shape):
     # calc_IoU
     num = on_real.shape[0]
     for class_n in np.arange(vox_shape[3]):
         on_recons_ = on_recons[:, :, :, :, class_n]
         on_real_ = on_real[:, :, :, :, class_n]
-        mother = np.sum(np.clip(np.add(on_recons_, on_real_), 0, 1), (1, 2, 3))
-        child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3))
+        mother = np.sum(np.add(on_recons_, on_real_), (1, 2, 3))
+        # Here the child must be doubled because the mother is calculated twice
+        child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3)) * 2
         count = 0
         IoU_element = 0
         for i in np.arange(num):
@@ -26,13 +27,13 @@ def iou_ap_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
         IoU_calc = np.round(IoU_element / count, 3)
         IoU_class[class_n] = IoU_calc
         print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
-    print 'IoU average = ' + str(
+    print 'IoU on average = ' + str(
         np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3])
 
     on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
     on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
     mother = np.sum(np.add(on_recons_, on_real_), (1, 2, 3, 4))
-    child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3, 4))
+    child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3, 4)) * 2 
     count = 0
     IoU_element = 0
     for i in np.arange(num):
@@ -92,7 +93,7 @@ def evaluate(batch_size, checknum, mode):
 
     save_path = cfg.DIR.EVAL_PATH
     chckpt_path = cfg.DIR.CHECK_PT_PATH + str(
-        checknum)  #+ '-' + str(checknum * freq)
+        checknum)
 
     fcr_agan_model = FCR_aGAN(
         batch_size=batch_size,
@@ -129,8 +130,8 @@ def evaluate(batch_size, checknum, mode):
     print("...Weights restored.")
 
     if mode == 'recons':
-        #reconstruction and generation from normal distribution evaluation
-        #generator from random distribution
+        # reconstruction and generation from normal distribution evaluation
+        # generator from random distribution
         for i in np.arange(batch_size):
             Z_np_sample = np.random.normal(
                 size=(1, start_vox_size[0], start_vox_size[1],
@@ -153,7 +154,7 @@ def evaluate(batch_size, checknum, mode):
         np.save(save_path + '/generate_refine.npy',
                 np.argmax(refined_voxs_fromrand, axis=4))
 
-        #evaluation for reconstruction
+        # evaluation for reconstruction
         voxel_test, tsdf_test, num = scene_model_id_pair_test(
             dataset_portion=cfg.TRAIN.DATASET_PORTION)
         num = voxel_test.shape[0]
@@ -235,10 +236,10 @@ def evaluate(batch_size, checknum, mode):
         # calc_IoU
         IoU_class = np.zeros([vox_shape[3] + 1])
         AP_class = np.zeros([vox_shape[3] + 1])
-        IoU_class, AP_class = iou_ap_calc(on_depth, on_gens_dep,
+        IoU_class, AP_class = IoU_AP_calc(on_depth, on_gens_dep,
                                           generated_voxs, IoU_class, AP_class,
                                           vox_shape)
-        IoU_class, AP_class = iou_ap_calc(on_real, on_recons, generated_voxs,
+        IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, generated_voxs,
                                           IoU_class, AP_class, vox_shape)
         np.savetxt(save_path + '/IoU.csv', IoU_class, delimiter=",")
         np.savetxt(save_path + '/AP.csv', AP_class, delimiter=",")
@@ -249,7 +250,7 @@ def evaluate(batch_size, checknum, mode):
 
         IoU_class = np.zeros([vox_shape[3] + 1])
         AP_class = np.zeros([vox_shape[3] + 1])
-        IoU_class, AP_class = iou_ap_calc(on_real, on_recons, refined_voxs,
+        IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs,
                                           IoU_class, AP_class, vox_shape)
         np.savetxt(save_path + '/IoU_refine.csv', IoU_class, delimiter=",")
         np.savetxt(save_path + '/AP_refine.csv', AP_class, delimiter=",")
@@ -331,7 +332,7 @@ def evaluate(batch_size, checknum, mode):
                         '.npy', vox_models_cat)
         print("voxels saved")
 
-    #add noise evaluation
+    # add noise evaluation
     if mode == 'noise':
         decode_z = np.load(save_path + '/decode_z.npy')
         decode_z = decode_z[:batch_size]
