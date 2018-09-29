@@ -526,6 +526,7 @@ class FCR_aGAN():
         h_code_real = self.code_discriminator(Z)
 
         # empty space mask
+        """
         empty_mask = tf.ones_like(vox_real)
         empty_mask[:, :, :, :, 0] = tf.to_float(
             tf.nn.relu(
@@ -534,6 +535,7 @@ class FCR_aGAN():
                     minval=-4,
                     maxval=1,
                     dtype=tf.int32)))
+        """
 
         code_encode_loss = tf.reduce_mean(
             tf.reduce_sum(
