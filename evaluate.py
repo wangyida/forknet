@@ -33,7 +33,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
     on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
     on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
     mother = np.sum(np.add(on_recons_, on_real_), (1, 2, 3, 4))
-    child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3, 4)) * 2 
+    child = np.sum(np.multiply(on_recons_, on_real_), (1, 2, 3, 4)) * 2
     count = 0
     IoU_element = 0
     for i in np.arange(num):
@@ -92,8 +92,7 @@ def evaluate(batch_size, checknum, mode):
     refiner = cfg.NET.REFINER
 
     save_path = cfg.DIR.EVAL_PATH
-    chckpt_path = cfg.DIR.CHECK_PT_PATH + str(
-        checknum)
+    chckpt_path = cfg.DIR.CHECK_PT_PATH + str(checknum)
 
     fcr_agan_model = FCR_aGAN(
         batch_size=batch_size,
@@ -165,7 +164,7 @@ def evaluate(batch_size, checknum, mode):
             batch_tsdf_test = tsdf_test[i * batch_size:i * batch_size +
                                         batch_size]
 
-            batch_generated_voxs, batch_generated_tsdf_seg, batch_generated_complete, batch_enc_Z = sess.run(
+            batch_generated_voxs, batch_depth_seg_gen, batch_complete_gen, batch_enc_Z = sess.run(
                 [
                     vox_gen_decode_tf, tsdf_seg_tf, vox_gen_complete_tf,
                     z_enc_tf
@@ -188,17 +187,17 @@ def evaluate(batch_size, checknum, mode):
 
             if i == 0:
                 generated_voxs = batch_generated_voxs
-                generated_tsdf_seg = batch_generated_tsdf_seg
-                generated_complete = batch_generated_complete
+                depth_seg_gen = batch_depth_seg_gen
+                complete_gen = batch_complete_gen
                 refined_voxs = batch_refined_vox
                 enc_Z = batch_enc_Z
             else:
                 generated_voxs = np.concatenate(
                     (generated_voxs, batch_generated_voxs), axis=0)
-                generated_tsdf_seg = np.concatenate(
-                    (generated_tsdf_seg, batch_generated_tsdf_seg), axis=0)
-                generated_complete = np.concatenate(
-                    (generated_complete, batch_generated_complete), axis=0)
+                depth_seg_gen = np.concatenate(
+                    (depth_seg_gen, batch_depth_seg_gen), axis=0)
+                complete_gen = np.concatenate(
+                    (complete_gen, batch_complete_gen), axis=0)
                 refined_voxs = np.concatenate(
                     (refined_voxs, batch_refined_vox), axis=0)
                 enc_Z = np.concatenate((enc_Z, batch_enc_Z), axis=0)
@@ -207,49 +206,66 @@ def evaluate(batch_size, checknum, mode):
 
         # real
         np.save(save_path + '/real.npy', voxel_test)
-        tsdf_models_cat = tsdf_test
-        np.save(save_path + '/tsdf.npy', tsdf_models_cat)
-        surface = np.multiply(voxel_test, np.squeeze(tsdf_models_cat))
-        np.save(save_path + '/surface.npy', surface)
+        np.save(save_path + '/tsdf.npy', tsdf_test)
+        depth_seg_real = np.multiply(voxel_test, np.squeeze(tsdf_test))
+        np.save(save_path + '/depth_seg_real.npy', depth_seg_real)
+        complete_real = [
+            voxel_test[:, :, :, :, 0],
+            np.sum(voxel_test[:, :, :, :, 1:-1], axis=-1)
+        ]
+        np.save(save_path + '/complete_real.npy', complete_real)
 
         # decoded
         np.save(save_path + '/recons.npy', np.argmax(generated_voxs, axis=4))
         np.save(save_path + '/recons_refine.npy',
                 np.argmax(refined_voxs, axis=4))
-        np.save(save_path + '/depth_segment.npy',
-                np.argmax(generated_tsdf_seg, axis=4))
-        np.save(save_path + '/complete.npy',
-                np.argmax(generated_complete, axis=4))
+        np.save(save_path + '/depth_seg_gen.npy',
+                np.argmax(depth_seg_gen, axis=4))
+        np.save(save_path + '/complete_gen.npy', np.argmax(
+            complete_gen, axis=4))
         np.save(save_path + '/decode_z.npy', enc_Z)
 
         print("voxels saved")
 
         # numerical evalutation
         on_real = onehot(voxel_test, vox_shape[3])
-        on_depth = onehot(surface, vox_shape[3])
+        on_depth_seg_real = onehot(depth_seg_real, vox_shape[3])
+        on_complete_real = onehot(complete_real, 2)
         on_recons = onehot(np.argmax(generated_voxs, axis=4), vox_shape[3])
-        on_gens_dep = onehot(
+        on_depth_seg_gen = onehot(
             np.multiply(
-                np.argmax(generated_tsdf_seg, axis=4), np.squeeze(
-                    tsdf_test, -1)), vox_shape[3])
+                np.argmax(depth_seg_gen, axis=4), np.squeeze(tsdf_test, -1)),
+            vox_shape[3])
+        on_complete_gen = onehot(np.argmax(complete_gen, axis=4))
 
         # calc_IoU
+        # completion
+        IoU_class = np.zeros([2 + 1])
+        AP_class = np.zeros([2 + 1])
+        IoU_class, AP_class = IoU_AP_calc(
+            on_complete_real, on_complete_gen, complete_gen, IoU_class,
+            AP_class, [vox_shape[0], vox_shape[1], vox_shape[2], 2])
+        np.savetxt(save_path + '/IoU_complete.csv', IoU_class, delimiter=",")
+        np.savetxt(save_path + '/AP_complete.csv', AP_class, delimiter=",")
+
+        # depth segmentation
         IoU_class = np.zeros([vox_shape[3] + 1])
         AP_class = np.zeros([vox_shape[3] + 1])
-        IoU_class, AP_class = IoU_AP_calc(on_depth, on_gens_dep,
-                                          generated_voxs, IoU_class, AP_class,
-                                          vox_shape)
+        IoU_class, AP_class = IoU_AP_calc(
+            on_depth_seg_real, on_depth_seg_gen,
+            np.multiply(depth_seg_gen, tsdf_test), IoU_class, AP_class,
+            vox_shape)
+        np.savetxt(save_path + '/IoU_depth.csv', IoU_class, delimiter=",")
+        np.savetxt(save_path + '/AP_depth.csv', AP_class, delimiter=",")
+
+        # volume segmentation
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, generated_voxs,
                                           IoU_class, AP_class, vox_shape)
         np.savetxt(save_path + '/IoU.csv', IoU_class, delimiter=",")
         np.savetxt(save_path + '/AP.csv', AP_class, delimiter=",")
 
-        # refine
-        # calc_IoU
+        # refine for volume segmentation
         on_recons = onehot(np.argmax(refined_voxs, axis=4), vox_shape[3])
-
-        IoU_class = np.zeros([vox_shape[3] + 1])
-        AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs,
                                           IoU_class, AP_class, vox_shape)
         np.savetxt(save_path + '/IoU_refine.csv', IoU_class, delimiter=",")
