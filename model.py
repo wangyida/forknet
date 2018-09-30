@@ -323,6 +323,12 @@ class FCR_aGAN():
         self.discrim_bn_b4 = tf.Variable(
             tf.zeros([1]), name='discrim_vox_bn_b4')
 
+        # patch GAN
+        self.discrim_W5 = tf.Variable(
+            tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
+            name='discrim_vox_W5')
+
+        """ original GAN
         self.discrim_W5 = tf.Variable(
             tf.random_normal([
                 self.start_vox_size[0] * self.start_vox_size[1] *
@@ -330,6 +336,7 @@ class FCR_aGAN():
             ],
                              stddev=0.02),
             name='discrim_vox_W5')
+        """
 
         # parameters of codes discriminator
         self.cod_W1 = tf.Variable(
@@ -560,11 +567,6 @@ class FCR_aGAN():
         inverse = tf.div(
             tf.ones_like(batch_mean_vox_real),
             tf.add(batch_mean_vox_real, tf.ones_like(batch_mean_vox_real)))
-        # inverse ranges from 1/1.1 to 10
-        """
-        inverse = tf.div(
-            tf.ones_like(batch_mean_vox_real), batch_mean_vox_real + 0.1)
-        """
         weight = inverse * tf.div(1., tf.reduce_sum(inverse))
         recons_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -579,16 +581,25 @@ class FCR_aGAN():
             vox_real[:, :, :, :, 0],
             tf.reduce_sum(vox_real[:, :, :, :, 1:], 4)
         ], 4)
+        """
         vox_real_complete = softmax(
             vox_real_complete, self.batch_size,
             [self.vox_shape[0], self.vox_shape[1], self.vox_shape[2], 2])
+        """
+
         vox_gen_complete = tf.stack([
             vox_gen_decode[:, :, :, :, 0],
             tf.reduce_sum(vox_gen_decode[:, :, :, :, 1:], 4)
         ], 4)
+        """
         vox_gen_complete = softmax(
             vox_gen_complete, self.batch_size,
             [self.vox_shape[0], self.vox_shape[1], self.vox_shape[2], 2])
+        """
+        # inverse ranges from 1/1.1 to 10
+        inverse = tf.div(
+            tf.ones_like(batch_mean_vox_real), batch_mean_vox_real + 0.1)
+        weight = inverse * tf.div(1., tf.reduce_sum(inverse))
         complete_loss = -tf.reduce_sum(
             self.lamda_gamma * vox_real_complete *
             tf.log(1e-6 + vox_gen_complete) + (1 - self.lamda_gamma) *
@@ -815,9 +826,19 @@ class FCR_aGAN():
                     padding='SAME'),
                 g=self.discrim_bn_g4,
                 b=self.discrim_bn_b4))
+        # this is added for patch GAN
+        h4 = tf.nn.conv3d(
+                h4,
+                self.discrim_W5,
+                strides=self.stride,
+                dilations=self.dilations,
+                padding='SAME')
+        # end of patch GAN
         h4 = tf.reshape(h4, [self.batch_size, -1])
+        """ original final layer
         h5 = tf.matmul(h4, self.discrim_W5)
         y = tf.nn.sigmoid(h5)
+        """
 
         return h4
 

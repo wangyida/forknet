@@ -139,7 +139,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
-            for s in np.arange(4):
+            for s in np.arange(2):
                 _, recons_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
                     [
                         train_op_encode, recons_loss_tf, code_encode_loss_tf,

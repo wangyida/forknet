@@ -27,7 +27,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
         IoU_calc = np.round(IoU_element / count, 3)
         IoU_class[class_n] = IoU_calc
         print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
-    print 'IoU on average = ' + str(
+    print 'IoU category-wise = ' + str(
         np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3])
 
     on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
@@ -42,7 +42,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
             count += 1
     IoU_calc = np.round(IoU_element / count, 3)
     IoU_class[vox_shape[3]] = IoU_calc
-    print 'IoU all =' + str(IoU_calc)
+    print 'IoU space-wise =' + str(IoU_calc)
 
     #calc_AP
     for class_n in np.arange(vox_shape[3]):
@@ -58,7 +58,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
         AP = np.round(AP / num, 3)
         AP_class[class_n] = AP
         print 'AP class ' + str(class_n) + '=' + str(AP)
-    print 'AP average = ' + str(
+    print 'AP category-wise = ' + str(
         np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3])
 
     on_recons_ = generated_voxs[:, :, :, :, 1:vox_shape[3]]
@@ -72,7 +72,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
 
     AP = np.round(AP / num, 3)
     AP_class[vox_shape[3]] = AP
-    print 'AP all =' + str(AP)
+    print 'AP space-wise =' + str(AP)
     return IoU_class, AP_class
 
 
@@ -209,10 +209,7 @@ def evaluate(batch_size, checknum, mode):
         np.save(save_path + '/tsdf.npy', tsdf_test)
         depth_seg_real = np.multiply(voxel_test, np.squeeze(tsdf_test))
         np.save(save_path + '/depth_seg_real.npy', depth_seg_real)
-        complete_real = [
-            voxel_test[:, :, :, :, 0],
-            np.sum(voxel_test[:, :, :, :, 1:-1], axis=-1)
-        ]
+        complete_real = np.clip(voxel_test, 0, 1)
         np.save(save_path + '/complete_real.npy', complete_real)
 
         # decoded
@@ -236,12 +233,13 @@ def evaluate(batch_size, checknum, mode):
             np.multiply(
                 np.argmax(depth_seg_gen, axis=4), np.squeeze(tsdf_test, -1)),
             vox_shape[3])
-        on_complete_gen = onehot(np.argmax(complete_gen, axis=4))
+        on_complete_gen = onehot(np.argmax(complete_gen, axis=4), 2)
 
         # calc_IoU
         # completion
         IoU_class = np.zeros([2 + 1])
         AP_class = np.zeros([2 + 1])
+        print("completion")
         IoU_class, AP_class = IoU_AP_calc(
             on_complete_real, on_complete_gen, complete_gen, IoU_class,
             AP_class, [vox_shape[0], vox_shape[1], vox_shape[2], 2])
@@ -249,6 +247,7 @@ def evaluate(batch_size, checknum, mode):
         np.savetxt(save_path + '/AP_complete.csv', AP_class, delimiter=",")
 
         # depth segmentation
+        print("depth segmentation")
         IoU_class = np.zeros([vox_shape[3] + 1])
         AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(
@@ -259,12 +258,14 @@ def evaluate(batch_size, checknum, mode):
         np.savetxt(save_path + '/AP_depth.csv', AP_class, delimiter=",")
 
         # volume segmentation
+        print("volume segmentation")
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, generated_voxs,
                                           IoU_class, AP_class, vox_shape)
         np.savetxt(save_path + '/IoU.csv', IoU_class, delimiter=",")
         np.savetxt(save_path + '/AP.csv', AP_class, delimiter=",")
 
         # refine for volume segmentation
+        print("refined volume segmentation")
         on_recons = onehot(np.argmax(refined_voxs, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs,
                                           IoU_class, AP_class, vox_shape)
