@@ -3,6 +3,7 @@ Checkpt
 log
 train_vox*
 tsdf.bin
+tsdf.ply
 .DS*
-vis_samples*
+vis_*
 eval

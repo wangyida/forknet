@@ -50,20 +50,23 @@ void Integrate(float * cam_K, float * cam2base, float * depth_im,
 
     float diff = depth_val - pt_cam_z;
 
-    if (diff <= -trunc_margin)
+    int volume_idx = pt_grid_z * voxel_grid_dim_y * voxel_grid_dim_x + pt_grid_y * voxel_grid_dim_x + pt_grid_x;
+    if (diff <= -trunc_margin) {
+      // This is for labeling the -1 space (occluded space)
+      voxel_grid_TSDF[volume_idx] = 2.0f;
       continue;
+    }
 
     // Integrate
-    int volume_idx = pt_grid_z * voxel_grid_dim_y * voxel_grid_dim_x + pt_grid_y * voxel_grid_dim_x + pt_grid_x;
     float dist = fmin(1.0f, diff / trunc_margin);
     float weight_old = voxel_grid_weight[volume_idx];
     float weight_new = weight_old + 1.0f;
     voxel_grid_weight[volume_idx] = weight_new;
     voxel_grid_TSDF[volume_idx] = (voxel_grid_TSDF[volume_idx] * weight_old + dist) / weight_new;
     if (std::abs(voxel_grid_TSDF[volume_idx]) < 0.1) {
-      voxel_grid_TSDF[volume_idx] = 0.0f;
-    } else {
       voxel_grid_TSDF[volume_idx] = 1.0f;
+    } else {
+      voxel_grid_TSDF[volume_idx] = 0.0f;
     }
   }
 }
@@ -135,7 +138,7 @@ int main(int argc, char * argv[]) {
   float * voxel_grid_TSDF = new float[voxel_grid_dim_x * voxel_grid_dim_y * voxel_grid_dim_z];
   float * voxel_grid_weight = new float[voxel_grid_dim_x * voxel_grid_dim_y * voxel_grid_dim_z];
   for (int i = 0; i < voxel_grid_dim_x * voxel_grid_dim_y * voxel_grid_dim_z; ++i)
-    voxel_grid_TSDF[i] = 1.0f;
+    voxel_grid_TSDF[i] = 0.0f;
   memset(voxel_grid_weight, 0, sizeof(float) * voxel_grid_dim_x * voxel_grid_dim_y * voxel_grid_dim_z);
 
   // Load variables to GPU memory
@@ -195,11 +198,10 @@ int main(int argc, char * argv[]) {
   // Compute surface points from TSDF voxel grid and save to point cloud .ply file
   // std::cout << "Saving surface point cloud (tsdf.ply)..." << std::endl;
   
-  /*
   SaveVoxelGrid2SurfacePointCloud("tsdf.ply", voxel_grid_dim_x, voxel_grid_dim_y, voxel_grid_dim_z,
                                   voxel_size, voxel_grid_origin_x, voxel_grid_origin_y, voxel_grid_origin_z,
                                   voxel_grid_TSDF, voxel_grid_weight, 0.1f, 0.0f);
-  */
+
   // Save TSDF voxel grid and its parameters to disk as binary file (float array)
   // std::cout << "Saving TSDF voxel grid values to disk (tsdf.bin)..." << std::endl;
   std::string voxel_grid_saveto_path = "tsdf.bin";
@@ -218,7 +220,7 @@ int main(int argc, char * argv[]) {
   outFile.write((char*)&trunc_margin, sizeof(float));
   */
   for (int i = 0; i < voxel_grid_dim_x * voxel_grid_dim_y * voxel_grid_dim_z; ++i) {
-    outFile.write((char*)&voxel_grid_TSDF[i], sizeof(uint));
+    outFile.write((char*)&voxel_grid_TSDF[i], sizeof(float));
   }
   outFile.close();
 
