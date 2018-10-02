@@ -81,6 +81,7 @@ def evaluate(batch_size, checknum, mode):
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
+    tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -156,6 +157,7 @@ def evaluate(batch_size, checknum, mode):
         # evaluation for reconstruction
         voxel_test, tsdf_test, num = scene_model_id_pair_test(
             dataset_portion=cfg.TRAIN.DATASET_PORTION)
+        voxel_test = np.multiply(voxel_test, np.where(tsdf_test > 0, 1, 0))
         num = voxel_test.shape[0]
         print("test voxels loaded")
         for i in np.arange(int(num / batch_size)):
@@ -207,7 +209,7 @@ def evaluate(batch_size, checknum, mode):
         # real
         np.save(save_path + '/real.npy', voxel_test)
         np.save(save_path + '/tsdf.npy', tsdf_test)
-        depth_seg_real = np.multiply(voxel_test, np.squeeze(tsdf_test))
+        depth_seg_real = np.multiply(voxel_test, np.where(tsdf_test == 1, 1, 0))
         np.save(save_path + '/depth_seg_real.npy', depth_seg_real)
         complete_real = np.clip(voxel_test, 0, 1)
         np.save(save_path + '/complete_real.npy', complete_real)
@@ -231,7 +233,7 @@ def evaluate(batch_size, checknum, mode):
         on_recons = onehot(np.argmax(generated_voxs, axis=4), vox_shape[3])
         on_depth_seg_gen = onehot(
             np.multiply(
-                np.argmax(depth_seg_gen, axis=4), np.squeeze(tsdf_test, -1)),
+                np.argmax(depth_seg_gen, axis=4), np.where(tsdf_test == 1, 1, 0)),
             vox_shape[3])
         on_complete_gen = onehot(np.argmax(complete_gen, axis=4), 2)
 
@@ -252,7 +254,7 @@ def evaluate(batch_size, checknum, mode):
         AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(
             on_depth_seg_real, on_depth_seg_gen,
-            np.multiply(depth_seg_gen, tsdf_test), IoU_class, AP_class,
+            np.multiply(depth_seg_gen, np.where(tsdf_test == 1, 1, 0)), IoU_class, AP_class,
             vox_shape)
         np.savetxt(save_path + '/IoU_depth.csv', IoU_class, delimiter=",")
         np.savetxt(save_path + '/AP_depth.csv', AP_class, delimiter=",")

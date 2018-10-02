@@ -99,7 +99,7 @@ class FCR_aGAN():
     def __init__(self,
                  batch_size=16,
                  vox_shape=[80, 48, 80, 12],
-                 dep_shape=[320, 240, 1],
+                 tsdf_shape=[80, 48, 80, 3],
                  dim_z=16,
                  dim=[512, 256, 128, 64, 12],
                  start_vox_size=[5, 3, 5],
@@ -113,6 +113,7 @@ class FCR_aGAN():
 
         self.batch_size = batch_size
         self.vox_shape = vox_shape
+        self.tsdf_shape = tsdf_shape
         self.n_class = vox_shape[3]
         self.dim_z = dim_z
         self.dim_W1 = dim[0]
@@ -213,7 +214,7 @@ class FCR_aGAN():
         # parameters of encoder
         self.encode_W1 = tf.Variable(
             tf.random_normal([
-                self.kernel5[0], self.kernel5[1], self.kernel5[2], 1,
+                self.kernel5[0], self.kernel5[1], self.kernel5[2], self.tsdf_shape[-1],
                 self.dim_W4
             ],
                              stddev=0.02),
@@ -514,7 +515,7 @@ class FCR_aGAN():
             self.batch_size, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2]
         ])
-        tsdf_real = tf.one_hot(tsdf_real_, 1)
+        tsdf_real = tf.one_hot(tsdf_real_, self.tsdf_shape[-1])
         tsdf_real = tf.cast(tsdf_real, tf.float32)
         # tsdf--end
         Z = tf.placeholder(tf.float32, [

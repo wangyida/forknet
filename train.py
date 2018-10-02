@@ -21,6 +21,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
+    tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -131,7 +132,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             batch_voxel = data_process.get_voxel(db_inds)
             batch_voxel_train = batch_voxel
             batch_tsdf = data_process.get_tsdf(db_inds)
-            batch_tsdf_train = np.expand_dims(batch_tsdf, axis=-1)
+            batch_tsdf_train = batch_tsdf
+            batch_voxel_train = np.multiply(batch_voxel, np.where(batch_tsdf_train > 0, 1, 0))
             lr = learning_rate(cfg.LEARNING_RATE_V, ite)
 
             batch_z_var = np.random.normal(

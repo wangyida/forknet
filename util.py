@@ -123,7 +123,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
     batch_voxel = np.zeros((num_models, n_vox[0], n_vox[1], n_vox[2]),
                            dtype=np.float32)
-    batch_tsdf = np.zeros((num_models, n_vox[0], n_vox[1], n_vox[2], 1),
+    batch_tsdf = np.zeros((num_models, n_vox[0], n_vox[1], n_vox[2]),
                           dtype=np.float32)
 
     for i in np.arange(num_models):
@@ -143,8 +143,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
         tsdf_fn = cfg.DIR.TSDF_PATH % (model_id)
         tsdf_data = np.load(tsdf_fn)
-        batch_tsdf[i, :, :, :, :] = np.reshape(
-            tsdf_data, [n_vox[0], n_vox[1], n_vox[2], 1])
+        batch_tsdf[i, :, :, :] = tsdf_data
 
     return batch_voxel, batch_tsdf, num_models
 
