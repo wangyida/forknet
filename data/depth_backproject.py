@@ -75,7 +75,7 @@ def process_data(file_depth, dir_voxel, dir_ply):
     tsdf_bin_path = tsdf_bin_path.replace(".png", ".bin")
     if os.path.isfile(camera_origin):
         call([
-            "./depth-tsdf/demo", camera_intrinsic, camera_origin,
+            "./depth-tsdf/back-project", camera_intrinsic, camera_origin,
             camera_extrinsic, img_path, tsdf_bin_path
         ])
         voxel = bin2array(file=tsdf_bin_path)

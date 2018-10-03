@@ -2,8 +2,8 @@ Checkpt
 *.pyc
 log
 train_vox*
-tsdf.bin
-tsdf.ply
+*.bin
+*.ply
 .DS*
 vis_*
 eval
