@@ -214,8 +214,8 @@ class FCR_aGAN():
         # parameters of encoder
         self.encode_W1 = tf.Variable(
             tf.random_normal([
-                self.kernel5[0], self.kernel5[1], self.kernel5[2], self.tsdf_shape[-1],
-                self.dim_W4
+                self.kernel5[0], self.kernel5[1], self.kernel5[2],
+                self.tsdf_shape[-1], self.dim_W4
             ],
                              stddev=0.02),
             name='encode_W1')
@@ -328,7 +328,6 @@ class FCR_aGAN():
         self.discrim_W5 = tf.Variable(
             tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
             name='discrim_vox_W5')
-
         """ original GAN
         self.discrim_W5 = tf.Variable(
             tf.random_normal([
@@ -611,14 +610,17 @@ class FCR_aGAN():
             tf.reduce_sum(complete_loss * weight_complete, 1))
 
         # depth segmentation
-        tsdf_seg = tf.multiply(vox_gen_decode, tsdf_real)
+        tsdf_seg = tf.multiply(vox_gen_decode,
+                               tf.expand_dims(tsdf_real[:, :, :, :, 1], -1))
         tsdf_seg_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * tf.multiply(vox_real, tsdf_real) *
-                    tf.log(1e-6 + tsdf_seg) + (1 - self.lamda_gamma) *
-                    (1 - tf.multiply(vox_real, tsdf_real)) *
-                    tf.log(1e-6 + 1 - tsdf_seg), [1, 2, 3]) * weight, 1))
+                    self.lamda_gamma * tf.multiply(
+                        vox_real, tf.expand_dims(tsdf_real[:, :, :, :, 1], -1))
+                    * tf.log(1e-6 + tsdf_seg) + (1 - self.lamda_gamma) *
+                    (1 - tf.multiply(
+                        vox_real, tf.expand_dims(tsdf_real[:, :, :, :, 1], -1))
+                     ) * tf.log(1e-6 + 1 - tsdf_seg), [1, 2, 3]) * weight, 1))
 
         recons_loss = recons_loss + complete_loss + tsdf_seg_loss
 
@@ -737,7 +739,7 @@ class FCR_aGAN():
         return Z, Z_encode, vox_real_, vox_gen, vox_gen_decode, vox_gen_complete, tsdf_seg, vox_after_refine_dec, vox_after_refine_gen,\
         recons_loss, code_encode_loss, gen_loss, discrim_loss, recons_loss_refine, gen_loss_refine, discrim_loss_refine,\
         cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
-        tsdf_real
+        tsdf_real_
 
     def encoder(self, vox):
 
@@ -829,11 +831,11 @@ class FCR_aGAN():
                 b=self.discrim_bn_b4))
         # this is added for patch GAN
         h4 = tf.nn.conv3d(
-                h4,
-                self.discrim_W5,
-                strides=self.stride,
-                dilations=self.dilations,
-                padding='SAME')
+            h4,
+            self.discrim_W5,
+            strides=self.stride,
+            dilations=self.dilations,
+            padding='SAME')
         # end of patch GAN
         h4 = tf.reshape(h4, [self.batch_size, -1])
         """ original final layer

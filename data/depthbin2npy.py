@@ -14,7 +14,6 @@ from astropy.nddata.utils import block_reduce
 
 
 def bin2array(file):
-    start_time = time.time()
     with open(file, 'r') as f:
         float_size = 4
         uint_size = 4

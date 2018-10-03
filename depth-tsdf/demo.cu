@@ -63,7 +63,7 @@ void Integrate(float * cam_K, float * cam2base, float * depth_im,
     float weight_new = weight_old + 1.0f;
     voxel_grid_weight[volume_idx] = weight_new;
     voxel_grid_TSDF[volume_idx] = (voxel_grid_TSDF[volume_idx] * weight_old + dist) / weight_new;
-    if (std::abs(voxel_grid_TSDF[volume_idx]) < 0.1) {
+    if (std::abs(voxel_grid_TSDF[volume_idx]) < trunc_margin) {
       voxel_grid_TSDF[volume_idx] = 1.0f;
     } else {
       voxel_grid_TSDF[volume_idx] = 0.0f;
@@ -77,9 +77,10 @@ int main(int argc, char * argv[]) {
 
   // Location of camera intrinsic file
   std::string cam_K_file = "data/camera-intrinsics.txt";
-  std::string cam_origin_file = "data/rgbd-frames-yida/origin/asdfasdfasdf.txt";
-  std::string base2world_file = "data/rgbd-frames-yida/pose/asdfasdfasdf.txt";
-  std::string depth_im_file = "data/rgbd-frames-yida/depth/asdfasdfasdf.png";
+  std::string cam_origin_file = "data/rgbd-frames-yida/origin/.txt";
+  std::string base2world_file = "data/rgbd-frames-yida/pose/.txt";
+  std::string depth_im_file = "data/rgbd-frames-yida/depth/.png";
+  std::string tsdf_bin_file = "tsdf.bin";
 
   // Location of folder containing RGB-D frames and camera pose files
   // std::string data_path = "data/rgbd-frames-yida";
@@ -101,7 +102,7 @@ int main(int argc, char * argv[]) {
   float voxel_grid_origin_y = 50.88f;
   float voxel_grid_origin_z = 0.05f;
   float voxel_size = 0.06f;
-  float trunc_margin = 0.9f;//voxel_size * 5;
+  float trunc_margin = 0.1f;//voxel_size * 5;
   int voxel_grid_dim_x = 80;
   int voxel_grid_dim_y = 80;
   int voxel_grid_dim_z = 48;
@@ -112,6 +113,7 @@ int main(int argc, char * argv[]) {
     cam_origin_file = argv[2];
     base2world_file = argv[3];
     depth_im_file = argv[4];
+    tsdf_bin_file = argv[5];
   }
 
   // Read camera intrinsics
@@ -204,8 +206,7 @@ int main(int argc, char * argv[]) {
 
   // Save TSDF voxel grid and its parameters to disk as binary file (float array)
   // std::cout << "Saving TSDF voxel grid values to disk (tsdf.bin)..." << std::endl;
-  std::string voxel_grid_saveto_path = "tsdf.bin";
-  std::ofstream outFile(voxel_grid_saveto_path, std::ios::binary | std::ios::out);
+  std::ofstream outFile(tsdf_bin_file, std::ios::binary | std::ios::out);
   /*
   float voxel_grid_dim_xf = (float) voxel_grid_dim_x;
   float voxel_grid_dim_yf = (float) voxel_grid_dim_y;

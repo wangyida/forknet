@@ -209,19 +209,21 @@ def evaluate(batch_size, checknum, mode):
         # real
         np.save(save_path + '/real.npy', voxel_test)
         np.save(save_path + '/tsdf.npy', tsdf_test)
-        depth_seg_real = np.multiply(voxel_test, np.where(tsdf_test == 1, 1, 0))
+        depth_seg_real = np.multiply(voxel_test, np.where(
+            tsdf_test == 1, 1, 0))
         np.save(save_path + '/depth_seg_real.npy', depth_seg_real)
         complete_real = np.clip(voxel_test, 0, 1)
         np.save(save_path + '/complete_real.npy', complete_real)
 
         # decoded
-        np.save(save_path + '/recons.npy', np.argmax(generated_voxs, axis=4))
+        np.save(save_path + '/recons.npy', 
+                np.argmax(generated_voxs, axis=4))
         np.save(save_path + '/recons_refine.npy',
                 np.argmax(refined_voxs, axis=4))
         np.save(save_path + '/depth_seg_gen.npy',
                 np.argmax(depth_seg_gen, axis=4))
-        np.save(save_path + '/complete_gen.npy', np.argmax(
-            complete_gen, axis=4))
+        np.save(save_path + '/complete_gen.npy', 
+                np.argmax(complete_gen, axis=4))
         np.save(save_path + '/decode_z.npy', enc_Z)
 
         print("voxels saved")
@@ -233,8 +235,8 @@ def evaluate(batch_size, checknum, mode):
         on_recons = onehot(np.argmax(generated_voxs, axis=4), vox_shape[3])
         on_depth_seg_gen = onehot(
             np.multiply(
-                np.argmax(depth_seg_gen, axis=4), np.where(tsdf_test == 1, 1, 0)),
-            vox_shape[3])
+                np.argmax(depth_seg_gen, axis=4), np.where(
+                    tsdf_test == 1, 1, 0)), vox_shape[3])
         on_complete_gen = onehot(np.argmax(complete_gen, axis=4), 2)
 
         # calc_IoU
@@ -254,8 +256,9 @@ def evaluate(batch_size, checknum, mode):
         AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(
             on_depth_seg_real, on_depth_seg_gen,
-            np.multiply(depth_seg_gen, np.where(tsdf_test == 1, 1, 0)), IoU_class, AP_class,
-            vox_shape)
+            np.multiply(depth_seg_gen,
+                        np.expand_dims(np.where(tsdf_test == 1, 1, 0), -1)),
+            IoU_class, AP_class, vox_shape)
         np.savetxt(save_path + '/IoU_depth.csv', IoU_class, delimiter=",")
         np.savetxt(save_path + '/AP_depth.csv', AP_class, delimiter=",")
 

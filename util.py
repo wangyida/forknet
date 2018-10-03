@@ -100,7 +100,7 @@ def scene_model_id_pair(dataset_portion=[]):
 
 def scene_model_id_pair_test(dataset_portion=[]):
 
-    amount_of_test_sample = 200
+    amount_of_test_sample = 100
 
     scene_name_pair = []  # full path of the objs files
 
@@ -133,16 +133,10 @@ def scene_model_id_pair_test(dataset_portion=[]):
         voxel_data = np.load(voxel_fn)
 
         batch_voxel[i, :, :, :] = voxel_data
-        # depth--start
-        """
-        depth_fn = cfg.DIR.DEPTH_PATH % (model_id)
-        depth_data = np.load(depth_fn)
-        batch_depth[i, :, :, :] = np.reshape(depth_data, [n_dep[0], n_dep[1], n_dep[2]])
-        """
-        # depth--end
 
         tsdf_fn = cfg.DIR.TSDF_PATH % (model_id)
         tsdf_data = np.load(tsdf_fn)
+
         batch_tsdf[i, :, :, :] = tsdf_data
 
     return batch_voxel, batch_tsdf, num_models

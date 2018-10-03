@@ -1,32 +1,24 @@
+import os.path
 from struct import *
 from subprocess import call
 import numpy as np
 # I considered using multiprocessing package, but I find this code version is fine.
 # Welcome for your version with multiprocessing to make the reading faster.
 # from joblib import Parallel, delayed
-import multiprocessing
 import time
 from scipy import misc
 import os
 import argparse
 from progressbar import ProgressBar
 from skimage.measure import block_reduce
+from numba import autojit, prange
 
 
 def bin2array(file):
-    start_time = time.time()
     with open(file, 'r') as f:
         float_size = 4
         uint_size = 4
         total_count = 0
-        """
-            cor = f.read(float_size*3)
-            cors = unpack('fff', cor)
-            print("cors is {}",cors)
-            tmp = f.read(float_size*5)
-            tmps = unpack('f'*5, tmp)
-            print("cams %16f",cams)
-            """
         vox = f.read()
         numC = len(vox) / float_size
         # print('numC is {}'.format(numC))
@@ -41,12 +33,6 @@ def bin2array(file):
     f.close()
     # print "reading voxel file takes {} mins".format((time.time()-start_time)/60)
     return checkVox
-
-
-def png2array(file):
-    image = misc.imread(file)
-    image = misc.imresize(image, 50)
-    return image
 
 
 class ScanFile(object):
@@ -78,25 +64,35 @@ class ScanFile(object):
         return subdir_list
 
 
-def process_data(file_depth):
+def process_data(file_depth, dir_voxel, dir_ply):
+
     img_path = file_depth
     camera_intrinsic = "./depth-tsdf/data/camera-intrinsics.txt"
     camera_extrinsic = img_path.replace("depth_real_png", "camera")
     camera_extrinsic = camera_extrinsic.replace(".png", ".txt")
     camera_origin = camera_extrinsic.replace("camera", "origin")
-    call([
-        "./depth-tsdf/demo", camera_intrinsic, camera_origin, camera_extrinsic,
-        img_path
-    ])
-    voxel = bin2array(file="./tsdf.bin")
-    name_start = int(img_path.rfind('/'))
-    name_end = int(img_path.find('.', name_start))
-    # save numpy
-    np.save(dir_voxel + img_path[name_start:name_end] + '.npy', voxel)
+    tsdf_bin_path = img_path.replace("depth_real_png", "depth_tsdf_bin")
+    tsdf_bin_path = tsdf_bin_path.replace(".png", ".bin")
+    if os.path.isfile(camera_origin):
+        call([
+            "./depth-tsdf/demo", camera_intrinsic, camera_origin,
+            camera_extrinsic, img_path, tsdf_bin_path
+        ])
+        voxel = bin2array(file=tsdf_bin_path)
+        name_start = int(img_path.rfind('/'))
+        name_end = int(img_path.find('.', name_start))
 
-    # save ply
-    call(
-        ["cp", "./tsdf.ply", dir_ply + img_path[name_start:name_end] + '.ply'])
+        # save numpy
+        np.save(dir_voxel + img_path[name_start:name_end] + '.npy', voxel)
+
+        # save ply
+        call([
+            "cp", "./tsdf.ply",
+            dir_ply + img_path[name_start:name_end] + '.ply'
+        ])
+        # call(["rm -rf", tsdf_bin_path])
+    else:
+        print(camera_origin, 'does not exist.')
 
 
 if __name__ == "__main__":
@@ -133,7 +129,7 @@ if __name__ == "__main__":
     scan_png = ScanFile(directory=dir_src, postfix='.png')
     files_png = scan_png.scan_files()
 
-    # making directories
+    # make directories
     try:
         os.stat(dir_voxel)
     except:
@@ -153,4 +149,4 @@ if __name__ == "__main__":
     Parallel(n_jobs=num_cores)(delayed(process_data(file_depth)) for file_depth in pbar(files_png))
     """
     for file_depth in pbar(files_png):
-        process_data(file_depth)
+        process_data(file_depth, dir_voxel, dir_ply)

@@ -18,7 +18,7 @@ flags.DEFINE_integer(
     "batch_size", cfg.CONST.BATCH_SIZE,
     "The size of batch voxels [100]")  #batch_size = cfg.CONST.BATCH_SIZE
 flags.DEFINE_integer(
-    "batch_size_test", cfg.CONST.BATCH_SIZE,
+    "batch_size_test", cfg.CONST.BATCH_SIZE_TEST,
     "The size of batch voxels [100]")  #batch_size = cfg.CONST.BATCH_SIZE
 
 flags.DEFINE_boolean("middle_start", False,

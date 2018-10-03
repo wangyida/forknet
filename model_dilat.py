@@ -239,8 +239,8 @@ class FCR_aGAN():
 
         self.encode_W3 = tf.Variable(
             tf.random_normal([
-                self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3*2,
-                self.dim_W2
+                self.kernel3[0], self.kernel3[1], self.kernel3[2],
+                self.dim_W3 * 2, self.dim_W2
             ],
                              stddev=0.02),
             name='encode_W3')
@@ -252,8 +252,8 @@ class FCR_aGAN():
 
         self.encode_W4 = tf.Variable(
             tf.random_normal([
-                self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2*2,
-                self.dim_W1
+                self.kernel2[0], self.kernel2[1], self.kernel2[2],
+                self.dim_W2 * 2, self.dim_W1
             ],
                              stddev=0.02),
             name='encode_W4')
@@ -327,7 +327,6 @@ class FCR_aGAN():
         self.discrim_W5 = tf.Variable(
             tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
             name='discrim_vox_W5')
-
         """ original GAN
         self.discrim_W5 = tf.Variable(
             tf.random_normal([
@@ -759,27 +758,25 @@ class FCR_aGAN():
                 b=self.encode_bn_b2,
                 batch_size=self.batch_size))
         temp1 = lrelu(
-                tf.layers.conv3d(
-                    inputs=h2,
-                    filters=128,
-                    kernel_size=(3,3,3),
-                    strides=(1,1,1),
-                    dilation_rate=(2,2,2),
-                    padding='SAME')
-                )
+            tf.layers.conv3d(
+                inputs=h2,
+                filters=128,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                dilation_rate=(2, 2, 2),
+                padding='SAME'))
         temp2 = lrelu(
-                tf.layers.conv3d(
-                    inputs=temp1,
-                    filters=128,
-                    kernel_size=(3,3,3),
-                    strides=(1,1,1),
-                    dilation_rate=(2,2,2),
-                    padding='SAME')
-                )
+            tf.layers.conv3d(
+                inputs=temp1,
+                filters=128,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                dilation_rate=(2, 2, 2),
+                padding='SAME'))
         h3 = lrelu(
             batchnormalize(
                 tf.nn.conv3d(
-                    tf.concat([h2, temp1+temp2], -1),
+                    tf.concat([h2, temp1 + temp2], -1),
                     self.encode_W3,
                     strides=self.stride,
                     dilations=self.dilations,
@@ -788,27 +785,25 @@ class FCR_aGAN():
                 b=self.encode_bn_b3,
                 batch_size=self.batch_size))
         temp3 = lrelu(
-                tf.layers.conv3d(
-                    inputs=h3,
-                    filters=256,
-                    kernel_size=(3,3,3),
-                    strides=(1,1,1),
-                    dilation_rate=(2,2,2),
-                    padding='SAME')
-                )
+            tf.layers.conv3d(
+                inputs=h3,
+                filters=256,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                dilation_rate=(2, 2, 2),
+                padding='SAME'))
         temp4 = lrelu(
-                tf.layers.conv3d(
-                    inputs=temp3,
-                    filters=256,
-                    kernel_size=(3,3,3),
-                    strides=(1,1,1),
-                    dilation_rate=(2,2,2),
-                    padding='SAME')
-                )
+            tf.layers.conv3d(
+                inputs=temp3,
+                filters=256,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                dilation_rate=(2, 2, 2),
+                padding='SAME'))
         h4 = lrelu(
             batchnormalize(
                 tf.nn.conv3d(
-                    tf.concat([h3, temp3+temp4], -1),
+                    tf.concat([h3, temp3 + temp4], -1),
                     self.encode_W4,
                     strides=self.stride,
                     dilations=self.dilations,
@@ -864,11 +859,11 @@ class FCR_aGAN():
                 b=self.discrim_bn_b4))
         # this is added for patch GAN
         h4 = tf.nn.conv3d(
-                h4,
-                self.discrim_W5,
-                strides=self.stride,
-                dilations=self.dilations,
-                padding='SAME')
+            h4,
+            self.discrim_W5,
+            strides=self.stride,
+            dilations=self.dilations,
+            padding='SAME')
         # end of patch GAN
         h4 = tf.reshape(h4, [self.batch_size, -1])
         """ original final layer
