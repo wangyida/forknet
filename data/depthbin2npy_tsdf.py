@@ -142,11 +142,15 @@ if __name__ == "__main__":
 
     # save voxel as npy files
     pbar = ProgressBar()
-    """
+    # parallel processing for samples
     from joblib import Parallel, delayed
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
-    Parallel(n_jobs=num_cores)(delayed(process_data(file_depth)) for file_depth in pbar(files_png))
+    Parallel(n_jobs=num_cores)(
+        delayed(process_data)(file_depth, dir_voxel, dir_ply)
+        for file_depth in pbar(files_png))
+    # below is the normal procedure for processing
     """
     for file_depth in pbar(files_png):
         process_data(file_depth, dir_voxel, dir_ply)
+    """
