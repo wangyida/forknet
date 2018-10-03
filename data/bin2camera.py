@@ -12,9 +12,8 @@ from progressbar import ProgressBar
 from skimage.measure import block_reduce
 
 
-def bin2camera(file):
-    start_time = time.time()
-    with open(file, 'r') as f:
+def bin2camera(file_bin, dir_camera, dir_origin):
+    with open(file_bin, 'r') as f:
         float_size = 4
         uint_size = 4
         total_count = 0
@@ -27,9 +26,12 @@ def bin2camera(file):
         cams = np.reshape(cams, [4, 4])
         # cams = np.linalg.inv(cams)
         # print("cams %16f",cams)
-    f.close()
     # print "reading voxel file takes {} mins".format((time.time()-start_time)/60)
-    return cams, cors
+    name_start = int(file_bin.rfind('/'))
+    name_end = int(file_bin.find('.', name_start))
+    np.savetxt(dir_camera + file_bin[name_start:name_end] + '.txt', cams)
+    np.savetxt(dir_origin + file_bin[name_start:name_end] + '.txt', cors)
+    f.close()
 
 
 class ScanFile(object):
@@ -102,10 +104,11 @@ if __name__ == "__main__":
         os.mkdir(dir_origin)
 
     # save voxel as npy files
-    pbar1 = ProgressBar()
-    for file_bin in pbar1(files_bin):
-        cams, cors = bin2camera(file=file_bin)
-        name_start = int(file_bin.rfind('/'))
-        name_end = int(file_bin.find('.', name_start))
-        np.savetxt(dir_camera + file_bin[name_start:name_end] + '.txt', cams)
-        np.savetxt(dir_origin + file_bin[name_start:name_end] + '.txt', cors)
+    pbar = ProgressBar()
+    # parallel processing for samples
+    from joblib import Parallel, delayed
+    import multiprocessing
+    num_cores = multiprocessing.cpu_count()
+    Parallel(n_jobs=num_cores)(delayed(bin2camera)(
+        file_bin=file_bin, dir_camera=dir_camera, dir_origin=dir_origin)
+                               for file_bin in pbar(files_bin))
