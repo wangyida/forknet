@@ -91,6 +91,8 @@ def evaluate(batch_size, checknum, mode):
     refine_ch = cfg.NET.REFINE_CH
     refine_kernel = cfg.NET.REFINE_KERNEL
     refiner = cfg.NET.REFINER
+    discriminative = cfg.NET.DISCRIMINATIVE
+    generative = cfg.NET.GENERATIVE
 
     save_path = cfg.DIR.EVAL_PATH
     chckpt_path = cfg.DIR.CHECK_PT_PATH + str(checknum)
@@ -106,7 +108,8 @@ def evaluate(batch_size, checknum, mode):
         dilations=dilations,
         refine_ch=refine_ch,
         refine_kernel=refine_kernel,
-        refiner=refiner)
+        refiner=refiner,
+        generative=generative)
 
 
     Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\

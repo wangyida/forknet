@@ -32,6 +32,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     refine_ch = cfg.NET.REFINE_CH
     refine_kernel = cfg.NET.REFINE_KERNEL
     refiner = cfg.NET.REFINER
+    discriminative = cfg.NET.DISCRIMINATIVE
+    generative = cfg.NET.GENERATIVE
+    variational = cfg.NET.VARIATIONAL
 
     refine_start = cfg.SWITCHING_ITE
 
@@ -46,7 +49,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         dilations=dilations,
         refine_ch=refine_ch,
         refine_kernel=refine_kernel,
-        refiner=refiner)
+        refiner=refiner,
+        generative=generative)
 
     Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
     recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, discrim_loss_refine_tf,\
@@ -165,24 +169,28 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         lr_VAE: lr
                     },
                 )
-            _, discrim_loss_val, cost_discrim_val = sess.run(
-                [train_op_discrim, discrim_loss_tf, cost_discrim_tf],
-                feed_dict={
-                    Z_tf: batch_z_var,
-                    vox_tf: batch_voxel_train,
-                    tsdf_tf: batch_tsdf_train
-                },
-            )
 
-            _, cost_code_val, z_enc_val = sess.run(
-                [train_op_code, cost_code_tf, z_enc_tf],
-                feed_dict={
-                    Z_tf: batch_z_var,
-                    vox_tf: batch_voxel_train,
-                    tsdf_tf: batch_tsdf_train,
-                    lr_VAE: lr
-                },
-            )
+            if discriminative:    
+                _, discrim_loss_val, cost_discrim_val = sess.run(
+                    [train_op_discrim, discrim_loss_tf, cost_discrim_tf],
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        vox_tf: batch_voxel_train,
+                        tsdf_tf: batch_tsdf_train
+                    },
+                )
+
+            if variational:
+                _, cost_code_val, z_enc_val = sess.run(
+                    [train_op_code, cost_code_tf, z_enc_tf],
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        vox_tf: batch_voxel_train,
+                        tsdf_tf: batch_tsdf_train,
+                        lr_VAE: lr
+                    },
+                )
+
             summary = sess.run(
                 summary_tf,
                 feed_dict={
@@ -250,17 +258,18 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     },
                 )
 
-                _, discrim_loss_refine_val, cost_discrim_ref_val, summary = sess.run(
-                    [
-                        train_op_discrim_refine, discrim_loss_refine_tf,
-                        cost_discrim_ref_tf, summary_tf
-                    ],
-                    feed_dict={
-                        Z_tf: batch_z_var,
-                        vox_tf: batch_voxel_train,
-                        tsdf_tf: batch_tsdf_train
-                    },
-                )
+                if discriminative:
+                    _, discrim_loss_refine_val, cost_discrim_ref_val, summary = sess.run(
+                        [
+                            train_op_discrim_refine, discrim_loss_refine_tf,
+                            cost_discrim_ref_tf, summary_tf
+                        ],
+                        feed_dict={
+                            Z_tf: batch_z_var,
+                            vox_tf: batch_voxel_train,
+                            tsdf_tf: batch_tsdf_train
+                        },
+                    )
 
                 print 'reconstruction loss:', recons_loss_val
                 print ' recons refine loss:', recons_loss_refine_val

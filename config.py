@@ -29,6 +29,9 @@ __C.NET.DILATIONS = [1, 1, 1, 1, 1]
 __C.NET.REFINE_CH = 32
 __C.NET.REFINE_KERNEL = 3
 __C.NET.REFINER = 'sscnet'
+__C.NET.DISCRIMINATIVE = True
+__C.NET.GENERATIVE = True
+__C.NET.VARIATIONAL = True
 
 #
 # Directories
@@ -39,7 +42,7 @@ __C.DIR = edict()
 # __C.DIR.VOXEL_PATH = '../3D-FCR-alphaGAN/Scenevox/%s/%s'
 __C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/voxel_semantic_npy'
 __C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/voxel_semantic_npy/%s'
-__C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/depth_tsdf_npy/%s'
+__C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/depth_tsdf_occluded_npy/%s'
 __C.DIR.CHECK_POINT_PATH = '/media/wangyida/SSD2T/models/depvox-gan'
 __C.DIR.CHECK_PT_PATH = '/media/wangyida/SSD2T/models/depvox-gan/checkpoint'
 __C.DIR.TRAIN_OBJ_PATH = './train_vox'
