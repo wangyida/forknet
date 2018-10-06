@@ -141,204 +141,404 @@ class FCR_aGAN():
         self.refiner = refiner
         self.generative = generative
 
-        # parameters of generator
-        self.gen_W1 = tf.Variable(
+        # parameters of generator y
+        self.gen_y_W1 = tf.Variable(
             tf.random_normal([
                 self.dim_z * self.start_vox_size[0] * self.start_vox_size[1] *
                 self.start_vox_size[2], self.dim_W1 * self.start_vox_size[0] *
                 self.start_vox_size[1] * self.start_vox_size[2]
             ],
                              stddev=0.02),
-            name='gen_W1')
-        self.gen_bn_g1 = tf.Variable(
+            name='gen_y_W1')
+        self.gen_y_bn_g1 = tf.Variable(
             tf.random_normal([
                 self.dim_W1 * self.start_vox_size[0] * self.start_vox_size[1] *
                 self.start_vox_size[2]
             ],
                              mean=1.0,
                              stddev=0.02),
-            name='gen_bn_g1')
-        self.gen_bn_b1 = tf.Variable(
+            name='gen_y_bn_g1')
+        self.gen_y_bn_b1 = tf.Variable(
             tf.zeros([
                 self.dim_W1 * self.start_vox_size[0] * self.start_vox_size[1] *
                 self.start_vox_size[2]
             ]),
-            name='gen_bn_b1')
+            name='gen_y_bn_b1')
 
-        self.gen_W2 = tf.Variable(
+        self.gen_y_W2 = tf.Variable(
             tf.random_normal([
                 self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
                 self.dim_W1
             ],
                              stddev=0.02),
-            name='gen_W2')
-        self.gen_bn_g2 = tf.Variable(
+            name='gen_y_W2')
+        self.gen_y_bn_g2 = tf.Variable(
             tf.random_normal([self.dim_W2], mean=1.0, stddev=0.02),
-            name='gen_bn_g2')
-        self.gen_bn_b2 = tf.Variable(tf.zeros([self.dim_W2]), name='gen_bn_b2')
+            name='gen_y_bn_g2')
+        self.gen_y_bn_b2 = tf.Variable(tf.zeros([self.dim_W2]), name='gen_y_bn_b2')
 
-        self.gen_W3 = tf.Variable(
+        self.gen_y_W3 = tf.Variable(
             tf.random_normal([
                 self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
                 self.dim_W2
             ],
                              stddev=0.02),
-            name='gen_W3')
-        self.gen_bn_g3 = tf.Variable(
+            name='gen_y_W3')
+        self.gen_y_bn_g3 = tf.Variable(
             tf.random_normal([self.dim_W3], mean=1.0, stddev=0.02),
-            name='gen_bn_g3')
-        self.gen_bn_b3 = tf.Variable(tf.zeros([self.dim_W3]), name='gen_bn_b3')
+            name='gen_y_bn_g3')
+        self.gen_y_bn_b3 = tf.Variable(tf.zeros([self.dim_W3]), name='gen_y_bn_b3')
 
-        self.gen_W4 = tf.Variable(
+        self.gen_y_W4 = tf.Variable(
             tf.random_normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
                 self.dim_W3
             ],
                              stddev=0.02),
-            name='gen_W4')
-        self.gen_bn_g4 = tf.Variable(
+            name='gen_y_W4')
+        self.gen_y_bn_g4 = tf.Variable(
             tf.random_normal([self.dim_W4], mean=1.0, stddev=0.02),
-            name='gen_bn_g4')
-        self.gen_bn_b4 = tf.Variable(tf.zeros([self.dim_W4]), name='gen_bn_b4')
+            name='gen_y_bn_g4')
+        self.gen_y_bn_b4 = tf.Variable(tf.zeros([self.dim_W4]), name='gen_y_bn_b4')
 
-        self.gen_W5 = tf.Variable(
+        self.gen_y_W5 = tf.Variable(
             tf.random_normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2], self.dim_W5,
                 self.dim_W4
             ],
                              stddev=0.02),
-            name='gen_W5')
-        self.gen_bn_g5 = tf.Variable(
+            name='gen_y_W5')
+        self.gen_y_bn_g5 = tf.Variable(
             tf.random_normal([self.dim_W5], mean=1.0, stddev=0.02),
-            name='gen_bn_g5')
-        self.gen_bn_b5 = tf.Variable(tf.zeros([self.dim_W5]), name='gen_bn_b5')
+            name='gen_y_bn_g5')
+        self.gen_y_bn_b5 = tf.Variable(tf.zeros([self.dim_W5]), name='gen_y_bn_b5')
 
-        # parameters of encoder
-        self.encode_W1 = tf.Variable(
+        # parameters of encoder x
+        self.encode_x_W1 = tf.Variable(
             tf.random_normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2],
                 self.tsdf_shape[-1], self.dim_W4
             ],
                              stddev=0.02),
-            name='encode_W1')
-        self.encode_bn_g1 = tf.Variable(
+            name='encode_x_W1')
+        self.encode_x_bn_g1 = tf.Variable(
             tf.random_normal([self.dim_W4], mean=1.0, stddev=0.02),
-            name='encode_bn_g1')
-        self.encode_bn_b1 = tf.Variable(
-            tf.zeros([self.dim_W4]), name='encode_bn_b1')
+            name='encode_x_bn_g1')
+        self.encode_x_bn_b1 = tf.Variable(
+            tf.zeros([self.dim_W4]), name='encode_x_bn_b1')
 
-        self.encode_W2 = tf.Variable(
+        self.encode_x_W2 = tf.Variable(
             tf.random_normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
                 self.dim_W3
             ],
                              stddev=0.02),
-            name='encode_W2')
-        self.encode_bn_g2 = tf.Variable(
+            name='encode_x_W2')
+        self.encode_x_bn_g2 = tf.Variable(
             tf.random_normal([self.dim_W3], mean=1.0, stddev=0.02),
-            name='encode_bn_g2')
-        self.encode_bn_b2 = tf.Variable(
-            tf.zeros([self.dim_W3]), name='encode_bn_b2')
+            name='encode_x_bn_g2')
+        self.encode_x_bn_b2 = tf.Variable(
+            tf.zeros([self.dim_W3]), name='encode_x_bn_b2')
 
-        self.encode_W3 = tf.Variable(
+        self.encode_x_W3 = tf.Variable(
             tf.random_normal([
                 self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
                 self.dim_W2
             ],
                              stddev=0.02),
-            name='encode_W3')
-        self.encode_bn_g3 = tf.Variable(
+            name='encode_x_W3')
+        self.encode_x_bn_g3 = tf.Variable(
             tf.random_normal([self.dim_W2], mean=1.0, stddev=0.02),
-            name='encode_bn_g3')
-        self.encode_bn_b3 = tf.Variable(
-            tf.zeros([self.dim_W2]), name='encode_bn_b3')
+            name='encode_x_bn_g3')
+        self.encode_x_bn_b3 = tf.Variable(
+            tf.zeros([self.dim_W2]), name='encode_x_bn_b3')
 
-        self.encode_W4 = tf.Variable(
+        self.encode_x_W4 = tf.Variable(
             tf.random_normal([
                 self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
                 self.dim_W1
             ],
                              stddev=0.02),
-            name='encode_W4')
-        self.encode_bn_g4 = tf.Variable(
+            name='encode_x_W4')
+        self.encode_x_bn_g4 = tf.Variable(
             tf.random_normal([self.dim_W1], mean=1.0, stddev=0.02),
-            name='encode_bn_g4')
-        self.encode_bn_b4 = tf.Variable(
-            tf.zeros([self.dim_W1]), name='encode_bn_b4')
+            name='encode_x_bn_g4')
+        self.encode_x_bn_b4 = tf.Variable(
+            tf.zeros([self.dim_W1]), name='encode_x_bn_b4')
 
-        self.encode_W5 = tf.Variable(
+        self.encode_x_W5 = tf.Variable(
             tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
-            name='encode_W5')
-        self.encode_W5_sigma = tf.Variable(
+            name='encode_x_W5')
+        self.encode_x_W5_sigma = tf.Variable(
             tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
-            name='encode_W5_sigma')
+            name='encode_x_W5_sigma')
 
-        self.discrim_W1 = tf.Variable(
+        self.discrim_y_W1 = tf.Variable(
             tf.random_normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2], self.dim_W5,
                 self.dim_W4
             ],
                              stddev=0.02),
-            name='discrim_vox_W1')
-        self.discrim_bn_g1 = tf.Variable(
+            name='discrim_y_vox_W1')
+        self.discrim_y_bn_g1 = tf.Variable(
             tf.random_normal([1], mean=1.0, stddev=0.02),
-            name='discrim_vox_bn_g1')
-        self.discrim_bn_b1 = tf.Variable(
-            tf.zeros([1]), name='discrim_vox_bn_b1')
+            name='discrim_y_vox_bn_g1')
+        self.discrim_y_bn_b1 = tf.Variable(
+            tf.zeros([1]), name='discrim_y_vox_bn_b1')
 
         # parameters of discriminator
-        self.discrim_W2 = tf.Variable(
+        self.discrim_y_W2 = tf.Variable(
             tf.random_normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
                 self.dim_W3
             ],
                              stddev=0.02),
-            name='discrim_vox_W2')
-        self.discrim_bn_g2 = tf.Variable(
+            name='discrim_y_vox_W2')
+        self.discrim_y_bn_g2 = tf.Variable(
             tf.random_normal([1], mean=1.0, stddev=0.02),
-            name='discrim_vox_bn_g2')
-        self.discrim_bn_b2 = tf.Variable(
-            tf.zeros([1]), name='discrim_vox_bn_b2')
+            name='discrim_y_vox_bn_g2')
+        self.discrim_y_bn_b2 = tf.Variable(
+            tf.zeros([1]), name='discrim_y_vox_bn_b2')
 
-        self.discrim_W3 = tf.Variable(
+        self.discrim_y_W3 = tf.Variable(
             tf.random_normal([
                 self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
                 self.dim_W2
             ],
                              stddev=0.02),
-            name='discrim_vox_W3')
-        self.discrim_bn_g3 = tf.Variable(
+            name='discrim_y_vox_W3')
+        self.discrim_y_bn_g3 = tf.Variable(
             tf.random_normal([1], mean=1.0, stddev=0.02),
-            name='discrim_vox_bn_g3')
-        self.discrim_bn_b3 = tf.Variable(
-            tf.zeros([1]), name='discrim_vox_bn_b3')
+            name='discrim_y_vox_bn_g3')
+        self.discrim_y_bn_b3 = tf.Variable(
+            tf.zeros([1]), name='discrim_y_vox_bn_b3')
 
-        self.discrim_W4 = tf.Variable(
+        self.discrim_y_W4 = tf.Variable(
             tf.random_normal([
                 self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
                 self.dim_W1
             ],
                              stddev=0.02),
-            name='discrim_vox_W4')
-        self.discrim_bn_g4 = tf.Variable(
+            name='discrim_y_vox_W4')
+        self.discrim_y_bn_g4 = tf.Variable(
             tf.random_normal([1], mean=1.0, stddev=0.02),
-            name='discrim_vox_bn_g4')
-        self.discrim_bn_b4 = tf.Variable(
-            tf.zeros([1]), name='discrim_vox_bn_b4')
+            name='discrim_y_vox_bn_g4')
+        self.discrim_y_bn_b4 = tf.Variable(
+            tf.zeros([1]), name='discrim_y_vox_bn_b4')
 
         # patch GAN
-        self.discrim_W5 = tf.Variable(
+        self.discrim_y_W5 = tf.Variable(
             tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
-            name='discrim_vox_W5')
+            name='discrim_y_vox_W5')
         """ original GAN
-        self.discrim_W5 = tf.Variable(
+        self.discrim_y_W5 = tf.Variable(
             tf.random_normal([
                 self.start_vox_size[0] * self.start_vox_size[1] *
                 self.start_vox_size[2] * self.dim_W1, 1
             ],
                              stddev=0.02),
-            name='discrim_vox_W5')
+            name='discrim_y_vox_W5')
         """
+
+        # parameters of generator x
+        self.gen_x_W1 = tf.Variable(
+            tf.random_normal([
+                self.dim_z * self.start_vox_size[0] * self.start_vox_size[1] *
+                self.start_vox_size[2], self.dim_W1 * self.start_vox_size[0] *
+                self.start_vox_size[1] * self.start_vox_size[2]
+            ],
+                             stddev=0.02),
+            name='gen_x_W1')
+        self.gen_x_bn_g1 = tf.Variable(
+            tf.random_normal([
+                self.dim_W1 * self.start_vox_size[0] * self.start_vox_size[1] *
+                self.start_vox_size[2]
+            ],
+                             mean=1.0,
+                             stddev=0.02),
+            name='gen_x_bn_g1')
+        self.gen_x_bn_b1 = tf.Variable(
+            tf.zeros([
+                self.dim_W1 * self.start_vox_size[0] * self.start_vox_size[1] *
+                self.start_vox_size[2]
+            ]),
+            name='gen_x_bn_b1')
+
+        self.gen_x_W2 = tf.Variable(
+            tf.random_normal([
+                self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
+                self.dim_W1
+            ],
+                             stddev=0.02),
+            name='gen_x_W2')
+        self.gen_x_bn_g2 = tf.Variable(
+            tf.random_normal([self.dim_W2], mean=1.0, stddev=0.02),
+            name='gen_x_bn_g2')
+        self.gen_x_bn_b2 = tf.Variable(tf.zeros([self.dim_W2]), name='gen_x_bn_b2')
+
+        self.gen_x_W3 = tf.Variable(
+            tf.random_normal([
+                self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
+                self.dim_W2
+            ],
+                             stddev=0.02),
+            name='gen_x_W3')
+        self.gen_x_bn_g3 = tf.Variable(
+            tf.random_normal([self.dim_W3], mean=1.0, stddev=0.02),
+            name='gen_x_bn_g3')
+        self.gen_x_bn_b3 = tf.Variable(tf.zeros([self.dim_W3]), name='gen_x_bn_b3')
+
+        self.gen_x_W4 = tf.Variable(
+            tf.random_normal([
+                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
+                self.dim_W3
+            ],
+                             stddev=0.02),
+            name='gen_x_W4')
+        self.gen_x_bn_g4 = tf.Variable(
+            tf.random_normal([self.dim_W4], mean=1.0, stddev=0.02),
+            name='gen_x_bn_g4')
+        self.gen_x_bn_b4 = tf.Variable(tf.zeros([self.dim_W4]), name='gen_x_bn_b4')
+
+        self.gen_x_W5 = tf.Variable(
+            tf.random_normal([
+                self.kernel5[0], self.kernel5[1], self.kernel5[2], self.tsdf_shape[-1],
+                self.dim_W4
+            ],
+                             stddev=0.02),
+            name='gen_x_W5')
+        self.gen_x_bn_g5 = tf.Variable(
+            tf.random_normal([self.tsdf_shape[-1]], mean=1.0, stddev=0.02),
+            name='gen_x_bn_g5')
+        self.gen_x_bn_b5 = tf.Variable(tf.zeros([self.tsdf_shape[-1]]), name='gen_x_bn_b5')
+
+        # parameters of encoder y
+        self.encode_y_W1 = tf.Variable(
+            tf.random_normal([
+                self.kernel5[0], self.kernel5[1], self.kernel5[2],
+                self.vox_shape[-1], self.dim_W4
+            ],
+                             stddev=0.02),
+            name='encode_y_W1')
+        self.encode_y_bn_g1 = tf.Variable(
+            tf.random_normal([self.dim_W4], mean=1.0, stddev=0.02),
+            name='encode_y_bn_g1')
+        self.encode_y_bn_b1 = tf.Variable(
+            tf.zeros([self.dim_W4]), name='encode_y_bn_b1')
+
+        self.encode_y_W2 = tf.Variable(
+            tf.random_normal([
+                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
+                self.dim_W3
+            ],
+                             stddev=0.02),
+            name='encode_y_W2')
+        self.encode_y_bn_g2 = tf.Variable(
+            tf.random_normal([self.dim_W3], mean=1.0, stddev=0.02),
+            name='encode_y_bn_g2')
+        self.encode_y_bn_b2 = tf.Variable(
+            tf.zeros([self.dim_W3]), name='encode_y_bn_b2')
+
+        self.encode_y_W3 = tf.Variable(
+            tf.random_normal([
+                self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
+                self.dim_W2
+            ],
+                             stddev=0.02),
+            name='encode_y_W3')
+        self.encode_y_bn_g3 = tf.Variable(
+            tf.random_normal([self.dim_W2], mean=1.0, stddev=0.02),
+            name='encode_y_bn_g3')
+        self.encode_y_bn_b3 = tf.Variable(
+            tf.zeros([self.dim_W2]), name='encode_y_bn_b3')
+
+        self.encode_y_W4 = tf.Variable(
+            tf.random_normal([
+                self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
+                self.dim_W1
+            ],
+                             stddev=0.02),
+            name='encode_y_W4')
+        self.encode_y_bn_g4 = tf.Variable(
+            tf.random_normal([self.dim_W1], mean=1.0, stddev=0.02),
+            name='encode_y_bn_g4')
+        self.encode_y_bn_b4 = tf.Variable(
+            tf.zeros([self.dim_W1]), name='encode_y_bn_b4')
+
+        self.encode_y_W5 = tf.Variable(
+            tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
+            name='encode_y_W5')
+        self.encode_y_W5_sigma = tf.Variable(
+            tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
+            name='encode_y_W5_sigma')
+
+        self.discrim_x_W1 = tf.Variable(
+            tf.random_normal([
+                self.kernel5[0], self.kernel5[1], self.kernel5[2], self.tsdf_shape[-1],
+                self.dim_W4
+            ],
+                             stddev=0.02),
+            name='discrim_x_vox_W1')
+        self.discrim_x_bn_g1 = tf.Variable(
+            tf.random_normal([1], mean=1.0, stddev=0.02),
+            name='discrim_x_vox_bn_g1')
+        self.discrim_x_bn_b1 = tf.Variable(
+            tf.zeros([1]), name='discrim_x_vox_bn_b1')
+
+        # parameters of discriminator
+        self.discrim_x_W2 = tf.Variable(
+            tf.random_normal([
+                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
+                self.dim_W3
+            ],
+                             stddev=0.02),
+            name='discrim_x_vox_W2')
+        self.discrim_x_bn_g2 = tf.Variable(
+            tf.random_normal([1], mean=1.0, stddev=0.02),
+            name='discrim_x_vox_bn_g2')
+        self.discrim_x_bn_b2 = tf.Variable(
+            tf.zeros([1]), name='discrim_x_vox_bn_b2')
+
+        self.discrim_x_W3 = tf.Variable(
+            tf.random_normal([
+                self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
+                self.dim_W2
+            ],
+                             stddev=0.02),
+            name='discrim_x_vox_W3')
+        self.discrim_x_bn_g3 = tf.Variable(
+            tf.random_normal([1], mean=1.0, stddev=0.02),
+            name='discrim_x_vox_bn_g3')
+        self.discrim_x_bn_b3 = tf.Variable(
+            tf.zeros([1]), name='discrim_x_vox_bn_b3')
+
+        self.discrim_x_W4 = tf.Variable(
+            tf.random_normal([
+                self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
+                self.dim_W1
+            ],
+                             stddev=0.02),
+            name='discrim_x_vox_W4')
+        self.discrim_x_bn_g4 = tf.Variable(
+            tf.random_normal([1], mean=1.0, stddev=0.02),
+            name='discrim_x_vox_bn_g4')
+        self.discrim_x_bn_b4 = tf.Variable(
+            tf.zeros([1]), name='discrim_x_vox_bn_b4')
+
+        # patch GAN
+        self.discrim_x_W5 = tf.Variable(
+            tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
+            name='discrim_x_vox_W5')
+        """ original GAN
+        self.discrim_x_W5 = tf.Variable(
+            tf.random_normal([
+                self.start_vox_size[0] * self.start_vox_size[1] *
+                self.start_vox_size[2] * self.dim_W1, 1
+            ],
+                             stddev=0.02),
+            name='discrim_x_vox_W5')
+        """
+
 
         # parameters of codes discriminator
         self.cod_W1 = tf.Variable(
@@ -527,7 +727,7 @@ class FCR_aGAN():
         filter_bilateral = tf.placeholder(
             tf.float32, [self.batch_size] +
             [self.vox_shape[0], self.vox_shape[1], self.vox_shape[2], 4])
-        mean, sigma = self.encoder(tsdf_real)
+        mean, sigma = self.encoder_x(tsdf_real)
         Z_encode = mean
 
         # code_discriminator
@@ -562,7 +762,7 @@ class FCR_aGAN():
                             labels=tf.zeros_like(h_code_encode)), [1]))
 
         # reconstruction
-        vox_gen_decode = self.generate(Z_encode)
+        vox_gen_decode = self.generate_y(Z_encode)
         batch_mean_vox_real = tf.reduce_mean(vox_real, [0, 1, 2, 3])
         # batch_mean_vox_real ranges from 0 to 1
         # inverse ranges from 0.5 to 1
@@ -646,7 +846,7 @@ class FCR_aGAN():
                     [1, 2, 3]) * weight, 1))
 
         # GAN_generate
-        vox_gen = self.generate(Z)
+        vox_gen = self.generate_y(Z)
         vox_after_refine_gen = tf.placeholder(tf.float32, [
             self.batch_size, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2], self.n_class
@@ -747,12 +947,12 @@ class FCR_aGAN():
         cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
         tsdf_real_
 
-    def encoder(self, vox):
+    def encoder_x(self, vox):
 
         h1 = lrelu(
             tf.nn.conv3d(
                 vox,
-                self.encode_W1,
+                self.encode_x_W1,
                 strides=self.stride,
                 dilations=self.dilations,
                 padding='SAME'))
@@ -760,48 +960,48 @@ class FCR_aGAN():
             batchnormalize(
                 tf.nn.conv3d(
                     h1,
-                    self.encode_W2,
+                    self.encode_x_W2,
                     strides=self.stride,
                     dilations=self.dilations,
                     padding='SAME'),
-                g=self.encode_bn_g2,
-                b=self.encode_bn_b2,
+                g=self.encode_x_bn_g2,
+                b=self.encode_x_bn_b2,
                 batch_size=self.batch_size))
         h3 = lrelu(
             batchnormalize(
                 tf.nn.conv3d(
                     h2,
-                    self.encode_W3,
+                    self.encode_x_W3,
                     strides=self.stride,
                     dilations=self.dilations,
                     padding='SAME'),
-                g=self.encode_bn_g3,
-                b=self.encode_bn_b3,
+                g=self.encode_x_bn_g3,
+                b=self.encode_x_bn_b3,
                 batch_size=self.batch_size))
         h4 = lrelu(
             batchnormalize(
                 tf.nn.conv3d(
                     h3,
-                    self.encode_W4,
+                    self.encode_x_W4,
                     strides=self.stride,
                     dilations=self.dilations,
                     padding='SAME'),
-                g=self.encode_bn_g4,
-                b=self.encode_bn_b4,
+                g=self.encode_x_bn_g4,
+                b=self.encode_x_bn_b4,
                 batch_size=self.batch_size))
         h5 = tf.nn.conv3d(
-            h4, self.encode_W5, strides=[1, 1, 1, 1, 1], padding='SAME')
+            h4, self.encode_x_W5, strides=[1, 1, 1, 1, 1], padding='SAME')
         h5_sigma = tf.nn.conv3d(
-            h4, self.encode_W5_sigma, strides=[1, 1, 1, 1, 1], padding='SAME')
+            h4, self.encode_x_W5_sigma, strides=[1, 1, 1, 1, 1], padding='SAME')
 
         return h5, h5_sigma
 
-    def discriminate(self, vox):
+    def discriminate_y(self, vox):
 
         h1 = lrelu(
             tf.nn.conv3d(
                 vox,
-                self.discrim_W1,
+                self.discrim_y_W1,
                 strides=self.stride,
                 dilations=self.dilations,
                 padding='SAME'))
@@ -809,43 +1009,43 @@ class FCR_aGAN():
             layernormalize(
                 tf.nn.conv3d(
                     h1,
-                    self.discrim_W2,
+                    self.discrim_y_W2,
                     strides=self.stride,
                     dilations=self.dilations,
                     padding='SAME'),
-                g=self.discrim_bn_g2,
-                b=self.discrim_bn_b2))
+                g=self.discrim_y_bn_g2,
+                b=self.discrim_y_bn_b2))
         h3 = lrelu(
             layernormalize(
                 tf.nn.conv3d(
                     h2,
-                    self.discrim_W3,
+                    self.discrim_y_W3,
                     strides=self.stride,
                     dilations=self.dilations,
                     padding='SAME'),
-                g=self.discrim_bn_g3,
-                b=self.discrim_bn_b3))
+                g=self.discrim_y_bn_g3,
+                b=self.discrim_y_bn_b3))
         h4 = lrelu(
             layernormalize(
                 tf.nn.conv3d(
                     h3,
-                    self.discrim_W4,
+                    self.discrim_y_W4,
                     strides=self.stride,
                     dilations=self.dilations,
                     padding='SAME'),
-                g=self.discrim_bn_g4,
-                b=self.discrim_bn_b4))
+                g=self.discrim_y_bn_g4,
+                b=self.discrim_y_bn_b4))
         # this is added for patch GAN
         h4 = tf.nn.conv3d(
             h4,
-            self.discrim_W5,
+            self.discrim_y_W5,
             strides=self.stride,
             dilations=self.dilations,
             padding='SAME')
         # end of patch GAN
         h4 = tf.reshape(h4, [self.batch_size, -1])
         """ original final layer
-        h5 = tf.matmul(h4, self.discrim_W5)
+        h5 = tf.matmul(h4, self.discrim_y_W5)
         y = tf.nn.sigmoid(h5)
         """
 
@@ -865,13 +1065,13 @@ class FCR_aGAN():
         y = tf.nn.sigmoid(h3)
         return h3
 
-    def generate(self, Z):
+    def generate_y(self, Z):
 
         Z_ = tf.reshape(Z, [self.batch_size, -1])
         h1 = tf.nn.relu(
             batchnormalize(
-                tf.matmul(Z_, self.gen_W1), g=self.gen_bn_g1,
-                b=self.gen_bn_b1))
+                tf.matmul(Z_, self.gen_y_W1), g=self.gen_y_bn_g1,
+                b=self.gen_y_bn_b1))
         h1 = tf.reshape(h1, [
             self.batch_size, self.start_vox_size[0], self.start_vox_size[1],
             self.start_vox_size[2], self.dim_W1
@@ -883,12 +1083,12 @@ class FCR_aGAN():
             self.dim_W2
         ]
         h2 = tf.nn.conv3d_transpose(
-            h1, self.gen_W2, output_shape=output_shape_l2, strides=self.stride)
+            h1, self.gen_y_W2, output_shape=output_shape_l2, strides=self.stride)
         h2 = tf.nn.relu(
             batchnormalize(
                 h2,
-                g=self.gen_bn_g2,
-                b=self.gen_bn_b2,
+                g=self.gen_y_bn_g2,
+                b=self.gen_y_bn_b2,
                 batch_size=self.batch_size))
 
         vox_size_l3 = self.start_vox_size * 4
@@ -897,12 +1097,12 @@ class FCR_aGAN():
             self.dim_W3
         ]
         h3 = tf.nn.conv3d_transpose(
-            h2, self.gen_W3, output_shape=output_shape_l3, strides=self.stride)
+            h2, self.gen_y_W3, output_shape=output_shape_l3, strides=self.stride)
         h3 = tf.nn.relu(
             batchnormalize(
                 h3,
-                g=self.gen_bn_g3,
-                b=self.gen_bn_b3,
+                g=self.gen_y_bn_g3,
+                b=self.gen_y_bn_b3,
                 batch_size=self.batch_size))
 
         vox_size_l4 = self.start_vox_size * 8
@@ -911,12 +1111,12 @@ class FCR_aGAN():
             self.dim_W4
         ]
         h4 = tf.nn.conv3d_transpose(
-            h3, self.gen_W4, output_shape=output_shape_l4, strides=self.stride)
+            h3, self.gen_y_W4, output_shape=output_shape_l4, strides=self.stride)
         h4 = tf.nn.relu(
             batchnormalize(
                 h4,
-                g=self.gen_bn_g4,
-                b=self.gen_bn_b4,
+                g=self.gen_y_bn_g4,
+                b=self.gen_y_bn_b4,
                 batch_size=self.batch_size))
 
         vox_size_l5 = self.start_vox_size * 16
@@ -925,7 +1125,7 @@ class FCR_aGAN():
             self.dim_W5
         ]
         h5 = tf.nn.conv3d_transpose(
-            h4, self.gen_W5, output_shape=output_shape_l5, strides=self.stride)
+            h4, self.gen_y_W5, output_shape=output_shape_l5, strides=self.stride)
 
         x = softmax(h5, self.batch_size, self.vox_shape)
         return x
@@ -1339,8 +1539,8 @@ class FCR_aGAN():
         Z_ = tf.reshape(Z, [visual_size, -1])
         h1 = tf.nn.relu(
             batchnormalize(
-                tf.matmul(Z_, self.gen_W1), g=self.gen_bn_g1,
-                b=self.gen_bn_b1))
+                tf.matmul(Z_, self.gen_y_W1), g=self.gen_y_bn_g1,
+                b=self.gen_y_bn_b1))
         h1 = tf.reshape(h1, [
             visual_size, self.start_vox_size[0], self.start_vox_size[1],
             self.start_vox_size[2], self.dim_W1
@@ -1352,12 +1552,12 @@ class FCR_aGAN():
             self.dim_W2
         ]
         h2 = tf.nn.conv3d_transpose(
-            h1, self.gen_W2, output_shape=output_shape_l2, strides=self.stride)
+            h1, self.gen_y_W2, output_shape=output_shape_l2, strides=self.stride)
         h2 = tf.nn.relu(
             batchnormalize(
                 h2,
-                g=self.gen_bn_g2,
-                b=self.gen_bn_b2,
+                g=self.gen_y_bn_g2,
+                b=self.gen_y_bn_b2,
                 batch_size=self.batch_size))
 
         vox_size_l3 = self.start_vox_size * 4
@@ -1366,12 +1566,12 @@ class FCR_aGAN():
             self.dim_W3
         ]
         h3 = tf.nn.conv3d_transpose(
-            h2, self.gen_W3, output_shape=output_shape_l3, strides=self.stride)
+            h2, self.gen_y_W3, output_shape=output_shape_l3, strides=self.stride)
         h3 = tf.nn.relu(
             batchnormalize(
                 h3,
-                g=self.gen_bn_g3,
-                b=self.gen_bn_b3,
+                g=self.gen_y_bn_g3,
+                b=self.gen_y_bn_b3,
                 batch_size=self.batch_size))
 
         vox_size_l4 = self.start_vox_size * 8
@@ -1380,12 +1580,12 @@ class FCR_aGAN():
             self.dim_W4
         ]
         h4 = tf.nn.conv3d_transpose(
-            h3, self.gen_W4, output_shape=output_shape_l4, strides=self.stride)
+            h3, self.gen_y_W4, output_shape=output_shape_l4, strides=self.stride)
         h4 = tf.nn.relu(
             batchnormalize(
                 h4,
-                g=self.gen_bn_g4,
-                b=self.gen_bn_b4,
+                g=self.gen_y_bn_g4,
+                b=self.gen_y_bn_b4,
                 batch_size=self.batch_size))
 
         vox_size_l5 = self.start_vox_size * 16
@@ -1394,7 +1594,7 @@ class FCR_aGAN():
             self.dim_W5
         ]
         h5 = tf.nn.conv3d_transpose(
-            h4, self.gen_W5, output_shape=output_shape_l5, strides=self.stride)
+            h4, self.gen_y_W5, output_shape=output_shape_l5, strides=self.stride)
 
         x = softmax(h5, visual_size, self.vox_shape)
         return Z, x
