@@ -170,7 +170,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     },
                 )
 
-            if discriminative:    
+            if discriminative:
                 _, discrim_loss_val, cost_discrim_val = sess.run(
                     [train_op_discrim, discrim_loss_tf, cost_discrim_tf],
                     feed_dict={

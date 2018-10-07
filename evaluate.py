@@ -219,14 +219,13 @@ def evaluate(batch_size, checknum, mode):
         np.save(save_path + '/complete_real.npy', complete_real)
 
         # decoded
-        np.save(save_path + '/recons.npy', 
-                np.argmax(generated_voxs, axis=4))
+        np.save(save_path + '/recons.npy', np.argmax(generated_voxs, axis=4))
         np.save(save_path + '/recons_refine.npy',
                 np.argmax(refined_voxs, axis=4))
         np.save(save_path + '/depth_seg_gen.npy',
                 np.argmax(depth_seg_gen, axis=4))
-        np.save(save_path + '/complete_gen.npy', 
-                np.argmax(complete_gen, axis=4))
+        np.save(save_path + '/complete_gen.npy', np.argmax(
+            complete_gen, axis=4))
         np.save(save_path + '/decode_z.npy', enc_Z)
 
         print("voxels saved")

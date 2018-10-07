@@ -175,7 +175,8 @@ class FCR_aGAN():
         self.gen_y_bn_g2 = tf.Variable(
             tf.random_normal([self.dim_W2], mean=1.0, stddev=0.02),
             name='gen_y_bn_g2')
-        self.gen_y_bn_b2 = tf.Variable(tf.zeros([self.dim_W2]), name='gen_y_bn_b2')
+        self.gen_y_bn_b2 = tf.Variable(
+            tf.zeros([self.dim_W2]), name='gen_y_bn_b2')
 
         self.gen_y_W3 = tf.Variable(
             tf.random_normal([
@@ -187,7 +188,8 @@ class FCR_aGAN():
         self.gen_y_bn_g3 = tf.Variable(
             tf.random_normal([self.dim_W3], mean=1.0, stddev=0.02),
             name='gen_y_bn_g3')
-        self.gen_y_bn_b3 = tf.Variable(tf.zeros([self.dim_W3]), name='gen_y_bn_b3')
+        self.gen_y_bn_b3 = tf.Variable(
+            tf.zeros([self.dim_W3]), name='gen_y_bn_b3')
 
         self.gen_y_W4 = tf.Variable(
             tf.random_normal([
@@ -199,7 +201,8 @@ class FCR_aGAN():
         self.gen_y_bn_g4 = tf.Variable(
             tf.random_normal([self.dim_W4], mean=1.0, stddev=0.02),
             name='gen_y_bn_g4')
-        self.gen_y_bn_b4 = tf.Variable(tf.zeros([self.dim_W4]), name='gen_y_bn_b4')
+        self.gen_y_bn_b4 = tf.Variable(
+            tf.zeros([self.dim_W4]), name='gen_y_bn_b4')
 
         self.gen_y_W5 = tf.Variable(
             tf.random_normal([
@@ -211,7 +214,8 @@ class FCR_aGAN():
         self.gen_y_bn_g5 = tf.Variable(
             tf.random_normal([self.dim_W5], mean=1.0, stddev=0.02),
             name='gen_y_bn_g5')
-        self.gen_y_bn_b5 = tf.Variable(tf.zeros([self.dim_W5]), name='gen_y_bn_b5')
+        self.gen_y_bn_b5 = tf.Variable(
+            tf.zeros([self.dim_W5]), name='gen_y_bn_b5')
 
         # parameters of encoder x
         self.encode_x_W1 = tf.Variable(
@@ -374,7 +378,8 @@ class FCR_aGAN():
         self.gen_x_bn_g2 = tf.Variable(
             tf.random_normal([self.dim_W2], mean=1.0, stddev=0.02),
             name='gen_x_bn_g2')
-        self.gen_x_bn_b2 = tf.Variable(tf.zeros([self.dim_W2]), name='gen_x_bn_b2')
+        self.gen_x_bn_b2 = tf.Variable(
+            tf.zeros([self.dim_W2]), name='gen_x_bn_b2')
 
         self.gen_x_W3 = tf.Variable(
             tf.random_normal([
@@ -386,7 +391,8 @@ class FCR_aGAN():
         self.gen_x_bn_g3 = tf.Variable(
             tf.random_normal([self.dim_W3], mean=1.0, stddev=0.02),
             name='gen_x_bn_g3')
-        self.gen_x_bn_b3 = tf.Variable(tf.zeros([self.dim_W3]), name='gen_x_bn_b3')
+        self.gen_x_bn_b3 = tf.Variable(
+            tf.zeros([self.dim_W3]), name='gen_x_bn_b3')
 
         self.gen_x_W4 = tf.Variable(
             tf.random_normal([
@@ -398,19 +404,21 @@ class FCR_aGAN():
         self.gen_x_bn_g4 = tf.Variable(
             tf.random_normal([self.dim_W4], mean=1.0, stddev=0.02),
             name='gen_x_bn_g4')
-        self.gen_x_bn_b4 = tf.Variable(tf.zeros([self.dim_W4]), name='gen_x_bn_b4')
+        self.gen_x_bn_b4 = tf.Variable(
+            tf.zeros([self.dim_W4]), name='gen_x_bn_b4')
 
         self.gen_x_W5 = tf.Variable(
             tf.random_normal([
-                self.kernel5[0], self.kernel5[1], self.kernel5[2], self.tsdf_shape[-1],
-                self.dim_W4
+                self.kernel5[0], self.kernel5[1], self.kernel5[2],
+                self.tsdf_shape[-1], self.dim_W4
             ],
                              stddev=0.02),
             name='gen_x_W5')
         self.gen_x_bn_g5 = tf.Variable(
             tf.random_normal([self.tsdf_shape[-1]], mean=1.0, stddev=0.02),
             name='gen_x_bn_g5')
-        self.gen_x_bn_b5 = tf.Variable(tf.zeros([self.tsdf_shape[-1]]), name='gen_x_bn_b5')
+        self.gen_x_bn_b5 = tf.Variable(
+            tf.zeros([self.tsdf_shape[-1]]), name='gen_x_bn_b5')
 
         # parameters of encoder y
         self.encode_y_W1 = tf.Variable(
@@ -474,8 +482,8 @@ class FCR_aGAN():
 
         self.discrim_x_W1 = tf.Variable(
             tf.random_normal([
-                self.kernel5[0], self.kernel5[1], self.kernel5[2], self.tsdf_shape[-1],
-                self.dim_W4
+                self.kernel5[0], self.kernel5[1], self.kernel5[2],
+                self.tsdf_shape[-1], self.dim_W4
             ],
                              stddev=0.02),
             name='discrim_x_vox_W1')
@@ -538,7 +546,6 @@ class FCR_aGAN():
                              stddev=0.02),
             name='discrim_x_vox_W5')
         """
-
 
         # parameters of codes discriminator
         self.cod_W1 = tf.Variable(
@@ -768,23 +775,23 @@ class FCR_aGAN():
         code_encode_loss = tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_code_encode_x, labels=tf.ones_like(h_code_encode_x)),
-                [1]))
+                    logits=h_code_encode_x,
+                    labels=tf.ones_like(h_code_encode_x)), [1]))
         code_encode_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_code_encode_y, labels=tf.ones_like(h_code_encode_y)),
-                [1]))
+                    logits=h_code_encode_y,
+                    labels=tf.ones_like(h_code_encode_y)), [1]))
         code_encode_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_code_encode_x_y, labels=tf.ones_like(h_code_encode_x_y)),
-                [1]))
+                    logits=h_code_encode_x_y,
+                    labels=tf.ones_like(h_code_encode_x_y)), [1]))
         code_encode_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_code_encode_y_x, labels=tf.ones_like(h_code_encode_y_x)),
-                [1]))
+                    logits=h_code_encode_y_x,
+                    labels=tf.ones_like(h_code_encode_y_x)), [1]))
 
         code_discrim_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -827,30 +834,53 @@ class FCR_aGAN():
         # This is the normal vae-gan
         # vox_gen_decode = self.generate_y(Z_encode_x)
         # This is the cycled vae-gan
-        vox_vae_decode = self.generate_y(Z_encode_y_x)
-        tsdf_vae_decode = self.generate_x(Z_encode_x_y)
+        vox_vae_decode = self.generate_y(Z_encode_y)
+        tsdf_vae_decode = self.generate_x(Z_encode_x)
+        vox_cc_decode = self.generate_y(Z_encode_y_x)
+        tsdf_cc_decode = self.generate_x(Z_encode_x_y)
         batch_mean_vox_real = tf.reduce_mean(vox_real, [0, 1, 2, 3])
+        batch_mean_tsdf_real = tf.reduce_mean(tsdf_real, [0, 1, 2, 3])
         # batch_mean_vox_real ranges from 0 to 1
         # inverse ranges from 0.5 to 1
         inverse = tf.div(
             tf.ones_like(batch_mean_vox_real),
             tf.add(batch_mean_vox_real, tf.ones_like(batch_mean_vox_real)))
-        weight = inverse * tf.div(1., tf.reduce_sum(inverse))
+        weight_y = inverse * tf.div(1., tf.reduce_sum(inverse))
+        inverse = tf.div(
+            tf.ones_like(batch_mean_tsdf_real),
+            tf.add(batch_mean_tsdf_real, tf.ones_like(batch_mean_tsdf_real)))
+        weight_x = inverse * tf.div(1., tf.reduce_sum(inverse))
         recons_loss = tf.reduce_mean(
+            tf.reduce_sum(
+                -tf.reduce_sum(
+                    self.lamda_gamma * vox_real * tf.log(1e-6 + vox_cc_decode)
+                    + (1 - self.lamda_gamma) *
+                    (1 - vox_real) * tf.log(1e-6 + 1 - vox_cc_decode),
+                    [1, 2, 3]) * weight_y, 1))
+
+        recons_loss += tf.reduce_mean(
+            tf.reduce_sum(
+                -tf.reduce_sum(
+                    self.lamda_gamma * tsdf_real *
+                    tf.log(1e-6 + tsdf_cc_decode) + (1 - self.lamda_gamma) *
+                    (1 - tsdf_real) * tf.log(1e-6 + 1 - tsdf_cc_decode),
+                    [1, 2, 3]) * weight_x, 1))
+
+        recons_loss += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
                     self.lamda_gamma * vox_real * tf.log(1e-6 + vox_vae_decode)
                     + (1 - self.lamda_gamma) *
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_vae_decode),
-                    [1, 2, 3]) * weight, 1))
+                    [1, 2, 3]) * weight_y, 1))
 
         recons_loss += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * tsdf_real * tf.log(1e-6 + tsdf_vae_decode)
-                    + (1 - self.lamda_gamma) *
+                    self.lamda_gamma * tsdf_real *
+                    tf.log(1e-6 + tsdf_vae_decode) + (1 - self.lamda_gamma) *
                     (1 - tsdf_real) * tf.log(1e-6 + 1 - tsdf_vae_decode),
-                    [1, 2, 3]), 1))
+                    [1, 2, 3]) * weight_x, 1))
 
         # completion loss
         vox_real_complete = tf.stack([
@@ -962,10 +992,9 @@ class FCR_aGAN():
                                     labels=tf.zeros_like(h_gen_dec_y)), 1))
 
         gen_loss = tf.reduce_mean(
-                        tf.reduce_sum(
-                            tf.nn.sigmoid_cross_entropy_with_logits(
-                                logits=h_gen_dec_y,
-                                labels=tf.ones_like(h_gen_dec_y)), 1))
+            tf.reduce_sum(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_gen_dec_y, labels=tf.ones_like(h_gen_dec_y)), 1))
 
         discrim_loss += tf.reduce_mean(
             tf.reduce_sum(
@@ -982,23 +1011,20 @@ class FCR_aGAN():
                                     labels=tf.zeros_like(h_gen_dec_x)), 1))
 
         gen_loss += tf.reduce_mean(
-                        tf.reduce_sum(
-                            tf.nn.sigmoid_cross_entropy_with_logits(
-                                logits=h_gen_dec_x,
-                                labels=tf.ones_like(h_gen_dec_x)), 1))
+            tf.reduce_sum(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_gen_dec_x, labels=tf.ones_like(h_gen_dec_x)), 1))
 
         if self.generative is True:
             gen_loss += tf.reduce_mean(
-            tf.reduce_sum(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_gen_y,
-                    labels=tf.ones_like(h_gen_y)), 1))
+                tf.reduce_sum(
+                    tf.nn.sigmoid_cross_entropy_with_logits(
+                        logits=h_gen_y, labels=tf.ones_like(h_gen_y)), 1))
 
             gen_loss += tf.reduce_mean(
-            tf.reduce_sum(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_gen_x,
-                    labels=tf.ones_like(h_gen_x)), 1))
+                tf.reduce_sum(
+                    tf.nn.sigmoid_cross_entropy_with_logits(
+                        logits=h_gen_x, labels=tf.ones_like(h_gen_x)), 1))
 
         # for refine
         discrim_loss_refine = tf.reduce_mean(
@@ -1008,7 +1034,8 @@ class FCR_aGAN():
                 1)) + tf.reduce_mean(
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_gen_ref_y, labels=tf.zeros_like(h_gen_ref_y)),
+                            logits=h_gen_ref_y,
+                            labels=tf.zeros_like(h_gen_ref_y)),
                         1)) + tf.reduce_mean(
                             tf.reduce_sum(
                                 tf.nn.sigmoid_cross_entropy_with_logits(
@@ -1016,10 +1043,10 @@ class FCR_aGAN():
                                     labels=tf.zeros_like(h_gen_dec_ref_y)), 1))
 
         gen_loss_refine = tf.reduce_mean(
-                    tf.reduce_sum(
-                        tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_gen_dec_ref_y,
-                            labels=tf.ones_like(h_gen_dec_ref_y)), 1))
+            tf.reduce_sum(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_gen_dec_ref_y,
+                    labels=tf.ones_like(h_gen_dec_ref_y)), 1))
         if self.generative is True:
             gen_loss_refine += tf.reduce_mean(
                 tf.reduce_sum(
@@ -1103,7 +1130,10 @@ class FCR_aGAN():
         h5 = tf.nn.conv3d(
             h4, self.encode_x_W5, strides=[1, 1, 1, 1, 1], padding='SAME')
         h5_sigma = tf.nn.conv3d(
-            h4, self.encode_x_W5_sigma, strides=[1, 1, 1, 1, 1], padding='SAME')
+            h4,
+            self.encode_x_W5_sigma,
+            strides=[1, 1, 1, 1, 1],
+            padding='SAME')
 
         return h5, h5_sigma
 
@@ -1207,7 +1237,10 @@ class FCR_aGAN():
         h5 = tf.nn.conv3d(
             h4, self.encode_y_W5, strides=[1, 1, 1, 1, 1], padding='SAME')
         h5_sigma = tf.nn.conv3d(
-            h4, self.encode_y_W5_sigma, strides=[1, 1, 1, 1, 1], padding='SAME')
+            h4,
+            self.encode_y_W5_sigma,
+            strides=[1, 1, 1, 1, 1],
+            padding='SAME')
 
         return h5, h5_sigma
 
@@ -1285,7 +1318,8 @@ class FCR_aGAN():
         Z_ = tf.reshape(Z, [self.batch_size, -1])
         h1 = tf.nn.relu(
             batchnormalize(
-                tf.matmul(Z_, self.gen_y_W1), g=self.gen_y_bn_g1,
+                tf.matmul(Z_, self.gen_y_W1),
+                g=self.gen_y_bn_g1,
                 b=self.gen_y_bn_b1))
         h1 = tf.reshape(h1, [
             self.batch_size, self.start_vox_size[0], self.start_vox_size[1],
@@ -1298,7 +1332,10 @@ class FCR_aGAN():
             self.dim_W2
         ]
         h2 = tf.nn.conv3d_transpose(
-            h1, self.gen_y_W2, output_shape=output_shape_l2, strides=self.stride)
+            h1,
+            self.gen_y_W2,
+            output_shape=output_shape_l2,
+            strides=self.stride)
         h2 = tf.nn.relu(
             batchnormalize(
                 h2,
@@ -1312,7 +1349,10 @@ class FCR_aGAN():
             self.dim_W3
         ]
         h3 = tf.nn.conv3d_transpose(
-            h2, self.gen_y_W3, output_shape=output_shape_l3, strides=self.stride)
+            h2,
+            self.gen_y_W3,
+            output_shape=output_shape_l3,
+            strides=self.stride)
         h3 = tf.nn.relu(
             batchnormalize(
                 h3,
@@ -1326,7 +1366,10 @@ class FCR_aGAN():
             self.dim_W4
         ]
         h4 = tf.nn.conv3d_transpose(
-            h3, self.gen_y_W4, output_shape=output_shape_l4, strides=self.stride)
+            h3,
+            self.gen_y_W4,
+            output_shape=output_shape_l4,
+            strides=self.stride)
         h4 = tf.nn.relu(
             batchnormalize(
                 h4,
@@ -1340,7 +1383,10 @@ class FCR_aGAN():
             self.dim_W5
         ]
         h5 = tf.nn.conv3d_transpose(
-            h4, self.gen_y_W5, output_shape=output_shape_l5, strides=self.stride)
+            h4,
+            self.gen_y_W5,
+            output_shape=output_shape_l5,
+            strides=self.stride)
 
         x = softmax(h5, self.batch_size, self.vox_shape)
         return x
@@ -1350,7 +1396,8 @@ class FCR_aGAN():
         Z_ = tf.reshape(Z, [self.batch_size, -1])
         h1 = tf.nn.relu(
             batchnormalize(
-                tf.matmul(Z_, self.gen_x_W1), g=self.gen_x_bn_g1,
+                tf.matmul(Z_, self.gen_x_W1),
+                g=self.gen_x_bn_g1,
                 b=self.gen_x_bn_b1))
         h1 = tf.reshape(h1, [
             self.batch_size, self.start_vox_size[0], self.start_vox_size[1],
@@ -1363,7 +1410,10 @@ class FCR_aGAN():
             self.dim_W2
         ]
         h2 = tf.nn.conv3d_transpose(
-            h1, self.gen_x_W2, output_shape=output_shape_l2, strides=self.stride)
+            h1,
+            self.gen_x_W2,
+            output_shape=output_shape_l2,
+            strides=self.stride)
         h2 = tf.nn.relu(
             batchnormalize(
                 h2,
@@ -1377,7 +1427,10 @@ class FCR_aGAN():
             self.dim_W3
         ]
         h3 = tf.nn.conv3d_transpose(
-            h2, self.gen_x_W3, output_shape=output_shape_l3, strides=self.stride)
+            h2,
+            self.gen_x_W3,
+            output_shape=output_shape_l3,
+            strides=self.stride)
         h3 = tf.nn.relu(
             batchnormalize(
                 h3,
@@ -1391,7 +1444,10 @@ class FCR_aGAN():
             self.dim_W4
         ]
         h4 = tf.nn.conv3d_transpose(
-            h3, self.gen_x_W4, output_shape=output_shape_l4, strides=self.stride)
+            h3,
+            self.gen_x_W4,
+            output_shape=output_shape_l4,
+            strides=self.stride)
         h4 = tf.nn.relu(
             batchnormalize(
                 h4,
@@ -1405,7 +1461,10 @@ class FCR_aGAN():
             self.tsdf_shape[-1]
         ]
         h5 = tf.nn.conv3d_transpose(
-            h4, self.gen_x_W5, output_shape=output_shape_l5, strides=self.stride)
+            h4,
+            self.gen_x_W5,
+            output_shape=output_shape_l5,
+            strides=self.stride)
 
         x = softmax(h5, self.batch_size, self.vox_shape)
         return x
@@ -1819,7 +1878,8 @@ class FCR_aGAN():
         Z_ = tf.reshape(Z, [visual_size, -1])
         h1 = tf.nn.relu(
             batchnormalize(
-                tf.matmul(Z_, self.gen_y_W1), g=self.gen_y_bn_g1,
+                tf.matmul(Z_, self.gen_y_W1),
+                g=self.gen_y_bn_g1,
                 b=self.gen_y_bn_b1))
         h1 = tf.reshape(h1, [
             visual_size, self.start_vox_size[0], self.start_vox_size[1],
@@ -1832,7 +1892,10 @@ class FCR_aGAN():
             self.dim_W2
         ]
         h2 = tf.nn.conv3d_transpose(
-            h1, self.gen_y_W2, output_shape=output_shape_l2, strides=self.stride)
+            h1,
+            self.gen_y_W2,
+            output_shape=output_shape_l2,
+            strides=self.stride)
         h2 = tf.nn.relu(
             batchnormalize(
                 h2,
@@ -1846,7 +1909,10 @@ class FCR_aGAN():
             self.dim_W3
         ]
         h3 = tf.nn.conv3d_transpose(
-            h2, self.gen_y_W3, output_shape=output_shape_l3, strides=self.stride)
+            h2,
+            self.gen_y_W3,
+            output_shape=output_shape_l3,
+            strides=self.stride)
         h3 = tf.nn.relu(
             batchnormalize(
                 h3,
@@ -1860,7 +1926,10 @@ class FCR_aGAN():
             self.dim_W4
         ]
         h4 = tf.nn.conv3d_transpose(
-            h3, self.gen_y_W4, output_shape=output_shape_l4, strides=self.stride)
+            h3,
+            self.gen_y_W4,
+            output_shape=output_shape_l4,
+            strides=self.stride)
         h4 = tf.nn.relu(
             batchnormalize(
                 h4,
@@ -1874,7 +1943,10 @@ class FCR_aGAN():
             self.dim_W5
         ]
         h5 = tf.nn.conv3d_transpose(
-            h4, self.gen_y_W5, output_shape=output_shape_l5, strides=self.stride)
+            h4,
+            self.gen_y_W5,
+            output_shape=output_shape_l5,
+            strides=self.stride)
 
         x = softmax(h5, visual_size, self.vox_shape)
         return Z, x
