@@ -81,9 +81,9 @@ int main(int argc, char * argv[]) {
 
   // Location of camera intrinsic file
   std::string cam_K_file = "data/camera-intrinsics.txt";
-  std::string cam_origin_file = "data/rgbd-frames-yida/origin/.txt";
-  std::string base2world_file = "data/rgbd-frames-yida/pose/.txt";
-  std::string depth_im_file = "data/rgbd-frames-yida/depth/.png";
+  std::string cam_origin_file = "data/origin/00017227_01e40e56e7c4006efc920560ac4d26b9_fl001_rm0004_0000.txt";
+  std::string base2world_file = "data/camera/00017227_01e40e56e7c4006efc920560ac4d26b9_fl001_rm0004_0000.txt";
+  std::string depth_im_file = "data/depth_real_png/00017227_01e40e56e7c4006efc920560ac4d26b9_fl001_rm0004_0000.png";
   std::string tsdf_bin_file = "tsdf.bin";
 
   // Location of folder containing RGB-D frames and camera pose files
@@ -194,11 +194,10 @@ int main(int argc, char * argv[]) {
   // Compute surface points from TSDF voxel grid and save to point cloud .ply file
   // std::cout << "Saving surface point cloud (tsdf.ply)..." << std::endl;
   
-  /*
   SaveVoxelGrid2SurfacePointCloud("tsdf.ply", voxel_grid_dim_x, voxel_grid_dim_y, voxel_grid_dim_z,
                                   voxel_size, voxel_grid_origin_x, voxel_grid_origin_y, voxel_grid_origin_z,
-                                  voxel_grid_TSDF, voxel_grid_weight, 0.1f, 0.0f);
-  */
+                                  voxel_grid_TSDF);
+
   // Save TSDF voxel grid and its parameters to disk as binary file (float array)
   // std::cout << "Saving TSDF voxel grid values to disk (tsdf.bin)..." << std::endl;
   std::ofstream outFile(tsdf_bin_file, std::ios::binary | std::ios::out);
