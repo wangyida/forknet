@@ -967,72 +967,76 @@ class FCR_aGAN():
         else:
             vox_after_refine_gen = self.refine_resnet(vox_gen)
 
-        h_real_y = self.discriminate_y(vox_real)
-        h_gen_y = self.discriminate_y(vox_gen)
-        h_gen_dec_y = self.discriminate_y(vox_gen_decode)
-        h_gen_ref_y = self.discriminate_y(vox_after_refine_gen)
-        h_gen_dec_ref_y = self.discriminate_y(vox_after_refine_dec)
+        h_real_vox = self.discriminate_vox(vox_real)
+        h_gen_vox = self.discriminate_vox(vox_gen)
+        h_gen_dec_vox = self.discriminate_vox(vox_gen_decode)
+        h_gen_ref_y = self.discriminate_vox(vox_after_refine_gen)
+        h_gen_dec_ref_y = self.discriminate_vox(vox_after_refine_dec)
 
-        h_real_x = self.discriminate_x(tsdf_real)
-        h_gen_x = self.discriminate_x(tsdf_gen)
-        h_gen_dec_x = self.discriminate_x(tsdf_gen_decode)
-        h_gen_ref_x = self.discriminate_x(tsdf_after_refine_gen)
+        h_real_tsdf = self.discriminate_tsdf(tsdf_real)
+        h_gen_tsdf = self.discriminate_tsdf(tsdf_gen)
+        h_gen_dec_tsdf = self.discriminate_tsdf(tsdf_gen_decode)
+        h_gen_ref_x = self.discriminate_tsdf(tsdf_after_refine_gen)
 
         # Standard_GAN_Loss
         discrim_loss = tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_real_y, labels=tf.ones_like(h_real_y)),
+                    logits=h_real_vox, labels=tf.ones_like(h_real_vox)),
                 1)) + tf.reduce_mean(
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_gen_y, labels=tf.zeros_like(h_gen_y)),
+                            logits=h_gen_vox, labels=tf.zeros_like(h_gen_vox)),
                         1)) + tf.reduce_mean(
                             tf.reduce_sum(
                                 tf.nn.sigmoid_cross_entropy_with_logits(
-                                    logits=h_gen_dec_y,
-                                    labels=tf.zeros_like(h_gen_dec_y)), 1))
-
-        gen_loss = tf.reduce_mean(
-            tf.reduce_sum(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_gen_dec_y, labels=tf.ones_like(h_gen_dec_y)), 1))
+                                    logits=h_gen_dec_vox,
+                                    labels=tf.zeros_like(h_gen_dec_vox)), 1))
 
         discrim_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_real_x, labels=tf.ones_like(h_real_x)),
+                    logits=h_real_tsdf, labels=tf.ones_like(h_real_tsdf)),
                 1)) + tf.reduce_mean(
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_gen_x, labels=tf.zeros_like(h_gen_x)),
+                            logits=h_gen_tsdf,
+                            labels=tf.zeros_like(h_gen_tsdf)),
                         1)) + tf.reduce_mean(
                             tf.reduce_sum(
                                 tf.nn.sigmoid_cross_entropy_with_logits(
-                                    logits=h_gen_dec_x,
-                                    labels=tf.zeros_like(h_gen_dec_x)), 1))
+                                    logits=h_gen_dec_tsdf,
+                                    labels=tf.zeros_like(h_gen_dec_tsdf)), 1))
+
+        gen_loss = tf.reduce_mean(
+            tf.reduce_sum(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_gen_dec_vox, labels=tf.ones_like(h_gen_dec_vox)),
+                1))
 
         gen_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_gen_dec_x, labels=tf.ones_like(h_gen_dec_x)), 1))
+                    logits=h_gen_dec_tsdf,
+                    labels=tf.ones_like(h_gen_dec_tsdf)), 1))
 
         if self.generative is True:
             gen_loss += tf.reduce_mean(
                 tf.reduce_sum(
                     tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=h_gen_y, labels=tf.ones_like(h_gen_y)), 1))
+                        logits=h_gen_vox, labels=tf.ones_like(h_gen_vox)), 1))
 
             gen_loss += tf.reduce_mean(
                 tf.reduce_sum(
                     tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=h_gen_x, labels=tf.ones_like(h_gen_x)), 1))
+                        logits=h_gen_tsdf, labels=tf.ones_like(h_gen_tsdf)),
+                    1))
 
         # for refine
         discrim_loss_refine = tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_real_y, labels=tf.ones_like(h_real_y)),
+                    logits=h_real_vox, labels=tf.ones_like(h_real_vox)),
                 1)) + tf.reduce_mean(
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
@@ -1139,7 +1143,7 @@ class FCR_aGAN():
 
         return h5, h5_sigma
 
-    def discriminate_y(self, vox):
+    def discriminate_vox(self, vox):
 
         h1 = lrelu(
             tf.nn.conv3d(
@@ -1246,7 +1250,7 @@ class FCR_aGAN():
 
         return h5, h5_sigma
 
-    def discriminate_x(self, vox):
+    def discriminate_tsdf(self, vox):
 
         h1 = lrelu(
             tf.nn.conv3d(
