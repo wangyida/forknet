@@ -852,7 +852,7 @@ class FCR_aGAN():
             tf.ones_like(batch_mean_tsdf_real),
             tf.add(batch_mean_tsdf_real, tf.ones_like(batch_mean_tsdf_real)))
         weight_tsdf = inverse * tf.div(1., tf.reduce_sum(inverse))
-        recons_loss = tf.reduce_mean(
+        recons_cc_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
                     self.lamda_gamma * vox_real * tf.log(1e-6 + vox_cc_decode)
@@ -860,7 +860,7 @@ class FCR_aGAN():
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_cc_decode),
                     [1, 2, 3]) * weight_vox, 1))
 
-        recons_loss += tf.reduce_mean(
+        recons_cc_loss += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
                     self.lamda_gamma * tsdf_real *
@@ -868,7 +868,7 @@ class FCR_aGAN():
                     (1 - tsdf_real) * tf.log(1e-6 + 1 - tsdf_cc_decode),
                     [1, 2, 3]) * weight_tsdf, 1))
 
-        recons_loss += tf.reduce_mean(
+        recons_vae_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
                     self.lamda_gamma * vox_real * tf.log(1e-6 + vox_vae_decode)
@@ -876,7 +876,7 @@ class FCR_aGAN():
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_vae_decode),
                     [1, 2, 3]) * weight_vox, 1))
 
-        recons_loss += tf.reduce_mean(
+        recons_vae_loss += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
                     self.lamda_gamma * tsdf_real *
@@ -1070,14 +1070,17 @@ class FCR_aGAN():
         """
 
         # Cost
-        cost_enc = code_encode_loss + self.lamda_recons * recons_loss
-        cost_gen = self.lamda_recons * recons_loss + gen_loss
-        cost_discrim = discrim_loss
-        cost_code = code_discrim_loss
-        cost_gen_ref = self.lamda_recons * recons_loss_refine + gen_loss_refine
+        cost_enc = 0.1 * code_encode_loss + self.lamda_recons * (
+            recons_vae_loss + recons_cc_loss)
+        cost_gen = self.lamda_recons * (
+            recons_vae_loss + recons_cc_loss) + 10 * gen_loss
+        cost_discrim = 10 * discrim_loss
+        cost_code = 0.1 * code_discrim_loss
+        cost_gen_ref = self.lamda_recons * recons_loss_refine + 10 * gen_loss_refine
         cost_discrim_ref = discrim_loss_refine
 
-        tf.summary.scalar("recons_loss", tf.reduce_mean(recons_loss))
+        tf.summary.scalar("recons_vae_loss", tf.reduce_mean(recons_vae_loss))
+        tf.summary.scalar("recons_cc_loss", tf.reduce_mean(recons_cc_loss))
         tf.summary.scalar("gen_loss", tf.reduce_mean(gen_loss))
         tf.summary.scalar("discrim_loss", tf.reduce_mean(discrim_loss))
         tf.summary.scalar("code_encode_loss", tf.reduce_mean(code_encode_loss))
@@ -1086,10 +1089,10 @@ class FCR_aGAN():
 
         summary_op = tf.summary.merge_all()
 
-        return Z, Z_encode, vox_real_, vox_gen, vox_gen_decode, vox_gen_complete, tsdf_seg, vox_after_refine_dec, vox_after_refine_gen,\
-        recons_loss, code_encode_loss, gen_loss, discrim_loss, recons_loss_refine, gen_loss_refine, discrim_loss_refine,\
+        return Z, Z_encode, vox_real_, vox_gen, vox_gen_decode, vox_vae_decode, vox_cc_decode, vox_gen_complete, tsdf_seg, vox_after_refine_dec, vox_after_refine_gen,\
+        recons_vae_loss, recons_cc_loss, code_encode_loss, gen_loss, discrim_loss, recons_loss_refine, gen_loss_refine, discrim_loss_refine,\
         cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
-        tsdf_real_
+        tsdf_real_, tsdf_gen, tsdf_gen_decode, tsdf_vae_decode, tsdf_cc_decode
 
     def encoder_tsdf(self, vox):
 
