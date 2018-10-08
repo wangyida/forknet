@@ -331,10 +331,11 @@ class FCR_aGAN():
             tf.zeros([1]), name='discrim_y_vox_bn_b4')
 
         # patch GAN
+        """
         self.discrim_y_W5 = tf.Variable(
             tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
             name='discrim_y_vox_W5')
-        """ original GAN
+        """
         self.discrim_y_W5 = tf.Variable(
             tf.random_normal([
                 self.start_vox_size[0] * self.start_vox_size[1] *
@@ -342,7 +343,6 @@ class FCR_aGAN():
             ],
                              stddev=0.02),
             name='discrim_y_vox_W5')
-        """
 
         # parameters of generator x
         self.gen_x_W1 = tf.Variable(
@@ -534,10 +534,11 @@ class FCR_aGAN():
             tf.zeros([1]), name='discrim_x_vox_bn_b4')
 
         # patch GAN
+        """
         self.discrim_x_W5 = tf.Variable(
             tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
             name='discrim_x_vox_W5')
-        """ original GAN
+        """
         self.discrim_x_W5 = tf.Variable(
             tf.random_normal([
                 self.start_vox_size[0] * self.start_vox_size[1] *
@@ -545,7 +546,6 @@ class FCR_aGAN():
             ],
                              stddev=0.02),
             name='discrim_x_vox_W5')
-        """
 
         # parameters of codes discriminator
         self.cod_W1 = tf.Variable(
@@ -980,45 +980,37 @@ class FCR_aGAN():
 
         # Standard_GAN_Loss
         discrim_loss = tf.reduce_mean(
-            tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_real_vox, labels=tf.ones_like(h_real_vox)),
-                1)) + tf.reduce_mean(
-                    tf.reduce_sum(
+                    logits=h_real_vox, labels=tf.ones_like(h_real_vox))
+                ) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_gen_vox, labels=tf.zeros_like(h_gen_vox)),
-                        1)) + tf.reduce_mean(
-                            tf.reduce_sum(
+                            logits=h_gen_vox, labels=tf.zeros_like(h_gen_vox))
+                        ) + tf.reduce_mean(
                                 tf.nn.sigmoid_cross_entropy_with_logits(
                                     logits=h_gen_dec_vox,
-                                    labels=tf.zeros_like(h_gen_dec_vox)), 1))
+                                    labels=tf.zeros_like(h_gen_dec_vox)))
 
         discrim_loss += tf.reduce_mean(
-            tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_real_tsdf, labels=tf.ones_like(h_real_tsdf)),
-                1)) + tf.reduce_mean(
-                    tf.reduce_sum(
+                    logits=h_real_tsdf, labels=tf.ones_like(h_real_tsdf))
+                ) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_gen_tsdf,
-                            labels=tf.zeros_like(h_gen_tsdf)),
-                        1)) + tf.reduce_mean(
-                            tf.reduce_sum(
+                            labels=tf.zeros_like(h_gen_tsdf))
+                        ) + tf.reduce_mean(
                                 tf.nn.sigmoid_cross_entropy_with_logits(
                                     logits=h_gen_dec_tsdf,
-                                    labels=tf.zeros_like(h_gen_dec_tsdf)), 1))
+                                    labels=tf.zeros_like(h_gen_dec_tsdf)))
 
         gen_loss = tf.reduce_mean(
-            tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_gen_dec_vox, labels=tf.ones_like(h_gen_dec_vox)),
-                1))
+                    logits=h_gen_dec_vox, labels=tf.ones_like(h_gen_dec_vox))
+                )
 
         gen_loss += tf.reduce_mean(
-            tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_gen_dec_tsdf,
-                    labels=tf.ones_like(h_gen_dec_tsdf)), 1))
+                    labels=tf.ones_like(h_gen_dec_tsdf)))
 
         if self.generative is True:
             gen_loss += tf.reduce_mean(
@@ -1034,31 +1026,26 @@ class FCR_aGAN():
 
         # for refine
         discrim_loss_refine = tf.reduce_mean(
-            tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_real_vox, labels=tf.ones_like(h_real_vox)),
-                1)) + tf.reduce_mean(
-                    tf.reduce_sum(
+                    logits=h_real_vox, labels=tf.ones_like(h_real_vox))
+                ) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_gen_ref_y,
-                            labels=tf.zeros_like(h_gen_ref_y)),
-                        1)) + tf.reduce_mean(
-                            tf.reduce_sum(
+                            labels=tf.zeros_like(h_gen_ref_y))
+                        ) + tf.reduce_mean(
                                 tf.nn.sigmoid_cross_entropy_with_logits(
                                     logits=h_gen_dec_ref_y,
-                                    labels=tf.zeros_like(h_gen_dec_ref_y)), 1))
+                                    labels=tf.zeros_like(h_gen_dec_ref_y)))
 
         gen_loss_refine = tf.reduce_mean(
-            tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_gen_dec_ref_y,
-                    labels=tf.ones_like(h_gen_dec_ref_y)), 1))
+                    labels=tf.ones_like(h_gen_dec_ref_y)))
         if self.generative is True:
             gen_loss_refine += tf.reduce_mean(
-                tf.reduce_sum(
                     tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=h_gen_ref_y, labels=tf.ones_like(h_gen_ref_y)),
-                    1))
+                        logits=h_gen_ref_y, labels=tf.ones_like(h_gen_ref_y))
+                    )
         """
         #LS_GAN_Loss
         a=-1
@@ -1077,7 +1064,7 @@ class FCR_aGAN():
         cost_discrim = 10 * discrim_loss
         cost_code = 0.1 * code_discrim_loss
         cost_gen_ref = self.lamda_recons * recons_loss_refine + 10 * gen_loss_refine
-        cost_discrim_ref = discrim_loss_refine
+        cost_discrim_ref = 10 * discrim_loss_refine
 
         tf.summary.scalar("recons_vae_loss", tf.reduce_mean(recons_vae_loss))
         tf.summary.scalar("recons_cc_loss", tf.reduce_mean(recons_cc_loss))
@@ -1195,9 +1182,7 @@ class FCR_aGAN():
             padding='SAME')
         """
         # end of patch GAN
-
         h4 = tf.reshape(h4, [self.batch_size, -1])
-
         h5 = tf.matmul(h4, self.discrim_y_W5)
         y = tf.nn.sigmoid(h5)
 
@@ -1304,9 +1289,7 @@ class FCR_aGAN():
             padding='SAME')
         # end of patch GAN
         """
-
         h4 = tf.reshape(h4, [self.batch_size, -1])
-
         h5 = tf.matmul(h4, self.discrim_x_W5)
         y = tf.nn.sigmoid(h5)
 
