@@ -1186,20 +1186,22 @@ class FCR_aGAN():
                 g=self.discrim_y_bn_g4,
                 b=self.discrim_y_bn_b4))
         # this is added for patch GAN
+        """
         h4 = tf.nn.conv3d(
             h4,
             self.discrim_y_W5,
             strides=self.stride,
             dilations=self.dilations,
             padding='SAME')
+        """
         # end of patch GAN
+
         h4 = tf.reshape(h4, [self.batch_size, -1])
-        """ original final layer
+
         h5 = tf.matmul(h4, self.discrim_y_W5)
         y = tf.nn.sigmoid(h5)
-        """
 
-        return h4
+        return h5
 
     def encoder_vox(self, vox):
 
@@ -1293,6 +1295,7 @@ class FCR_aGAN():
                 g=self.discrim_x_bn_g4,
                 b=self.discrim_x_bn_b4))
         # this is added for patch GAN
+        """
         h4 = tf.nn.conv3d(
             h4,
             self.discrim_x_W5,
@@ -1300,13 +1303,14 @@ class FCR_aGAN():
             dilations=self.dilations,
             padding='SAME')
         # end of patch GAN
-        h4 = tf.reshape(h4, [self.batch_size, -1])
-        """ original final layer
-        h5 = tf.matmul(h4, self.discrim_x_W5)
-        y = tf.nn.sigmoid(h5)
         """
 
-        return h4
+        h4 = tf.reshape(h4, [self.batch_size, -1])
+
+        h5 = tf.matmul(h4, self.discrim_x_W5)
+        y = tf.nn.sigmoid(h5)
+
+        return h5
 
     def code_discriminator(self, Z):
         Z_ = tf.reshape(Z, [self.batch_size, -1])
