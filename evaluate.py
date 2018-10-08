@@ -113,7 +113,7 @@ def evaluate(batch_size, checknum, mode):
         generative=generative)
 
 
-    Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
+    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
     recons_vae_loss_tf, recons_cc_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = fcr_agan_model.build_model()
@@ -170,11 +170,12 @@ def evaluate(batch_size, checknum, mode):
             batch_tsdf_test = tsdf_test[i * batch_size:i * batch_size +
                                         batch_size]
 
-            batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, batch_depth_seg_gen, batch_complete_gen, batch_enc_Z, batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
+            batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, batch_depth_seg_gen, batch_complete_gen, batch_tsdf_enc_Z, batch_vox_enc_Z, batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
                 [
                     vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,
-                    tsdf_seg_tf, vox_gen_complete_tf, z_enc_tf,
-                    tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf
+                    tsdf_seg_tf, vox_gen_complete_tf, z_tsdf_enc_tf,
+                    z_vox_enc_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf,
+                    tsdf_cc_decode_tf
                 ],
                 # feed_dict={tsdf_tf: batch_tsdf_test})
                 feed_dict={
@@ -209,7 +210,8 @@ def evaluate(batch_size, checknum, mode):
                 depth_seg_gen = batch_depth_seg_gen
                 complete_gen = batch_complete_gen
                 refined_voxs = batch_refined_vox
-                enc_Z = batch_enc_Z
+                tsdf_enc_Z = batch_tsdf_enc_Z
+                vox_enc_Z = batch_vox_enc_Z
                 generated_tsdf = batch_generated_tsdf
                 vae_tsdf = batch_vae_tsdf
                 cc_tsdf = batch_cc_tsdf
@@ -224,7 +226,10 @@ def evaluate(batch_size, checknum, mode):
                     (complete_gen, batch_complete_gen), axis=0)
                 refined_voxs = np.concatenate(
                     (refined_voxs, batch_refined_vox), axis=0)
-                enc_Z = np.concatenate((enc_Z, batch_enc_Z), axis=0)
+                tsdf_enc_Z = np.concatenate((tsdf_enc_Z, batch_tsdf_enc_Z),
+                                            axis=0)
+                vox_enc_Z = np.concatenate((vox_enc_Z, batch_vox_enc_Z),
+                                           axis=0)
                 generated_tsdf = np.concatenate(
                     (generated_tsdf, batch_generated_tsdf), axis=0)
                 vae_tsdf = np.concatenate((vae_tsdf, batch_vae_tsdf), axis=0)
@@ -256,7 +261,8 @@ def evaluate(batch_size, checknum, mode):
                 np.argmax(depth_seg_gen, axis=4))
         np.save(save_path + '/complete_gen.npy', np.argmax(
             complete_gen, axis=4))
-        np.save(save_path + '/decode_z.npy', enc_Z)
+        np.save(save_path + '/decode_z_tsdf.npy', tsdf_enc_Z)
+        np.save(save_path + '/decode_z_vox.npy', vox_enc_Z)
 
         print("voxels saved")
 

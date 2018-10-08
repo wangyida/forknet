@@ -548,27 +548,55 @@ class FCR_aGAN():
             name='discrim_x_vox_W5')
 
         # parameters of codes discriminator
-        self.cod_W1 = tf.Variable(
+        self.cod_x_W1 = tf.Variable(
             tf.random_normal([
                 self.dim_z * self.start_vox_size[0] * self.start_vox_size[1] *
                 self.start_vox_size[2], self.dim_code
             ],
                              stddev=0.02),
-            name='cod_W1')
-        self.cod_bn_g1 = tf.Variable(
+            name='cod_x_W1')
+        self.cod_x_bn_g1 = tf.Variable(
             tf.random_normal([dim_code], mean=1.0, stddev=0.02),
-            name='cod_bn_g1')
-        self.cod_bn_b1 = tf.Variable(tf.zeros([dim_code]), name='cod_bn_b1')
+            name='cod_x_bn_g1')
+        self.cod_x_bn_b1 = tf.Variable(
+            tf.zeros([dim_code]), name='cod_x_bn_b1')
 
-        self.cod_W2 = tf.Variable(
-            tf.random_normal([dim_code, dim_code], stddev=0.02), name='cod_W2')
-        self.cod_bn_g2 = tf.Variable(
+        self.cod_x_W2 = tf.Variable(
+            tf.random_normal([dim_code, dim_code], stddev=0.02),
+            name='cod_x_W2')
+        self.cod_x_bn_g2 = tf.Variable(
             tf.random_normal([dim_code], mean=1.0, stddev=0.02),
-            name='cod_bn_g2')
-        self.cod_bn_b2 = tf.Variable(tf.zeros([dim_code]), name='cod_bn_b2')
+            name='cod_x_bn_g2')
+        self.cod_x_bn_b2 = tf.Variable(
+            tf.zeros([dim_code]), name='cod_x_bn_b2')
 
-        self.cod_W3 = tf.Variable(
-            tf.random_normal([dim_code, 1], stddev=0.02), name='cod_W3')
+        self.cod_x_W3 = tf.Variable(
+            tf.random_normal([dim_code, 1], stddev=0.02), name='cod_x_W3')
+
+        self.cod_y_W1 = tf.Variable(
+            tf.random_normal([
+                self.dim_z * self.start_vox_size[0] * self.start_vox_size[1] *
+                self.start_vox_size[2], self.dim_code
+            ],
+                             stddev=0.02),
+            name='cod_y_W1')
+        self.cod_y_bn_g1 = tf.Variable(
+            tf.random_normal([dim_code], mean=1.0, stddev=0.02),
+            name='cod_y_bn_g1')
+        self.cod_y_bn_b1 = tf.Variable(
+            tf.zeros([dim_code]), name='cod_y_bn_b1')
+
+        self.cod_y_W2 = tf.Variable(
+            tf.random_normal([dim_code, dim_code], stddev=0.02),
+            name='cod_y_W2')
+        self.cod_y_bn_g2 = tf.Variable(
+            tf.random_normal([dim_code], mean=1.0, stddev=0.02),
+            name='cod_y_bn_g2')
+        self.cod_y_bn_b2 = tf.Variable(
+            tf.zeros([dim_code]), name='cod_y_bn_b2')
+
+        self.cod_y_W3 = tf.Variable(
+            tf.random_normal([dim_code, 1], stddev=0.02), name='cod_y_W3')
 
         # parameters of refiner
         self.refine_W1 = tf.Variable(
@@ -751,14 +779,13 @@ class FCR_aGAN():
         mean_vox_tsdf, sigma_vox_tsdf = self.encoder_tsdf(tsdf_gen_decode)
         Z_encode_vox_tsdf = mean_vox_tsdf
 
-        Z_encode = Z_encode_tsdf
-
         # code_discriminator
-        h_code_encode_tsdf = self.code_discriminator(Z_encode_tsdf)
-        h_code_encode_vox = self.code_discriminator(Z_encode_vox)
-        h_code_encode_tsdf_vox = self.code_discriminator(Z_encode_tsdf_vox)
-        h_code_encode_vox_tsdf = self.code_discriminator(Z_encode_vox_tsdf)
-        h_code_real = self.code_discriminator(Z)
+        h_code_encode_tsdf = self.code_discriminator_x(Z_encode_tsdf)
+        h_code_encode_vox = self.code_discriminator_y(Z_encode_vox)
+        h_code_encode_tsdf_vox = self.code_discriminator_y(Z_encode_tsdf_vox)
+        h_code_encode_vox_tsdf = self.code_discriminator_x(Z_encode_vox_tsdf)
+        h_code_real_x = self.code_discriminator_x(Z)
+        h_code_real_y = self.code_discriminator_y(Z)
 
         # empty space mask
         """
@@ -796,7 +823,7 @@ class FCR_aGAN():
         code_discrim_loss = tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_code_real, labels=tf.ones_like(h_code_real)),
+                    logits=h_code_real_x, labels=tf.ones_like(h_code_real_x)),
                 [1])) + tf.reduce_mean(
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
@@ -805,7 +832,7 @@ class FCR_aGAN():
         code_discrim_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_code_real, labels=tf.ones_like(h_code_real)),
+                    logits=h_code_real_y, labels=tf.ones_like(h_code_real_y)),
                 [1])) + tf.reduce_mean(
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
@@ -814,7 +841,7 @@ class FCR_aGAN():
         code_discrim_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_code_real, labels=tf.ones_like(h_code_real)),
+                    logits=h_code_real_y, labels=tf.ones_like(h_code_real_y)),
                 [1])) + tf.reduce_mean(
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
@@ -824,7 +851,7 @@ class FCR_aGAN():
         code_discrim_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_code_real, labels=tf.ones_like(h_code_real)),
+                    logits=h_code_real_x, labels=tf.ones_like(h_code_real_x)),
                 [1])) + tf.reduce_mean(
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
@@ -1013,12 +1040,12 @@ class FCR_aGAN():
                     logits=h_gen_tsdf, labels=tf.zeros_like(h_gen_tsdf)))
 
             gen_loss += tf.reduce_mean(
-                    tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=h_gen_vox, labels=tf.ones_like(h_gen_vox)))
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_gen_vox, labels=tf.ones_like(h_gen_vox)))
 
             gen_loss += tf.reduce_mean(
-                    tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=h_gen_tsdf, labels=tf.ones_like(h_gen_tsdf)))
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_gen_tsdf, labels=tf.ones_like(h_gen_tsdf)))
 
         # for refine
         discrim_loss_refine = tf.reduce_mean(
@@ -1069,7 +1096,7 @@ class FCR_aGAN():
 
         summary_op = tf.summary.merge_all()
 
-        return Z, Z_encode, vox_real_, vox_gen, vox_gen_decode, vox_vae_decode, vox_cc_decode, vox_gen_complete, tsdf_seg, vox_after_refine_dec, vox_after_refine_gen,\
+        return Z, Z_encode_tsdf, Z_encode_vox, vox_real_, vox_gen, vox_gen_decode, vox_vae_decode, vox_cc_decode, vox_gen_complete, tsdf_seg, vox_after_refine_dec, vox_after_refine_gen,\
         recons_vae_loss, recons_cc_loss, code_encode_loss, gen_loss, discrim_loss, recons_loss_refine, gen_loss_refine, discrim_loss_refine,\
         cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
         tsdf_real_, tsdf_gen, tsdf_gen_decode, tsdf_vae_decode, tsdf_cc_decode
@@ -1288,17 +1315,35 @@ class FCR_aGAN():
 
         return h5
 
-    def code_discriminator(self, Z):
+    def code_discriminator_x(self, Z):
         Z_ = tf.reshape(Z, [self.batch_size, -1])
         h1 = tf.nn.relu(
             batchnormalize(
-                tf.matmul(Z_, self.cod_W1), g=self.cod_bn_g1,
-                b=self.cod_bn_b1))
+                tf.matmul(Z_, self.cod_x_W1),
+                g=self.cod_x_bn_g1,
+                b=self.cod_x_bn_b1))
         h2 = tf.nn.relu(
             batchnormalize(
-                tf.matmul(h1, self.cod_W2), g=self.cod_bn_g2,
-                b=self.cod_bn_b2))
-        h3 = tf.matmul(h2, self.cod_W3)
+                tf.matmul(h1, self.cod_x_W2),
+                g=self.cod_x_bn_g2,
+                b=self.cod_x_bn_b2))
+        h3 = tf.matmul(h2, self.cod_x_W3)
+        y = tf.nn.sigmoid(h3)
+        return h3
+
+    def code_discriminator_y(self, Z):
+        Z_ = tf.reshape(Z, [self.batch_size, -1])
+        h1 = tf.nn.relu(
+            batchnormalize(
+                tf.matmul(Z_, self.cod_y_W1),
+                g=self.cod_y_bn_g1,
+                b=self.cod_y_bn_b1))
+        h2 = tf.nn.relu(
+            batchnormalize(
+                tf.matmul(h1, self.cod_y_W2),
+                g=self.cod_y_bn_g2,
+                b=self.cod_y_bn_b2))
+        h3 = tf.matmul(h2, self.cod_y_W3)
         y = tf.nn.sigmoid(h3)
         return h3
 

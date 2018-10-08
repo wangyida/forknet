@@ -52,7 +52,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         refiner=refiner,
         generative=generative)
 
-    Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
+    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
     recons_vae_loss_tf, recons_cc_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, discrim_loss_refine_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = fcr_agan_model.build_model()
@@ -86,7 +86,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             cost_discrim_tf, var_list=discrim_vars, global_step=global_step)
     train_op_gen = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-            cost_gen_tf, var_list=gen_vars)
+            cost_gen_tf, var_list=gen_vars + encode_vars)
     train_op_code = tf.train.AdamOptimizer(
         lr_VAE, beta1=beta_G, beta2=0.9).minimize(
             cost_code_tf, var_list=code_vars)
@@ -134,7 +134,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             print '=iteration:%d, epoch:%d' % (ite, epoch)
             db_inds, epoch_flag = data_process.get_next_minibatch()
             batch_voxel = data_process.get_voxel(db_inds)
-            batch_voxel_train = batch_voxel
             batch_tsdf = data_process.get_tsdf(db_inds)
             batch_tsdf_train = batch_tsdf
             batch_voxel_train = np.multiply(
@@ -181,8 +180,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 )
 
             if variational:
-                _, cost_code_val, z_enc_val = sess.run(
-                    [train_op_code, cost_code_tf, z_enc_tf],
+                _, cost_code_val, z_tsdf_enc_val, z_vox_enc_val = sess.run(
+                    [train_op_code, cost_code_tf, z_tsdf_enc_tf, z_vox_enc_tf],
                     feed_dict={
                         Z_tf: batch_z_var,
                         vox_tf: batch_voxel_train,
@@ -225,11 +224,19 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             print '           cost_code:', cost_code_val if (
                 'cost_code_val' in locals()) else 'None'
 
-            print '    avarage of enc_z:', np.mean(np.mean(
-                z_enc_val, 4)) if ('z_enc_val' in locals()) else 'None'
+            print 'avarage of tsdf_enc_z:', np.mean(
+                np.mean(z_tsdf_enc_val,
+                        4)) if ('z_tsdf_enc_val' in locals()) else 'None'
 
-            print '        std of enc_z:', np.mean(np.std(
-                z_enc_val, 4)) if ('z_enc_val' in locals()) else 'None'
+            print '    std of tsdf_enc_z:', np.mean(
+                np.std(z_tsdf_enc_val,
+                       4)) if ('z_tsdf_enc_val' in locals()) else 'None'
+
+            print ' avarage of vox_enc_z:', np.mean(np.mean(
+                z_vox_enc_val, 4)) if ('z_vox_enc_val' in locals()) else 'None'
+
+            print '     std of vox_enc_z:', np.mean(np.std(
+                z_vox_enc_val, 4)) if ('z_vox_enc_val' in locals()) else 'None'
 
             if np.mod(ite, freq) == 0:
                 vox_models = sess.run(
