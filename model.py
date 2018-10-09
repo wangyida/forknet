@@ -1096,7 +1096,7 @@ class FCR_aGAN():
         cost_enc = 0.1 * code_encode_loss + self.lamda_recons * (
             recons_vae_loss + recons_cc_loss + recons_gen_loss)
         cost_gen = self.lamda_recons * (
-            recons_vae_loss + recons_cc_loss) + 10 * gen_loss
+            recons_vae_loss + recons_cc_loss + recons_gen_loss) + 10 * gen_loss
         cost_discrim = 10 * discrim_loss
         cost_code = 0.1 * code_discrim_loss
         cost_gen_ref = self.lamda_recons * recons_loss_refine + 10 * gen_loss_refine
