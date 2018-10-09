@@ -7,6 +7,12 @@ from util import DataProcess, scene_model_id_pair, onehot, scene_model_id_pair_t
 from sklearn.metrics import average_precision_score
 import copy
 
+from colorama import init
+from termcolor import colored
+
+# use Colorama to make Termcolor work on Windows too
+init()
+
 
 def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
                 vox_shape):
@@ -114,7 +120,7 @@ def evaluate(batch_size, checknum, mode):
 
 
     Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
-    recons_vae_loss_tf, recons_cc_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
+    recons_vae_loss_tf, recons_cc_loss_tf, recons_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = fcr_agan_model.build_model()
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
@@ -283,7 +289,7 @@ def evaluate(batch_size, checknum, mode):
         # completion
         IoU_class = np.zeros([2 + 1])
         AP_class = np.zeros([2 + 1])
-        print("completion")
+        print(colored("Completion", 'green'))
         IoU_class, AP_class = IoU_AP_calc(
             on_complete_real, on_complete_gen, complete_gen, IoU_class,
             AP_class, [vox_shape[0], vox_shape[1], vox_shape[2], 2])
@@ -291,7 +297,7 @@ def evaluate(batch_size, checknum, mode):
         np.savetxt(save_path + '/AP_complete.csv', AP_class, delimiter=",")
 
         # depth segmentation
-        print("depth segmentation")
+        print(colored("Depth segmentation", 'green'))
         IoU_class = np.zeros([vox_shape[3] + 1])
         AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(
@@ -303,22 +309,22 @@ def evaluate(batch_size, checknum, mode):
         np.savetxt(save_path + '/AP_depth.csv', AP_class, delimiter=",")
 
         # volume segmentation
-        print("volume segmentation")
+        print(colored("Decoded segmentation", 'green'))
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, generated_voxs,
                                           IoU_class, AP_class, vox_shape)
         np.savetxt(save_path + '/IoU.csv', IoU_class, delimiter=",")
         np.savetxt(save_path + '/AP.csv', AP_class, delimiter=",")
 
-        print("vae segmentation")
+        print(colored("VAE segmentation", 'green'))
         IoU_class, AP_class = IoU_AP_calc(on_real, on_vae, vae_voxs, IoU_class,
                                           AP_class, vox_shape)
 
-        print("cc segmentation")
+        print(colored("Cycle consistency segmentation", 'green'))
         IoU_class, AP_class = IoU_AP_calc(on_real, on_cc, cc_voxs, IoU_class,
                                           AP_class, vox_shape)
 
         # refine for volume segmentation
-        print("refined volume segmentation")
+        print(colored("refined volume segmentation", 'green'))
         on_recons = onehot(np.argmax(refined_voxs, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs,
                                           IoU_class, AP_class, vox_shape)

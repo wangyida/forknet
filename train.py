@@ -5,6 +5,12 @@ from config import cfg
 from util import DataProcess, scene_model_id_pair
 from model import FCR_aGAN
 
+from colorama import init
+from termcolor import colored
+
+# use Colorama to make Termcolor work on Windows too
+init()
+
 
 def learning_rate(rate, step):
     if step < rate[1]:
@@ -53,7 +59,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         generative=generative)
 
     Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
-    recons_vae_loss_tf, recons_cc_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, discrim_loss_refine_tf,\
+    recons_vae_loss_tf, recons_cc_loss_tf, recons_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, discrim_loss_refine_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = fcr_agan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -131,7 +137,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     for epoch in np.arange(cur_epochs, n_epochs):
         epoch_flag = True
         while epoch_flag:
-            print '=iteration:%d, epoch:%d' % (ite, epoch)
+            print colored('---Iteration:%d, epoch:%d', 'blue') % (ite, epoch)
             db_inds, epoch_flag = data_process.get_next_minibatch()
             batch_voxel = data_process.get_voxel(db_inds)
             batch_tsdf = data_process.get_tsdf(db_inds)
@@ -146,10 +152,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             # updating for the main network
             for s in np.arange(2):
-                _, recons_vae_loss_val, recons_cc_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
+                _, recons_vae_loss_val, recons_cc_loss_val, recons_gen_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
                     [
                         train_op_encode, recons_vae_loss_tf, recons_cc_loss_tf,
-                        code_encode_loss_tf, cost_enc_tf
+                        recons_gen_loss_tf, code_encode_loss_tf, cost_enc_tf
                     ],
                     feed_dict={
                         vox_tf: batch_voxel_train,
@@ -206,6 +212,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             print ' reconstruct cc loss:', recons_cc_loss_val if (
                 'recons_cc_loss_val' in locals()) else 'None'
 
+            print(
+                colored('reconstruct gen loss: ' + str(recons_gen_loss_val), 'green')
+            ) if ('recons_gen_loss_val' in locals()) else 'None'
+
             print '    code encode loss:', code_encode_loss_val if (
                 'code_encode_loss_val' in locals()) else 'None'
 
@@ -224,18 +234,18 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             print '           cost_code:', cost_code_val if (
                 'cost_code_val' in locals()) else 'None'
 
-            print 'avarage of tsdf_enc_z:', np.mean(
+            print '   avarage of tsdf_z:', np.mean(
                 np.mean(z_tsdf_enc_val,
                         4)) if ('z_tsdf_enc_val' in locals()) else 'None'
 
-            print '    std of tsdf_enc_z:', np.mean(
+            print '       std of tsdf_z:', np.mean(
                 np.std(z_tsdf_enc_val,
                        4)) if ('z_tsdf_enc_val' in locals()) else 'None'
 
-            print ' avarage of vox_enc_z:', np.mean(np.mean(
+            print '    avarage of vox_z:', np.mean(np.mean(
                 z_vox_enc_val, 4)) if ('z_vox_enc_val' in locals()) else 'None'
 
-            print '     std of vox_enc_z:', np.mean(np.std(
+            print '        std of vox_z:', np.mean(np.std(
                 z_vox_enc_val, 4)) if ('z_vox_enc_val' in locals()) else 'None'
 
             if np.mod(ite, freq) == 0:
