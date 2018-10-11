@@ -34,7 +34,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
         IoU_class[class_n] = IoU_calc
         print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
     print 'IoU category-wise = ' + str(
-        np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3])
+        np.round(np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3]), 3)
 
     on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
     on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -65,7 +65,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
         AP_class[class_n] = AP
         print 'AP class ' + str(class_n) + '=' + str(AP)
     print 'AP category-wise = ' + str(
-        np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3])
+        np.round(np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3]), 3)
 
     on_recons_ = generated_voxs[:, :, :, :, 1:vox_shape[3]]
     on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -289,15 +289,13 @@ def evaluate(batch_size, checknum, mode):
         # completion
         IoU_class = np.zeros([2 + 1])
         AP_class = np.zeros([2 + 1])
-        print(colored("Completion", 'green'))
+        print(colored("Completion", 'cyan'))
         IoU_class, AP_class = IoU_AP_calc(
             on_complete_real, on_complete_gen, complete_gen, IoU_class,
             AP_class, [vox_shape[0], vox_shape[1], vox_shape[2], 2])
-        np.savetxt(save_path + '/IoU_complete.csv', IoU_class, delimiter=",")
-        np.savetxt(save_path + '/AP_complete.csv', AP_class, delimiter=",")
 
         # depth segmentation
-        print(colored("Depth segmentation", 'green'))
+        print(colored("Depth segmentation", 'cyan'))
         IoU_class = np.zeros([vox_shape[3] + 1])
         AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(
@@ -305,31 +303,47 @@ def evaluate(batch_size, checknum, mode):
             np.multiply(depth_seg_gen,
                         np.expand_dims(np.where(tsdf_test == 1, 1, 0), -1)),
             IoU_class, AP_class, vox_shape)
-        np.savetxt(save_path + '/IoU_depth.csv', IoU_class, delimiter=",")
-        np.savetxt(save_path + '/AP_depth.csv', AP_class, delimiter=",")
+        IoU_all = np.expand_dims(IoU_class, axis=1)
+        AP_all = np.expand_dims(AP_class, axis=1)
 
         # volume segmentation
-        print(colored("Decoded segmentation", 'green'))
+        print(colored("Decoded segmentation", 'cyan'))
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, generated_voxs,
                                           IoU_class, AP_class, vox_shape)
-        np.savetxt(save_path + '/IoU.csv', IoU_class, delimiter=",")
-        np.savetxt(save_path + '/AP.csv', AP_class, delimiter=",")
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+                                 axis=1)
+        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
+                                axis=1)
 
-        print(colored("VAE segmentation", 'green'))
+        print(colored("VAE segmentation", 'cyan'))
         IoU_class, AP_class = IoU_AP_calc(on_real, on_vae, vae_voxs, IoU_class,
                                           AP_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+                                 axis=1)
+        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
+                                axis=1)
 
-        print(colored("Cycle consistency segmentation", 'green'))
+        print(colored("Cycle consistency segmentation", 'cyan'))
         IoU_class, AP_class = IoU_AP_calc(on_real, on_cc, cc_voxs, IoU_class,
                                           AP_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+                                 axis=1)
+        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
+                                axis=1)
 
         # refine for volume segmentation
-        print(colored("refined volume segmentation", 'green'))
+        print(colored("refined volume segmentation", 'cyan'))
         on_recons = onehot(np.argmax(refined_voxs, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs,
                                           IoU_class, AP_class, vox_shape)
-        np.savetxt(save_path + '/IoU_refine.csv', IoU_class, delimiter=",")
-        np.savetxt(save_path + '/AP_refine.csv', AP_class, delimiter=",")
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+                                 axis=1)
+        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
+                                axis=1)
+        np.savetxt(
+            save_path + '/IoU.csv', np.transpose(IoU_all * 100), delimiter="|")
+        np.savetxt(
+            save_path + '/AP.csv', np.transpose(AP_all * 100), delimiter="|")
 
     # interpolation evaluation
     if mode == 'interpolate':

@@ -213,8 +213,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 'recons_cc_loss_val' in locals()) else 'None'
 
             print(
-                colored('reconstruct gen loss: ' + str(recons_gen_loss_val), 'green')
-            ) if ('recons_gen_loss_val' in locals()) else 'None'
+                colored('reconstruct gen loss: ' + str(recons_gen_loss_val),
+                        'green')) if (
+                            'recons_gen_loss_val' in locals()) else 'None'
 
             print '    code encode loss:', code_encode_loss_val if (
                 'code_encode_loss_val' in locals()) else 'None'

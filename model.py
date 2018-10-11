@@ -911,6 +911,7 @@ class FCR_aGAN():
                     (1 - tsdf_real) * tf.log(1e-6 + 1 - tsdf_vae_decode),
                     [1, 2, 3]) * weight_tsdf, 1))
 
+        # supervised (paired data)
         recons_gen_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
@@ -918,7 +919,7 @@ class FCR_aGAN():
                     + (1 - self.lamda_gamma) *
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_gen_decode),
                     [1, 2, 3]) * weight_vox, 1))
-
+        """        
         recons_gen_loss += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
@@ -926,6 +927,7 @@ class FCR_aGAN():
                     tf.log(1e-6 + tsdf_gen_decode) + (1 - self.lamda_gamma) *
                     (1 - tsdf_real) * tf.log(1e-6 + 1 - tsdf_gen_decode),
                     [1, 2, 3]) * weight_tsdf, 1))
+        """
 
         # completion loss
         vox_real_complete = tf.stack([
