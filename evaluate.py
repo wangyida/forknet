@@ -34,7 +34,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
         IoU_class[class_n] = IoU_calc
         print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
     print 'IoU category-wise = ' + str(
-        np.round(np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3]), 3)
+        np.round(np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3], 3))
 
     on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
     on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -65,7 +65,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
         AP_class[class_n] = AP
         print 'AP class ' + str(class_n) + '=' + str(AP)
     print 'AP category-wise = ' + str(
-        np.round(np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3]), 3)
+        np.round(np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3], 3))
 
     on_recons_ = generated_voxs[:, :, :, :, 1:vox_shape[3]]
     on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
