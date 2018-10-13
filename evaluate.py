@@ -33,9 +33,10 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
         IoU_calc = np.round(IoU_element / count, 3)
         IoU_class[class_n] = IoU_calc
         print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
-    print 'IoU category-wise = ' + str(
-        np.round(np.sum(IoU_class[:vox_shape[3] - 1]) / vox_shape[3], 3))
-
+    IoU_class[vox_shape[3]] = np.round(
+        np.sum(IoU_class[1:(vox_shape[3] - 1)]) / (vox_shape[3] - 1), 3)
+    print 'IoU category-wise = ' + str(IoU_class[vox_shape[3]])
+    """
     on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
     on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
     mother = np.sum(np.add(on_recons_, on_real_), (1, 2, 3, 4))
@@ -49,6 +50,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
     IoU_calc = np.round(IoU_element / count, 3)
     IoU_class[vox_shape[3]] = IoU_calc
     print 'IoU space-wise =' + str(IoU_calc)
+    """
 
     #calc_AP
     for class_n in np.arange(vox_shape[3]):
@@ -64,9 +66,10 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
         AP = np.round(AP / num, 3)
         AP_class[class_n] = AP
         print 'AP class ' + str(class_n) + '=' + str(AP)
-    print 'AP category-wise = ' + str(
-        np.round(np.sum(AP_class[:vox_shape[3] - 1]) / vox_shape[3], 3))
-
+    AP_class[vox_shape[3]] = np.round(
+        np.sum(AP_class[1:(vox_shape[3] - 1)]) / (vox_shape[3] - 1), 3)
+    print 'AP category-wise = ' + str(AP_class[vox_shape[3]])
+    """
     on_recons_ = generated_voxs[:, :, :, :, 1:vox_shape[3]]
     on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
     AP = 0.
@@ -79,6 +82,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
     AP = np.round(AP / num, 3)
     AP_class[vox_shape[3]] = AP
     print 'AP space-wise =' + str(AP)
+    """
     print ''
     return IoU_class, AP_class
 
@@ -287,12 +291,12 @@ def evaluate(batch_size, checknum, mode):
 
         # calc_IoU
         # completion
-        IoU_class = np.zeros([2 + 1])
-        AP_class = np.zeros([2 + 1])
+        IoU_comp = np.zeros([2 + 1])
+        AP_comp = np.zeros([2 + 1])
         print(colored("Completion", 'cyan'))
-        IoU_class, AP_class = IoU_AP_calc(
-            on_complete_real, on_complete_gen, complete_gen, IoU_class,
-            AP_class, [vox_shape[0], vox_shape[1], vox_shape[2], 2])
+        IoU_comp, AP_comp = IoU_AP_calc(
+            on_complete_real, on_complete_gen, complete_gen, IoU_comp,
+            AP_comp, [vox_shape[0], vox_shape[1], vox_shape[2], 2])
 
         # depth segmentation
         print(colored("Depth segmentation", 'cyan'))
@@ -341,9 +345,15 @@ def evaluate(batch_size, checknum, mode):
         AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
                                 axis=1)
         np.savetxt(
-            save_path + '/IoU.csv', np.transpose(IoU_all * 100), delimiter="|")
+            save_path + '/IoU.csv',
+            np.transpose(IoU_all[1:] * 100),
+            delimiter=" & ",
+            fmt='%2.1f')
         np.savetxt(
-            save_path + '/AP.csv', np.transpose(AP_all * 100), delimiter="|")
+            save_path + '/AP.csv',
+            np.transpose(AP_all[1:] * 100),
+            delimiter=" & ",
+            fmt='%2.1f')
 
     # interpolation evaluation
     if mode == 'interpolate':
