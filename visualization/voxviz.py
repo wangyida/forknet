@@ -135,14 +135,23 @@ def plot_image(arr, name='depth.png'):
     plt.close(fig)
 
 
-def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80):
+def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=11):
     from mpl_toolkits.mplot3d import Axes3D
 
     # cube = normalize(cube)
-    cube[np.where(cube > 11)] = 0
-    facecolors = cm.Paired((np.round(cube) / 11))
+    # Note that cm.Paired has 12 colors and Set2 has 8 colors
+    cube[np.where(cube > num_class)] = 0
+    if num_class == 11:
+        facecolors = cm.Paired((np.round(cube) / 11))
+        facecolors[:, :, :, -1] = 0.04 * np.tanh(
+            cube * 1000) + 0.1 * (cube > 3) + 0.2 * (cube == 2)
+
+    elif num_class <= 7:
+        facecolors = cm.Set2((np.round(cube) / 7))
+        facecolors[:, :, :, -1] = 0.02 * np.tanh(
+            cube * 1000) + 0.2 * (cube == 1)
+
     # make the alpha channel more similar to each others while 0 is still 0
-    facecolors[:, :, :, -1] = 0.1 * np.tanh(cube * 1000)
     facecolors = explode(facecolors)
     filled = facecolors[:, :, :, -1] != 0
 
@@ -242,19 +251,27 @@ if __name__ == "__main__":
         dest="target_folder",
         default="./target_folder",
         help='target folder for vis')
+    parser.add_argument(
+        '-n',
+        action="store",
+        type=int,
+        dest="num_class",
+        default="11",
+        help='number of classes for rendering cubics')
     parser.print_help()
     results = parser.parse_args()
 
     dir_dep = results.dir_dep
     dir_vox = results.dir_vox
     target_folder = results.target_folder
+    num_class = results.num_class
     scan = ScanFile(dir_dep)
     subdirs = scan.scan_subdir()
     files = scan.scan_files()
     try:
-        os.stat(target_folder )
+        os.stat(target_folder)
     except:
-        os.mkdir(target_folder )
+        os.mkdir(target_folder)
     """
     pbar = ProgressBar()
     for file_dep in pbar(files):
@@ -275,4 +292,5 @@ if __name__ == "__main__":
         # resized = resize(resized, (48, 80, 80), mode='constant')
         plot_cube(
             np.flip(np.rollaxis(resized[:, :, :], 2, 0), 1),
-            name=target_folder + '/' + format(idx, '03d'))
+            name=target_folder + '/' + format(idx, '03d'),
+            num_class=num_class)

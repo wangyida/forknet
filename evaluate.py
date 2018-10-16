@@ -295,8 +295,8 @@ def evaluate(batch_size, checknum, mode):
         AP_comp = np.zeros([2 + 1])
         print(colored("Completion", 'cyan'))
         IoU_comp, AP_comp = IoU_AP_calc(
-            on_complete_real, on_complete_gen, complete_gen, IoU_comp,
-            AP_comp, [vox_shape[0], vox_shape[1], vox_shape[2], 2])
+            on_complete_real, on_complete_gen, complete_gen, IoU_comp, AP_comp,
+            [vox_shape[0], vox_shape[1], vox_shape[2], 2])
 
         # depth segmentation
         print(colored("Depth segmentation", 'cyan'))

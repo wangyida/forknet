@@ -57,7 +57,7 @@ void Integrate(float * cam_K, float * cam2base, float * depth_im,
 
     float diff = depth_val - pt_cam_z;
 
-    if (diff <= -0.1) {
+    if (diff <= -0.1 || depth_val == 0) {
       // This is for labeling the -1 space (occluded space)
       voxel_grid_TSDF[volume_idx] = 2.0f;
       continue;

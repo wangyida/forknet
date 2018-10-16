@@ -55,7 +55,7 @@ __C.DIR.LOG_PATH = './log'
 __C.TRAIN = edict()
 
 __C.TRAIN.DATASET_PORTION = [0, 0.9]
-__C.TRAIN.NUM_EPOCH = 500  # maximum number of training epochs
+__C.TRAIN.NUM_EPOCH = 5000  # maximum number of training epochs
 
 # Learning
 __C.LEARNING_RATE_G = 0.0001
