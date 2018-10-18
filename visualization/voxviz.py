@@ -143,12 +143,12 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=11):
     cube[np.where(cube > num_class)] = 0
     if num_class == 11:
         facecolors = cm.Paired((np.round(cube) / 11))
-        facecolors[:, :, :, -1] = 0.04 * np.tanh(
-            cube * 1000) + 0.1 * (cube > 3) + 0.2 * (cube == 2)
+        facecolors[:, :, :, -1] = 0.05 * np.tanh(
+            cube * 1000) + 0.1 * (cube > 3) + 0.4 * (cube == 2)
 
     elif num_class <= 7:
         facecolors = cm.Set2((np.round(cube) / 7))
-        facecolors[:, :, :, -1] = 0.02 * np.tanh(
+        facecolors[:, :, :, -1] = 0.04 * np.tanh(
             cube * 1000) + 0.2 * (cube == 1)
 
     # make the alpha channel more similar to each others while 0 is still 0
