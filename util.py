@@ -1,6 +1,8 @@
 import numpy as np
 import os
 import random
+import matplotlib.image as mpimg
+from scipy.misc import imsave
 
 from config import cfg
 
@@ -92,8 +94,8 @@ def scene_model_id_pair(dataset_portion=[]):
     scene_name_pair.extend([(model_path, model_id) for model_id in models])
 
     num_models = len(scene_name_pair)
-    portioned_scene_name_pair = scene_name_pair[int(
-        num_models * dataset_portion[0]):int(num_models * dataset_portion[1])]
+    portioned_scene_name_pair = scene_name_pair[int(num_models *
+                                                    dataset_portion[0]):]
 
     return portioned_scene_name_pair
 
@@ -110,7 +112,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
     scene_name_pair.extend([(model_path, model_id) for model_id in models])
 
     num_models = len(scene_name_pair)
-    data_paths_test = scene_name_pair[int(num_models * dataset_portion[1]) +
+    data_paths_test = scene_name_pair[int(num_models * dataset_portion[0]) +
                                       1:]
     # random.shuffle(data_paths_test)
     #data_paths = scene_name_pair[int(num_models * dataset_portion[1])+1:int(num_models * dataset_portion[1])+amount_of_test_sample+1]
@@ -128,6 +130,13 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
     for i in np.arange(num_models):
         sceneId, model_id = data_paths[i]
+
+        # save depth images accordingly
+        depth_fn = sceneId.replace("voxel_semantic_npy",
+                                   "depth_real_png") + "/" + model_id.replace(
+                                       ".npy", ".png")
+        img = mpimg.imread(depth_fn)
+        imsave('vis_depth/' + str(i) + '.png', img)
 
         voxel_fn = cfg.DIR.VOXEL_PATH % (model_id)
         voxel_data = np.load(voxel_fn)

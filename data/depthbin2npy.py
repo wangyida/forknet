@@ -35,9 +35,10 @@ def bin2array(file):
             for i in np.tile(val, repeat)
         ]
         checkVox = np.reshape(checkVox, (240, 144, 240))
-        checkVox[checkVox == 0] = 255
-        checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.min)
-        checkVox[checkVox == 255] = 0
+        # Firstly convert 255 to 0
+        checkVox[checkVox == 255] = -1
+        checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
+        checkVox[checkVox > 11] = 10
     f.close()
     # print "reading voxel file takes {} mins".format((time.time()-start_time)/60)
     return checkVox

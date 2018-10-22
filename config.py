@@ -15,7 +15,7 @@ __C.CONST.BATCH_SIZE_TEST = 4
 __C.SAVER_MAX = 1000
 __C.CHECK_FREQ = 1000
 __C.RECORD_VOX_NUM = 10
-__C.SWITCHING_ITE = 200001
+__C.SWITCHING_ITE = 20001
 
 # Network
 __C.NET = edict()
@@ -38,13 +38,30 @@ __C.NET.VARIATIONAL = True
 #
 __C.DIR = edict()
 # Path where taxonomy.json is stored
-# __C.DIR.SCENE_ID_PATH = '../3D-FCR-alphaGAN/Scenevox'
-# __C.DIR.VOXEL_PATH = '../3D-FCR-alphaGAN/Scenevox/%s/%s'
-__C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/voxel_semantic_npy'
-__C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/voxel_semantic_npy/%s'
-__C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/depth_tsdf_occluded_npy/%s'
-__C.DIR.CHECK_POINT_PATH = '/media/wangyida/SSD2T/models/depvox-gan-cycled'
-__C.DIR.CHECK_PT_PATH = '/media/wangyida/SSD2T/models/depvox-gan-cycled/checkpoint'
+__C.TYPE_EVAL = 'synthetic'
+__C.TYPE_DATA = 'train'
+if __C.TYPE_EVAL == 'real':
+    if __C.TYPE_DATA == 'test':
+        __C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/test/voxel_semantic_npy'
+        __C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/test/voxel_semantic_npy/%s'
+        __C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/test/depth_tsdf_camera_npy/%s'
+    elif __C.TYPE_DATA == 'train':
+        __C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/train/voxel_semantic_npy'
+        __C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/train/voxel_semantic_npy/%s'
+        __C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/train/depth_tsdf_camera_npy/%s'
+    __C.DIR.CHECK_POINT_PATH = '/media/wangyida/SSD2T/models/depvox-gan-real'
+    __C.DIR.CHECK_PT_PATH = '/media/wangyida/SSD2T/models/depvox-gan-real/checkpoint'
+elif __C.TYPE_EVAL == 'synthetic':
+    if __C.TYPE_DATA == 'test':
+        __C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/test/voxel_semantic_npy'
+        __C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/test/voxel_semantic_npy/%s'
+        __C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/test/depth_tsdf_camera_npy/%s'
+    elif __C.TYPE_DATA == 'train':
+        __C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/voxel_semantic_npy'
+        __C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/voxel_semantic_npy/%s'
+        __C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/depth_tsdf_camera_npy/%s'
+    __C.DIR.CHECK_POINT_PATH = '/media/wangyida/SSD2T/models/depvox-gan-cycled'
+    __C.DIR.CHECK_PT_PATH = '/media/wangyida/SSD2T/models/depvox-gan-cycled/checkpoint'
 __C.DIR.TRAIN_OBJ_PATH = './train_vox'
 __C.DIR.EVAL_PATH = './eval'
 __C.DIR.LOG_PATH = './log'

@@ -206,6 +206,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 },
             )
 
+            print(colored('gan', 'red'))
             print 'reconstruct vae loss:', recons_vae_loss_val if (
                 'recons_vae_loss_val' in locals()) else 'None'
 
@@ -268,8 +269,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             if ite > refine_start:
                 _, recons_loss_val, recons_loss_refine_val, gen_loss_refine_val, cost_gen_ref_val = sess.run(
                     [
-                        train_op_refine, recons_loss_tf, recons_loss_refine_tf,
-                        gen_loss_refine_tf, cost_gen_ref_tf
+                        train_op_refine, recons_gen_loss_tf,
+                        recons_loss_refine_tf, gen_loss_refine_tf,
+                        cost_gen_ref_tf
                     ],
                     feed_dict={
                         Z_tf: batch_z_var,
@@ -292,6 +294,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         },
                     )
 
+                print(colored('refine', 'red'))
                 print 'reconstruction loss:', recons_loss_val
                 print ' recons refine loss:', recons_loss_refine_val
                 print '           gen loss:', gen_loss_refine_val

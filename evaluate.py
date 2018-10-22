@@ -30,9 +30,13 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
             if mother[i] != 0:
                 IoU_element += child[i] / mother[i]
                 count += 1
-        IoU_calc = np.round(IoU_element / count, 3)
-        IoU_class[class_n] = IoU_calc
-        print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
+        if count > 0:
+            IoU_calc = np.round(IoU_element / count, 3)
+            IoU_class[class_n] = IoU_calc
+            print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
+        else:
+            IoU_class[class_n] = 1
+            print 'IoU class ' + str(class_n) + '=' + str(1)
     IoU_class[vox_shape[3]] = np.round(
         np.sum(IoU_class[1:(vox_shape[3] - 1)]) / (vox_shape[3] - 1), 3)
     print 'IoU category-wise = ' + str(IoU_class[vox_shape[3]])

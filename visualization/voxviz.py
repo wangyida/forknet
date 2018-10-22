@@ -140,15 +140,18 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=11):
 
     # cube = normalize(cube)
     # Note that cm.Paired has 12 colors and Set2 has 8 colors
-    cube[np.where(cube > num_class)] = 0
+    cube[np.where(cube > num_class)] = 10
     if num_class == 11:
+        cube[cube == -1] = 0
         facecolors = cm.Paired((np.round(cube) / 11))
         facecolors[:, :, :, -1] = 0.05 * np.tanh(
-            cube * 1000) + 0.1 * (cube > 3) + 0.4 * (cube == 2)
+            cube * 1000) + 0.1 * (cube > 3) + 0.2 * (cube == 2)
 
     elif num_class <= 7:
+        # cube[cube == -1] = 3
+        cube[cube < 0] = 0
         facecolors = cm.Set2((np.round(cube) / 7))
-        facecolors[:, :, :, -1] = 0.04 * np.tanh(
+        facecolors[:, :, :, -1] = 0.01 * np.tanh(
             cube * 1000) + 0.2 * (cube == 1)
 
     # make the alpha channel more similar to each others while 0 is still 0
@@ -158,7 +161,7 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=11):
     x, y, z = expand_coordinates(np.indices(np.array(filled.shape) + 1))
 
     # Here is a loop for generating demo files
-    for idx, val in enumerate(np.arange(-40, -30, 10)):
+    for idx, val in enumerate(np.arange(180, 190, 10)):
         fig = plt.figure(figsize=(30 / 2.54, 30 / 2.54))  # , dpi=150)
         # plot
         ax1 = fig.add_subplot(111, projection='3d')
@@ -282,7 +285,6 @@ if __name__ == "__main__":
     pbar = ProgressBar()
     arr = np.load(results.dir_vox)
     # arr = np.expand_dims(arr, axis=0)
-    arr[arr == 255] = 0
     for idx in pbar(range(
             0,
             arr.shape[0])):  #([37, 69, 73, 76, 91, 93, 100, 121, 154, 156]):
