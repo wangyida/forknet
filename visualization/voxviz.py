@@ -144,14 +144,14 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=11):
     if num_class == 11:
         cube[cube == -1] = 0
         facecolors = cm.Paired((np.round(cube) / 11))
-        facecolors[:, :, :, -1] = 0.05 * np.tanh(
+        facecolors[:, :, :, -1] = 0.06 * np.tanh(
             cube * 1000) + 0.1 * (cube > 3) + 0.2 * (cube == 2)
 
     elif num_class <= 7:
         # cube[cube == -1] = 3
         cube[cube < 0] = 0
         facecolors = cm.Set2((np.round(cube) / 7))
-        facecolors[:, :, :, -1] = 0.01 * np.tanh(
+        facecolors[:, :, :, -1] = 0.02 * np.tanh(
             cube * 1000) + 0.2 * (cube == 1)
 
     # make the alpha channel more similar to each others while 0 is still 0
@@ -161,8 +161,8 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=11):
     x, y, z = expand_coordinates(np.indices(np.array(filled.shape) + 1))
 
     # Here is a loop for generating demo files
-    for idx, val in enumerate(np.arange(180, 190, 10)):
-        fig = plt.figure(figsize=(30 / 2.54, 30 / 2.54))  # , dpi=150)
+    for idx, val in enumerate(np.arange(160, 170, 10)):
+        fig = plt.figure(figsize=(60 / 2.54, 60 / 2.54))  # , dpi=150)
         # plot
         ax1 = fig.add_subplot(111, projection='3d')
         # For samples in SUNCG, 20, -40 is a good choice for visualization
@@ -178,11 +178,12 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=11):
             z,
             filled,
             facecolors=facecolors,
-            edgecolors=np.clip(2 * facecolors - 0.5, 0, 1))
+            edgecolors=np.clip(3 * facecolors - 0.5, 0, 1),
+            linewidth=0.5)
 
         # plt.show()
         plt.savefig(
-            name + '_' + format(idx, '04d') + '.png',
+            name + '_' + format(idx, '03d') + '.png',
             bbox_inches='tight',
             pad_inches=0,
             transparent=True)
@@ -220,12 +221,6 @@ def plot_depvox(dir_dep, dir_vox, target_folder):
     # ignore 255 and replace it with 0
     arr[arr == 255] = 0
 
-    # show_histogram(arr)
-    """
-    transformed = np.clip(
-            scale_by(np.clip(normalize(arr)-0.1, 0, 1)**0.4, 2)-0.1,
-            0, 1)
-    """
     resized = resize(arr, (48, 80, 80), mode='constant')
     plot_cube(
         np.rollaxis(resized[:, :, :], 2, 0),

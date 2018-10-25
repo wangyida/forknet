@@ -6,4 +6,4 @@ tsdf.bin
 tsdf.ply
 .DS*
 vis_*
-eval
+eval_*

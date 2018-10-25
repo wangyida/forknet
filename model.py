@@ -480,6 +480,7 @@ class FCR_aGAN():
             tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
             name='encode_y_W5_sigma')
 
+        # parameters of discriminator
         self.discrim_x_W1 = tf.Variable(
             tf.random_normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2],
@@ -493,7 +494,6 @@ class FCR_aGAN():
         self.discrim_x_bn_b1 = tf.Variable(
             tf.zeros([1]), name='discrim_x_vox_bn_b1')
 
-        # parameters of discriminator
         self.discrim_x_W2 = tf.Variable(
             tf.random_normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
@@ -676,7 +676,7 @@ class FCR_aGAN():
 
         # parameters of refiner (sscnet)
         self.refine_ssc_W1 = tf.Variable(
-            tf.random_normal([7, 7, 7, self.dim_W5, 16], stddev=0.02),
+            tf.random_normal([7, 7, 7, self.tsdf_shape[-1], 16], stddev=0.02),
             name='refine_ssc_W1')
         self.refine_ssc_W2 = tf.Variable(
             tf.random_normal([3, 3, 3, 16, 32], stddev=0.02),
@@ -975,10 +975,13 @@ class FCR_aGAN():
             self.batch_size, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2], self.n_class
         ])
-        if self.refiner is 'sscnet':
-            vox_after_refine_dec = self.refine_sscnet(vox_gen_decode)
-        else:
-            vox_after_refine_dec = self.refine_resnet(vox_gen_decode)
+        vox_sscnet = tf.placeholder(tf.float32, [
+            self.batch_size, self.vox_shape[0], self.vox_shape[1],
+            self.vox_shape[2], self.n_class
+        ])
+
+        vox_after_refine_dec = self.refine_resnet(vox_vae_decode)
+        vox_sscnet = self.refine_sscnet(tsdf_real)
 
         recons_loss_refine = tf.reduce_mean(
             tf.reduce_sum(
@@ -988,6 +991,13 @@ class FCR_aGAN():
                     (1 - self.lamda_gamma) *
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_after_refine_dec),
                     [1, 2, 3]) * weight, 1))
+        recons_loss_refine += tf.reduce_mean(
+            tf.reduce_sum(
+                -tf.reduce_sum(
+                    self.lamda_gamma * vox_real * tf.log(1e-6 + vox_sscnet) +
+                    (1 - self.lamda_gamma) *
+                    (1 - vox_real) * tf.log(1e-6 + 1 - vox_sscnet), [1, 2, 3])
+                * weight, 1))
 
         # GAN_generate
         vox_gen = self.generate_vox(Z)
@@ -997,10 +1007,7 @@ class FCR_aGAN():
             self.vox_shape[2], self.n_class
         ])
 
-        if self.refiner is 'sscnet':
-            vox_after_refine_gen = self.refine_sscnet(vox_gen)
-        else:
-            vox_after_refine_gen = self.refine_resnet(vox_gen)
+        vox_after_refine_gen = self.refine_resnet(vox_gen)
 
         h_real_vox = self.discriminate_vox(vox_real)
         h_gen_vox = self.discriminate_vox(vox_gen)
@@ -1071,6 +1078,7 @@ class FCR_aGAN():
         gen_loss_refine = tf.reduce_mean(
             tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=h_gen_dec_ref_y, labels=tf.ones_like(h_gen_dec_ref_y)))
+
         if self.generative is True:
             gen_loss_refine += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
@@ -1105,7 +1113,7 @@ class FCR_aGAN():
 
         summary_op = tf.summary.merge_all()
 
-        return Z, Z_encode_tsdf, Z_encode_vox, vox_real_, vox_gen, vox_gen_decode, vox_vae_decode, vox_cc_decode, vox_gen_complete, tsdf_seg, vox_after_refine_dec, vox_after_refine_gen,\
+        return Z, Z_encode_tsdf, Z_encode_vox, vox_real_, vox_gen, vox_gen_decode, vox_vae_decode, vox_cc_decode, vox_gen_complete, tsdf_seg, vox_after_refine_dec, vox_after_refine_gen, vox_sscnet,\
         recons_vae_loss, recons_cc_loss, recons_gen_loss, code_encode_loss, gen_loss, discrim_loss, recons_loss_refine, gen_loss_refine, discrim_loss_refine,\
         cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
         tsdf_real_, tsdf_gen, tsdf_gen_decode, tsdf_vae_decode, tsdf_cc_decode
@@ -2073,7 +2081,7 @@ class FCR_aGAN():
     def refine_generator_sscnet(self, visual_size):
         vox = tf.placeholder(tf.float32, [
             visual_size, self.vox_shape[0], self.vox_shape[1],
-            self.vox_shape[2], self.vox_shape[3]
+            self.vox_shape[2], self.tsdf_shape[-1]
         ])
         """
         ssc1 = tf.nn.relu(

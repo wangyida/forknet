@@ -13,8 +13,8 @@ from progressbar import ProgressBar
 from astropy.nddata.utils import block_reduce
 
 
-def bin2array(file):
-    with open(file, 'r') as f:
+def bin2array(file_bin, dir_tar_voxel):
+    with open(file_bin, 'r') as f:
         float_size = 4
         uint_size = 4
         total_count = 0
@@ -37,11 +37,14 @@ def bin2array(file):
         checkVox = np.reshape(checkVox, (240, 144, 240))
         # Firstly convert 255 to 0
         checkVox[checkVox == 255] = -1
+        checkVox[checkVox == 5] = 4
+        checkVox[checkVox > 5] -= 1
+        checkVox[checkVox > 11] = 11
         checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
-        checkVox[checkVox > 11] = 10
     f.close()
-    # print "reading voxel file takes {} mins".format((time.time()-start_time)/60)
-    return checkVox
+    name_start = int(file_bin.rfind('/'))
+    name_end = int(file_bin.find('.', name_start))
+    np.save(dir_tar_voxel + file_bin[name_start:name_end] + '.npy', checkVox)
 
 
 def png2array(file):
@@ -137,9 +140,11 @@ if __name__ == "__main__":
     """
 
     # save voxel as npy files
-    pbar2 = ProgressBar()
-    for file_bin in pbar2(files_bin):
-        voxel = bin2array(file=file_bin)
-        name_start = int(file_bin.rfind('/'))
-        name_end = int(file_bin.find('.', name_start))
-        np.save(dir_tar_voxel + file_bin[name_start:name_end] + '.npy', voxel)
+    pbar = ProgressBar()
+    # parallel processing for samples
+    from joblib import Parallel, delayed
+    import multiprocessing
+    num_cores = multiprocessing.cpu_count()
+    Parallel(n_jobs=num_cores)(
+        delayed(bin2array)(file_bin=file_bin, dir_tar_voxel=dir_tar_voxel)
+        for file_bin in pbar(files_bin))
