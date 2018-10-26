@@ -98,10 +98,10 @@ def softmax(X, batch_size, vox_shape):
 class FCR_aGAN():
     def __init__(self,
                  batch_size=16,
-                 vox_shape=[80, 48, 80, 12],
+                 vox_shape=[80, 48, 80, 13],
                  tsdf_shape=[80, 48, 80, 3],
                  dim_z=16,
-                 dim=[512, 256, 128, 64, 12],
+                 dim=[512, 256, 128, 64, 13],
                  start_vox_size=[5, 3, 5],
                  kernel=[[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]],
                  stride=[1, 2, 2, 2, 1],
@@ -1908,7 +1908,7 @@ class FCR_aGAN():
             reuse=tf.AUTO_REUSE)
         base_9 = tf.layers.conv3d_transpose(
             base_9,
-            filters=12,
+            filters=self.vox_shape[-1],
             kernel_size=(3, 3, 3),
             strides=(2, 2, 2),
             padding='same',
@@ -2394,7 +2394,7 @@ class FCR_aGAN():
             reuse=tf.AUTO_REUSE)
         base_9 = tf.layers.conv3d_transpose(
             base_9,
-            filters=12,
+            filters=self.vox_shape[-1],
             kernel_size=(3, 3, 3),
             strides=(2, 2, 2),
             padding='same',

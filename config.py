@@ -10,7 +10,7 @@ __C.SUB_CONFIG_FILE = []
 
 __C.CONST = edict()
 __C.CONST.N_VOX = [80, 48, 80]
-__C.CONST.BATCH_SIZE = 8 
+__C.CONST.BATCH_SIZE = 8
 __C.CONST.BATCH_SIZE_TEST = 4
 __C.SAVER_MAX = 1000
 __C.CHECK_FREQ = 1000
@@ -21,7 +21,7 @@ __C.SWITCHING_ITE = 20001
 __C.NET = edict()
 __C.NET.DIM_Z = 16
 # The last dimension of NET.DIM matters much for GPU consumption for loss function
-__C.NET.DIM = [512, 256, 128, 64, 12]
+__C.NET.DIM = [512, 256, 128, 64, 13]
 __C.NET.START_VOX = [5, 3, 5]
 __C.NET.KERNEL = [[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]

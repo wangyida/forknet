@@ -135,15 +135,15 @@ def plot_image(arr, name='depth.png'):
     plt.close(fig)
 
 
-def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=11):
+def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=12):
     from mpl_toolkits.mplot3d import Axes3D
 
     # cube = normalize(cube)
     # Note that cm.Paired has 12 colors and Set2 has 8 colors
-    cube[np.where(cube > num_class)] = 10
-    if num_class == 11:
+    # cube[np.where(cube > num_class)] = 10
+    if num_class == 12:
         cube[cube == -1] = 0
-        facecolors = cm.Paired((np.round(cube) / 11))
+        facecolors = cm.Paired((np.round(cube) / 12))
         facecolors[:, :, :, -1] = 0.06 * np.tanh(
             cube * 1000) + 0.1 * (cube > 3) + 0.2 * (cube == 2)
 
@@ -189,7 +189,7 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=11):
             transparent=True)
         plt.close(fig)
     """
-    objects_name = ['empty', 'ceiling', 'floor', 'wall', 'window', 'chair', 'bed', 'sofa', 'table', 'tvs', 'furnture', 'object']
+    objects_name = ['empty', 'ceiling', 'floor', 'wall', 'window', 'door', 'chair', 'bed', 'sofa', 'table', 'tvs', 'furnture', 'object']
     for x in range(1, 11):
         fig = plt.figure(figsize=(30/2.54, 30/2.54))
         filled = explode(cube) == x
@@ -254,7 +254,7 @@ if __name__ == "__main__":
         action="store",
         type=int,
         dest="num_class",
-        default="11",
+        default="12",
         help='number of classes for rendering cubics')
     parser.print_help()
     results = parser.parse_args()

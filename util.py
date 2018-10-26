@@ -136,7 +136,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
                                    "depth_real_png") + "/" + model_id.replace(
                                        ".npy", ".png")
         img = mpimg.imread(depth_fn)
-        imsave('vis_depth/' + str(i) + '.png', img)
+        imsave('eval/vis_depth/' + str(i) + '.png', img)
 
         voxel_fn = cfg.DIR.VOXEL_PATH % (model_id)
         voxel_data = np.load(voxel_fn)

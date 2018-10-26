@@ -36,7 +36,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
             print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
         else:
             IoU_class[class_n] = 1
-            print 'IoU class ' + str(class_n) + '=' + str(1)
+            print 'IoU class ' + str(class_n) + ': nothing exists'
     IoU_class[vox_shape[3]] = np.round(
         np.sum(IoU_class[1:(vox_shape[3] - 1)]) / (vox_shape[3] - 1), 3)
     print 'IoU category-wise = ' + str(IoU_class[vox_shape[3]])
@@ -133,12 +133,9 @@ def evaluate(batch_size, checknum, mode):
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = fcr_agan_model.build_model()
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
         visual_size=batch_size)
-    if refiner is 'sscnet':
-        sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_sscnet(
-            visual_size=batch_size)
-    else:
-        sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_resnet(
-            visual_size=batch_size)
+    # sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_sscnet(visual_size=batch_size)
+    sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_resnet(
+        visual_size=batch_size)
     sess = tf.InteractiveSession()
     saver = tf.train.Saver()
 
@@ -198,6 +195,7 @@ def evaluate(batch_size, checknum, mode):
                 })
 
             # This can eliminate some false positive
+            """
             batch_generated_voxs = np.multiply(
                 batch_generated_voxs,
                 np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
@@ -210,15 +208,13 @@ def evaluate(batch_size, checknum, mode):
             batch_voxs_sscnet = np.multiply(
                 batch_voxs_sscnet,
                 np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
-
-            batch_refined_vox = sess.run(
-                sample_refine_vox_tf,
-                feed_dict={sample_vox_tf: batch_generated_voxs})
-
-            # This can eliminate some false positive
             batch_refined_vox = np.multiply(
                 batch_refined_vox,
                 np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
+            """
+            batch_refined_vox = sess.run(
+                sample_refine_vox_tf,
+                feed_dict={sample_vox_tf: batch_generated_voxs})
 
             if i == 0:
                 generated_voxs = batch_generated_voxs
@@ -258,13 +254,19 @@ def evaluate(batch_size, checknum, mode):
         print("forwarded")
 
         # real
-        np.save(save_path + '/real.npy', voxel_test)
+        layout = np.array(voxel_test)
+        layout[layout > 4] = 0
+        observe = np.array(tsdf_test)
+        observe[observe == -1] = 3
+        np.save(save_path + '/scene.npy', voxel_test)
+        np.save(save_path + '/layout.npy', layout)
+        np.save(save_path + '/observe.npy', observe)
         np.save(save_path + '/tsdf.npy', tsdf_test)
         depth_seg_real = np.multiply(voxel_test, np.where(
             tsdf_test == 1, 1, 0))
-        np.save(save_path + '/depth_seg_real.npy', depth_seg_real)
+        np.save(save_path + '/depth_seg_scene.npy', depth_seg_real)
         complete_real = np.clip(voxel_test, 0, 1)
-        np.save(save_path + '/complete_real.npy', complete_real)
+        np.save(save_path + '/complete_scene.npy', complete_real)
 
         # decoded
         np.save(save_path + '/recons_vox.npy', np.argmax(
@@ -357,7 +359,7 @@ def evaluate(batch_size, checknum, mode):
                                 axis=1)
 
         print(colored("SSCNet segmentation", 'cyan'))
-        on_recons = onehot(np.argmax(sscnet_voxs, axis=4), vox_shape[3])
+        on_recons = onehot(np.argmax(voxs_sscnet, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs,
                                           IoU_class, AP_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
