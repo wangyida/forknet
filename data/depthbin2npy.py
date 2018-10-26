@@ -20,13 +20,10 @@ def bin2array(file_bin, dir_tar_voxel):
         total_count = 0
         cor = f.read(float_size * 3)
         cors = unpack('fff', cor)
-        # print("cors is {}",cors)
         cam = f.read(float_size * 16)
         cams = unpack('ffffffffffffffff', cam)
-        # print("cams %16f",cams)
         vox = f.read()
         numC = len(vox) / uint_size
-        # print('numC is {}'.format(numC))
         checkVoxValIter = unpack('I' * numC, vox)
         checkVoxVal = checkVoxValIter[0::2]
         checkVoxIter = checkVoxValIter[1::2]
@@ -35,7 +32,7 @@ def bin2array(file_bin, dir_tar_voxel):
             for i in np.tile(val, repeat)
         ]
         checkVox = np.reshape(checkVox, (240, 144, 240))
-        # Firstly convert 255 to 0
+        # Firstly convert 255 to -1
         checkVox[checkVox == 255] = -1
         checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
         checkVox[checkVox > 12] = 12
@@ -90,12 +87,6 @@ if __name__ == "__main__":
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000",
         help='folder of paired depth and voxel')
     parser.add_argument(
-        '-td',
-        action="store",
-        dest="dir_tar_depth",
-        default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
-        help='for storing generated npy')
-    parser.add_argument(
         '-tv',
         action="store",
         dest="dir_tar_voxel",
@@ -107,7 +98,6 @@ if __name__ == "__main__":
     # folder of paired depth and voxel
     dir_src = results.dir_src
     # for storing generated npy
-    dir_tar_depth = results.dir_tar_depth
     dir_tar_voxel = results.dir_tar_voxel
 
     # scan for depth files
@@ -123,19 +113,6 @@ if __name__ == "__main__":
         os.stat(dir_tar_voxel)
     except:
         os.mkdir(dir_tar_voxel)
-    try:
-        os.stat(dir_tar_depth)
-    except:
-        os.mkdir(dir_tar_depth)
-    """
-    pbar1 = ProgressBar()
-    # save depth as npy files
-    for file_png in pbar1(files_png):
-        depth = png2array(file=file_png)
-        name_start = int(file_png.rfind('/'))
-        name_end = int(file_png.find('.', name_start))
-        np.save(dir_tar_depth + file_png[name_start:name_end] + '.npy', depth)
-    """
 
     # save voxel as npy files
     pbar = ProgressBar()
