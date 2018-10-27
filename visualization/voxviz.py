@@ -277,17 +277,24 @@ if __name__ == "__main__":
         plot_depvox(file_dep, file_vox, target_folder)
     """
     # vis for 3D FGAN
-    pbar = ProgressBar()
     arr = np.load(results.dir_vox)
     # arr = np.expand_dims(arr, axis=0)
-    for idx in pbar(range(
-            0,
-            arr.shape[0])):  #([37, 69, 73, 76, 91, 93, 100, 121, 154, 156]):
-        resized = arr[idx, :, :, :]
-        # resized = normalize(resized)
-        resized = np.squeeze(resized)
-        # resized = resize(resized, (48, 80, 80), mode='constant')
+    pbar = ProgressBar()
+    # parallel processing for samples
+    from joblib import Parallel, delayed
+    import multiprocessing
+    num_cores = multiprocessing.cpu_count()
+    sample_range = np.arange(0, arr.shape[0])
+    """
+    Parallel(n_jobs=num_cores)(delayed(plot_cube)(
+        np.flip(np.rollaxis(np.squeeze(arr[idx, :, :, :]), 2, 0), 1),
+        name=target_folder + '/' + format(idx, '03d'),
+        num_class=num_class) for idx in pbar(sample_range))
+    """
+    # resized = resize(resized, (48, 80, 80), mode='constant')
+    for idx in pbar(sample_range):
         plot_cube(
-            np.flip(np.rollaxis(resized[:, :, :], 2, 0), 1),
-            name=target_folder + '/' + format(idx, '03d'),
-            num_class=num_class)
+        np.flip(np.rollaxis(np.squeeze(arr[idx, :, :, :]), 2, 0), 1),
+        name=target_folder + '/' + format(idx, '03d'),
+        num_class=num_class)
+
