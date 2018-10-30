@@ -107,21 +107,23 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
         visual_size=batch_size)
-    if refiner is 'sscnet':
-        sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_sscnet(
-            visual_size=batch_size)
-    else:
-        sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_resnet(
-            visual_size=batch_size)
+
+    # sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_sscnet(visual_size=batch_size)
+    sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_resnet(
+        visual_size=batch_size)
     writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
     tf.initialize_all_variables().run(session=sess)
 
     if mid_flag:
-        chckpt_path = cfg.DIR.CHECK_PT_PATH + str(
-            check_num)  #+ '-' + str(check_num * freq)
+        chckpt_path = cfg.DIR.CHECK_PT_PATH + str(check_num)
         saver.restore(sess, chckpt_path)
+        """
         Z_var_np_sample = np.load(cfg.DIR.TRAIN_OBJ_PATH +
                                   '/sample_z.npy').astype(np.float32)
+        """
+        Z_var_np_sample = np.random.normal(
+            size=(batch_size, start_vox_size[0], start_vox_size[1],
+                  start_vox_size[2], dim_z)).astype(np.float32)
         Z_var_np_sample = Z_var_np_sample[:batch_size]
         print '---weights restored'
     else:

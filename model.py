@@ -20,22 +20,6 @@ def batchnormalize(X, eps=1e-5, g=None, b=None, batch_size=10):
             b = tf.reshape(b, [1, 1, 1, 1, -1])
             X = X * g + b
 
-    # depth--start
-    elif X.get_shape().ndims == 4:
-        if batch_size == 1:
-            mean = 0
-            std = 1 - eps
-        else:
-            mean = tf.reduce_mean(X, [0, 1, 2])
-            std = tf.reduce_mean(tf.square(X - mean), [0, 1, 2])
-        X = (X - mean) / tf.sqrt(std + eps)
-
-        if g is not None and b is not None:
-            g = tf.reshape(g, [1, 1, 1, -1])
-            b = tf.reshape(b, [1, 1, 1, -1])
-            X = X * g + b
-    # depth--end
-
     elif X.get_shape().ndims == 2:
         if batch_size == 1:
             mean = 0
@@ -675,6 +659,7 @@ class FCR_aGAN():
             name='refine_W2')
 
         # parameters of refiner (sscnet)
+        """
         self.refine_ssc_W1 = tf.Variable(
             tf.random_normal([7, 7, 7, self.tsdf_shape[-1], 16], stddev=0.02),
             name='refine_ssc_W1')
@@ -735,6 +720,7 @@ class FCR_aGAN():
         self.refine_ssc_W18 = tf.Variable(
             tf.random_normal([3, 3, 3, 12, 128], stddev=0.02),
             name='refine_ssc_W18')
+        """
 
         self.saver = tf.train.Saver()
 
@@ -943,15 +929,18 @@ class FCR_aGAN():
         ], 4)
 
         # inverse ranges from 1/1.1 to 10
+        batch_mean_complete_real = tf.reduce_mean(vox_real_complete,
+                                                  [0, 1, 2, 3])
         inverse = tf.div(
-            tf.ones_like(batch_mean_vox_real), batch_mean_vox_real + 0.1)
-        weight = inverse * tf.div(1., tf.reduce_sum(inverse))
+            tf.ones_like(batch_mean_complete_real),
+            tf.add(batch_mean_complete_real,
+                   tf.ones_like(batch_mean_complete_real)))
+        weight_complete = inverse * tf.div(1., tf.reduce_sum(inverse))
         complete_loss = -tf.reduce_sum(
             self.lamda_gamma * vox_real_complete *
             tf.log(1e-6 + vox_gen_complete) + (1 - self.lamda_gamma) *
             (1 - vox_real_complete) * tf.log(1e-6 + 1 - vox_gen_complete),
             [1, 2, 3])
-        weight_complete = tf.stack([weight[0], tf.reduce_sum(weight[1:])])
         complete_loss = tf.reduce_mean(
             tf.reduce_sum(complete_loss * weight_complete, 1))
 
@@ -966,9 +955,10 @@ class FCR_aGAN():
                     * tf.log(1e-6 + tsdf_seg) + (1 - self.lamda_gamma) *
                     (1 - tf.multiply(
                         vox_real, tf.expand_dims(tsdf_real[:, :, :, :, 1], -1))
-                     ) * tf.log(1e-6 + 1 - tsdf_seg), [1, 2, 3]) * weight, 1))
+                     ) * tf.log(1e-6 + 1 - tsdf_seg), [1, 2, 3]) * weight_vox,
+                1))
 
-        # recons_loss = recons_loss + complete_loss + tsdf_seg_loss
+        recons_gen_loss = recons_gen_loss + complete_loss + tsdf_seg_loss
 
         # refiner
         vox_after_refine_dec = tf.placeholder(tf.float32, [
@@ -990,14 +980,18 @@ class FCR_aGAN():
                     tf.log(1e-6 + vox_after_refine_dec) +
                     (1 - self.lamda_gamma) *
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_after_refine_dec),
-                    [1, 2, 3]) * weight, 1))
+                    [1, 2, 3]) * weight_vox, 1))
+
+        # sscnet loss
+        """
         recons_loss_refine += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
                     self.lamda_gamma * vox_real * tf.log(1e-6 + vox_sscnet) +
                     (1 - self.lamda_gamma) *
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_sscnet), [1, 2, 3])
-                * weight, 1))
+                * weight_vox, 1))
+        """
 
         # GAN_generate
         vox_gen = self.generate_vox(Z)

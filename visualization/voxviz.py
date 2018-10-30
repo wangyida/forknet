@@ -145,14 +145,17 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=12):
         cube[cube == -1] = 0
         facecolors = cm.Paired((np.round(cube) / 12))
         facecolors[:, :, :, -1] = 0.06 * np.tanh(
-            cube * 1000) + 0.1 * (cube > 3) + 0.2 * (cube == 2)
-
-    elif num_class <= 7:
+            cube * 1000) + 0.1 * (cube > 3) + 0.2 * (cube == 2) 
+    elif num_class == 4:
+        IMG_DIM = 64
+        facecolors = cm.Dark2((np.round(cube) / 8))
+        facecolors[:, :, :, -1] = 0.7 * np.tanh(cube * 1000)
+    elif num_class == 3:
         # cube[cube == -1] = 3
         cube[cube < 0] = 0
-        facecolors = cm.Set2((np.round(cube) / 7))
-        facecolors[:, :, :, -1] = 0.02 * np.tanh(
-            cube * 1000) + 0.2 * (cube == 1)
+        facecolors = cm.Set2((np.round(cube) / 8))
+        facecolors[:, :, :, -1] = 0.03 * np.tanh(
+            cube * 1000) + 0.6 * (cube == 1)
 
     # make the alpha channel more similar to each others while 0 is still 0
     facecolors = explode(facecolors)
@@ -170,7 +173,7 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=12):
         ax1.view_init(angle, val)
         ax1.set_xlim(right=IMG_DIM * 2)
         ax1.set_ylim(top=IMG_DIM * 2)
-        ax1.set_zlim(top=48 * 2)
+        ax1.set_zlim(top=IMG_DIM * 2)
         ax1.set_axis_off()
         ax1.voxels(
             x,
@@ -205,27 +208,6 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=12):
         plt.savefig(name.replace('.png', '_'+objects_name[x]+'.png'), bbox_inches='tight', pad_inches=0, transparent=True)
         plt.close(fig)
     """
-
-
-def plot_depvox(dir_dep, dir_vox, target_folder):
-    label_start = dir_dep.rfind('/') + 1
-    label_end = dir_dep.find('.', label_start)
-    arr = np.load(dir_dep)
-    plot_image(
-        arr,
-        name=target_folder + '/depth/' + dir_dep[label_start:label_end] +
-        '.png')
-
-    arr = np.load(dir_vox)
-
-    # ignore 255 and replace it with 0
-    arr[arr == 255] = 0
-
-    resized = resize(arr, (48, 80, 80), mode='constant')
-    plot_cube(
-        np.rollaxis(resized[:, :, :], 2, 0),
-        name=target_folder + '/voxel/' + dir_dep[label_start:label_end] +
-        '.png')
 
 
 if __name__ == "__main__":
@@ -270,12 +252,7 @@ if __name__ == "__main__":
         os.stat(target_folder)
     except:
         os.mkdir(target_folder)
-    """
-    pbar = ProgressBar()
-    for file_dep in pbar(files):
-        file_vox = file_dep.replace(dir_dep, dir_vox, 1)
-        plot_depvox(file_dep, file_vox, target_folder)
-    """
+
     # vis for 3D FGAN
     arr = np.load(results.dir_vox)
     # arr = np.expand_dims(arr, axis=0)
