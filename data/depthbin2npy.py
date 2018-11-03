@@ -35,7 +35,21 @@ def bin2array(file_bin, dir_tar_voxel):
         # Firstly convert 255 to -1
         checkVox[checkVox == 255] = -1
         checkVox = block_reduce(checkVox, block_size=(3, 3, 3), func=np.max)
-        checkVox[checkVox > 12] = 12
+        checkVox[checkVox == 10] = 9
+        checkVox[checkVox == 12] = 11
+        checkVox[checkVox == 13] = 11
+        checkVox[checkVox == 14] = 12
+        checkVox[checkVox == 16] = 10
+        checkVox[checkVox == 17] = 9
+        checkVox[checkVox == 25] = 11
+        checkVox[checkVox == 29] = 11
+        checkVox[checkVox == 31] = 11
+        checkVox[checkVox == 34] = 11
+        checkVox[checkVox == 30] = 6 
+        checkVox[checkVox == 33] = 10 
+        checkVox[checkVox == 35] = 10 
+        checkVox[checkVox > 12] = 12 
+
         name_start = int(file_bin.rfind('/'))
         name_end = int(file_bin.find('.', name_start))
         np.save(dir_tar_voxel + file_bin[name_start:name_end] + '.npy', checkVox)

@@ -102,7 +102,7 @@ def scene_model_id_pair(dataset_portion=[]):
 
 def scene_model_id_pair_test(dataset_portion=[]):
 
-    amount_of_test_sample = 76
+    amount_of_test_sample = 200
 
     scene_name_pair = []  # full path of the objs files
 
@@ -114,7 +114,9 @@ def scene_model_id_pair_test(dataset_portion=[]):
     num_models = len(scene_name_pair)
     data_paths_test = scene_name_pair[int(num_models * dataset_portion[0]) +
                                       1:]
-    # random.shuffle(data_paths_test)
+    random.seed(1)
+    random.shuffle(data_paths_test)
+    print(data_paths_test[1])
     #data_paths = scene_name_pair[int(num_models * dataset_portion[1])+1:int(num_models * dataset_portion[1])+amount_of_test_sample+1]
     data_paths = data_paths_test[:amount_of_test_sample]
 
@@ -137,7 +139,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
                                        ".npy", ".png")
         if os.path.isfile(depth_fn):
             img = mpimg.imread(depth_fn)
-            imsave('vis_synthetic/vis_depth/' + str(i) + '.png', img)
+            imsave('vis_suncg/vis_depth/' + str(i) + '.png', img)
 
         voxel_fn = cfg.DIR.VOXEL_PATH % (model_id)
         voxel_data = np.load(voxel_fn)

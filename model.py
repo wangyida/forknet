@@ -85,12 +85,12 @@ class FCR_aGAN():
                  vox_shape=[80, 48, 80, 13],
                  tsdf_shape=[80, 48, 80, 3],
                  dim_z=16,
-                 dim=[512, 256, 128, 64, 13],
+                 dim=[512, 256, 192, 64, 13],
                  start_vox_size=[5, 3, 5],
                  kernel=[[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]],
                  stride=[1, 2, 2, 2, 1],
                  dilations=[1, 1, 1, 1, 1],
-                 dim_code=750,
+                 dim_code=512,
                  refine_ch=32,
                  refine_kernel=3,
                  refiner="resnet",
@@ -217,7 +217,7 @@ class FCR_aGAN():
 
         self.encode_x_W2 = tf.Variable(
             tf.random_normal([
-                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
+                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4 * 3,
                 self.dim_W3
             ],
                              stddev=0.02),
@@ -420,7 +420,7 @@ class FCR_aGAN():
 
         self.encode_y_W2 = tf.Variable(
             tf.random_normal([
-                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
+                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4 * 3,
                 self.dim_W3
             ],
                              stddev=0.02),
@@ -658,69 +658,6 @@ class FCR_aGAN():
                              stddev=0.02),
             name='refine_W2')
 
-        # parameters of refiner (sscnet)
-        """
-        self.refine_ssc_W1 = tf.Variable(
-            tf.random_normal([7, 7, 7, self.tsdf_shape[-1], 16], stddev=0.02),
-            name='refine_ssc_W1')
-        self.refine_ssc_W2 = tf.Variable(
-            tf.random_normal([3, 3, 3, 16, 32], stddev=0.02),
-            name='refine_ssc_W2')
-        self.refine_ssc_W3 = tf.Variable(
-            tf.random_normal([3, 3, 3, 32, 32], stddev=0.02),
-            name='refine_ssc_W3')
-        self.refine_ssc_W4 = tf.Variable(
-            tf.random_normal([1, 1, 1, 16, 32], stddev=0.02),
-            name='refine_ssc_W4')
-
-        self.refine_ssc_W5 = tf.Variable(
-            tf.random_normal([3, 3, 3, 32, 64], stddev=0.02),
-            name='refine_ssc_W5')
-        self.refine_ssc_W6 = tf.Variable(
-            tf.random_normal([3, 3, 3, 64, 64], stddev=0.02),
-            name='refine_ssc_W6')
-        self.refine_ssc_W7 = tf.Variable(
-            tf.random_normal([1, 1, 1, 64, 64], stddev=0.02),
-            name='refine_ssc_W7')
-
-        self.refine_ssc_W8 = tf.Variable(
-            tf.random_normal([3, 3, 3, 64, 64], stddev=0.02),
-            name='refine_ssc_W8')
-        self.refine_ssc_W9 = tf.Variable(
-            tf.random_normal([3, 3, 3, 64, 64], stddev=0.02),
-            name='refine_ssc_W9')
-
-        self.refine_ssc_W10 = tf.Variable(
-            tf.random_normal([3, 3, 3, 64, 64], stddev=0.02),
-            name='refine_ssc_W10')
-        self.refine_ssc_W11 = tf.Variable(
-            tf.random_normal([3, 3, 3, 64, 64], stddev=0.02),
-            name='refine_ssc_W11')
-
-        self.refine_ssc_W12 = tf.Variable(
-            tf.random_normal([3, 3, 3, 64, 64], stddev=0.02),
-            name='refine_ssc_W12')
-        self.refine_ssc_W13 = tf.Variable(
-            tf.random_normal([3, 3, 3, 64, 64], stddev=0.02),
-            name='refine_ssc_W13')
-
-        self.refine_ssc_W14 = tf.Variable(
-            tf.random_normal([1, 1, 1, 64 * 3, 128], stddev=0.02),
-            name='refine_ssc_W14')
-        self.refine_ssc_W15 = tf.Variable(
-            tf.random_normal([1, 1, 1, 128, 128], stddev=0.02),
-            name='refine_ssc_W15')
-        self.refine_ssc_W16 = tf.Variable(
-            tf.random_normal([1, 1, 1, 128, 128], stddev=0.02),
-            name='refine_ssc_W16')
-
-        self.refine_ssc_W17 = tf.Variable(
-            tf.random_normal([3, 3, 3, 128, 128], stddev=0.02),
-            name='refine_ssc_W17')
-        self.refine_ssc_W18 = tf.Variable(
-            tf.random_normal([3, 3, 3, 12, 128], stddev=0.02),
-            name='refine_ssc_W18')
-        """
 
         self.saver = tf.train.Saver()
 
@@ -775,18 +712,6 @@ class FCR_aGAN():
         h_code_encode_vox_tsdf = self.code_discriminator_x(Z_encode_vox_tsdf)
         h_code_real_x = self.code_discriminator_x(Z)
         h_code_real_y = self.code_discriminator_y(Z)
-
-        # empty space mask
-        """
-        empty_mask = tf.ones_like(vox_real)
-        empty_mask[:, :, :, :, 0] = tf.to_float(
-            tf.nn.relu(
-                tf.random_uniform(
-                    empty_mask[:, :, :, :, 0].get_shape(),
-                    minval=-4,
-                    maxval=1,
-                    dtype=tf.int32)))
-        """
 
         code_encode_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -900,7 +825,7 @@ class FCR_aGAN():
                     (1 - tsdf_real) * tf.log(1e-6 + 1 - tsdf_vae_decode),
                     [1, 2, 3]) * weight_tsdf, 1))
 
-        # supervised (paired data)
+        # SUPERVISED (paired data)
         recons_gen_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
@@ -909,6 +834,7 @@ class FCR_aGAN():
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_gen_decode),
                     [1, 2, 3]) * weight_vox, 1))
 
+        # from scene, the observed surface can also be produced
         recons_gen_loss += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
@@ -957,21 +883,15 @@ class FCR_aGAN():
                         vox_real, tf.expand_dims(tsdf_real[:, :, :, :, 1], -1))
                      ) * tf.log(1e-6 + 1 - tsdf_seg), [1, 2, 3]) * weight_vox,
                 1))
-
-        recons_gen_loss = recons_gen_loss + complete_loss + tsdf_seg_loss
+        recons_gen_loss = recons_gen_loss + complete_loss # + tsdf_seg_loss
 
         # refiner
         vox_after_refine_dec = tf.placeholder(tf.float32, [
             self.batch_size, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2], self.n_class
         ])
-        vox_sscnet = tf.placeholder(tf.float32, [
-            self.batch_size, self.vox_shape[0], self.vox_shape[1],
-            self.vox_shape[2], self.n_class
-        ])
 
         vox_after_refine_dec = self.refine_resnet(vox_vae_decode)
-        vox_sscnet = self.refine_sscnet(tsdf_real)
 
         recons_loss_refine = tf.reduce_mean(
             tf.reduce_sum(
@@ -981,17 +901,6 @@ class FCR_aGAN():
                     (1 - self.lamda_gamma) *
                     (1 - vox_real) * tf.log(1e-6 + 1 - vox_after_refine_dec),
                     [1, 2, 3]) * weight_vox, 1))
-
-        # sscnet loss
-        """
-        recons_loss_refine += tf.reduce_mean(
-            tf.reduce_sum(
-                -tf.reduce_sum(
-                    self.lamda_gamma * vox_real * tf.log(1e-6 + vox_sscnet) +
-                    (1 - self.lamda_gamma) *
-                    (1 - vox_real) * tf.log(1e-6 + 1 - vox_sscnet), [1, 2, 3])
-                * weight_vox, 1))
-        """
 
         # GAN_generate
         vox_gen = self.generate_vox(Z)
@@ -1107,7 +1016,7 @@ class FCR_aGAN():
 
         summary_op = tf.summary.merge_all()
 
-        return Z, Z_encode_tsdf, Z_encode_vox, vox_real_, vox_gen, vox_gen_decode, vox_vae_decode, vox_cc_decode, vox_gen_complete, tsdf_seg, vox_after_refine_dec, vox_after_refine_gen, vox_sscnet,\
+        return Z, Z_encode_tsdf, Z_encode_vox, vox_real_, vox_gen, vox_gen_decode, vox_vae_decode, vox_cc_decode, vox_gen_complete, tsdf_seg, vox_after_refine_dec, vox_after_refine_gen,\
         recons_vae_loss, recons_cc_loss, recons_gen_loss, code_encode_loss, gen_loss, discrim_loss, recons_loss_refine, gen_loss_refine, discrim_loss_refine,\
         cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
         tsdf_real_, tsdf_gen, tsdf_gen_decode, tsdf_vae_decode, tsdf_cc_decode
@@ -1121,10 +1030,52 @@ class FCR_aGAN():
                 strides=self.stride,
                 dilations=self.dilations,
                 padding='SAME'))
+
+        base_5 = tf.layers.conv3d(
+            h1,
+            filters=16,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='encode_x_sscnet_1',
+            reuse=tf.AUTO_REUSE)
+
+        base_6 = base_5 + tf.layers.conv3d(
+            base_5,
+            filters=16,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='encode_x_sscnet_2',
+            reuse=tf.AUTO_REUSE)
+
+        base_7 = tf.layers.conv3d(
+            base_6,
+            filters=16,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='encode_x_sscnet_3',
+            reuse=tf.AUTO_REUSE)
+
+        base_8 = base_7 + tf.layers.conv3d(
+            base_7,
+            filters=16,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='encode_x_sscnet_4',
+            reuse=tf.AUTO_REUSE)
+        base_9 = tf.concat([h1, base_6, base_8], -1)
+
         h2 = lrelu(
             batchnormalize(
                 tf.nn.conv3d(
-                    h1,
+                    base_9,
                     self.encode_x_W2,
                     strides=self.stride,
                     dilations=self.dilations,
@@ -1228,10 +1179,52 @@ class FCR_aGAN():
                 strides=self.stride,
                 dilations=self.dilations,
                 padding='SAME'))
+
+        base_5 = tf.layers.conv3d(
+            h1,
+            filters=16,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='encode_y_sscnet_1',
+            reuse=tf.AUTO_REUSE)
+
+        base_6 = base_5 + tf.layers.conv3d(
+            base_5,
+            filters=16,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='encode_y_sscnet_2',
+            reuse=tf.AUTO_REUSE)
+
+        base_7 = tf.layers.conv3d(
+            base_6,
+            filters=16,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='encode_y_sscnet_3',
+            reuse=tf.AUTO_REUSE)
+
+        base_8 = base_7 + tf.layers.conv3d(
+            base_7,
+            filters=16,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='encode_y_sscnet_4',
+            reuse=tf.AUTO_REUSE)
+        base_9 = tf.concat([h1, base_6, base_8], -1)
+
         h2 = lrelu(
             batchnormalize(
                 tf.nn.conv3d(
-                    h1,
+                    base_9,
                     self.encode_y_W2,
                     strides=self.stride,
                     dilations=self.dilations,
@@ -1585,333 +1578,6 @@ class FCR_aGAN():
 
         return x_refine
 
-    def refine_sscnet(self, vox):
-        """
-        ssc1 = tf.nn.relu(
-            tf.nn.conv3d(
-                tf.concat([vox, tsdf], -1),
-                self.refine_ssc_W1,
-                strides=[1, 2, 2, 2, 1],
-                padding='SAME'))
-        ssc2 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc1,
-                self.refine_ssc_W2,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc3 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc2,
-                self.refine_ssc_W3,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        
-        ssc_add1 = tf.nn.max_pool3d(ssc3 + tf.nn.relu(
-            tf.nn.conv3d(
-                ssc1,
-                self.refine_ssc_W4,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME')),
-            ksize = [1,3,3,3,1],
-            strides = [1,2,2,2,1],
-            padding='SAME')
-
-        ssc5 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc_add1,
-                self.refine_ssc_W5,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc6 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc5,
-                self.refine_ssc_W6,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        ssc_add2 = ssc6 + tf.nn.relu(
-            tf.nn.conv3d(
-                ssc5,
-                self.refine_ssc_W7,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        ssc8 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc_add2,
-                self.refine_ssc_W8,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc9 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc8,
-                self.refine_ssc_W9,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        ssc_add3 = ssc8 + ssc9 
-
-        ssc10 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc_add3,
-                self.refine_ssc_W10,
-                strides=[1, 1, 1, 1, 1],
-                dilations=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc11 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc10,
-                self.refine_ssc_W11,
-                strides=[1, 1, 1, 1, 1],
-                dilations=[1, 1, 1, 1, 1],
-                padding='SAME'))
-            # Should be 1 2 2 2 1
-            #
-            #
-            #
-            #
-
-        ssc_add4 = ssc10 + ssc11 
-
-        ssc12 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc_add4,
-                self.refine_ssc_W12,
-                strides=[1, 1, 1, 1, 1],
-                dilations=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc13 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc12,
-                self.refine_ssc_W13,
-                strides=[1, 1, 1, 1, 1],
-                dilations=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        ssc_add5 = ssc12 + ssc13 
-
-        ssc_concat = tf.concat([ssc_add3, ssc_add4, ssc_add5], -1)
-
-        ssc14 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc_concat,
-                self.refine_ssc_W14,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc15 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc14,
-                self.refine_ssc_W15,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc16 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc15,
-                self.refine_ssc_W16,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        ssc17 = tf.nn.relu(
-            tf.nn.conv3d_transpose(
-                ssc16,
-                self.refine_ssc_W17,
-                output_shape=[self.batch_size, 40, 24, 40, 128],
-                strides=[1, 2, 2, 2, 1],
-                padding='SAME'))
-        ssc18 = tf.nn.relu(
-            tf.nn.conv3d_transpose(
-                ssc17,
-                self.refine_ssc_W18,
-                output_shape=[self.batch_size, 80, 48, 80, 12],
-                strides=[1, 2, 2, 2, 1],
-                padding='SAME'))
-
-        x_refine = softmax(ssc18, self.batch_size, self.vox_shape)
-        """
-        base_1 = tf.layers.conv3d(
-            vox,
-            filters=16,
-            kernel_size=(7, 7, 7),
-            strides=(2, 2, 2),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_1',
-            reuse=tf.AUTO_REUSE)
-
-        h = tf.layers.conv3d(
-            base_1,
-            filters=32,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_2',
-            reuse=tf.AUTO_REUSE)
-        h = tf.layers.conv3d(
-            h,
-            filters=32,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_3',
-            reuse=tf.AUTO_REUSE)
-        h = h + tf.layers.conv3d(
-            base_1,
-            filters=32,
-            kernel_size=(1, 1, 1),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_4',
-            reuse=tf.AUTO_REUSE)
-        h = tf.layers.max_pooling3d(
-            h,
-            pool_size=(3, 3, 3),
-            strides=(2, 2, 2),
-            padding='same',
-            name='refine_sscnet_5')
-
-        base_2 = tf.layers.conv3d(
-            h,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_6',
-            reuse=tf.AUTO_REUSE)
-
-        h = tf.layers.conv3d(
-            base_2,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_7',
-            reuse=tf.AUTO_REUSE)
-
-        h = h + tf.layers.conv3d(
-            base_2,
-            filters=64,
-            kernel_size=(1, 1, 1),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_8',
-            reuse=tf.AUTO_REUSE)
-
-        base_3 = tf.layers.conv3d(
-            h,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_9',
-            reuse=tf.AUTO_REUSE)
-
-        base_4 = base_3 + tf.layers.conv3d(
-            base_3,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_10',
-            reuse=tf.AUTO_REUSE)
-
-        base_5 = tf.layers.conv3d(
-            base_4,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(2, 2, 2),
-            name='refine_sscnet_11',
-            reuse=tf.AUTO_REUSE)
-
-        base_6 = base_5 + tf.layers.conv3d(
-            base_5,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(2, 2, 2),
-            name='refine_sscnet_12',
-            reuse=tf.AUTO_REUSE)
-
-        base_7 = tf.layers.conv3d(
-            base_6,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(2, 2, 2),
-            name='refine_sscnet_13',
-            reuse=tf.AUTO_REUSE)
-
-        base_8 = base_7 + tf.layers.conv3d(
-            base_7,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(2, 2, 2),
-            name='refine_sscnet_14',
-            reuse=tf.AUTO_REUSE)
-
-        base_9 = tf.concat([base_4, base_6, base_8], -1)
-        base_9 = tf.layers.conv3d(
-            base_9,
-            filters=128,
-            kernel_size=(1, 1, 1),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_15',
-            reuse=tf.AUTO_REUSE)
-        base_9 = tf.layers.conv3d(
-            base_9,
-            filters=128,
-            kernel_size=(1, 1, 1),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_16',
-            reuse=tf.AUTO_REUSE)
-        base_9 = tf.layers.conv3d(
-            base_9,
-            filters=128,
-            kernel_size=(1, 1, 1),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_17',
-            reuse=tf.AUTO_REUSE)
-
-        base_9 = tf.layers.conv3d_transpose(
-            base_9,
-            filters=128,
-            kernel_size=(3, 3, 3),
-            strides=(2, 2, 2),
-            padding='same',
-            name='refine_sscnet_18',
-            reuse=tf.AUTO_REUSE)
-        base_9 = tf.layers.conv3d_transpose(
-            base_9,
-            filters=self.vox_shape[-1],
-            kernel_size=(3, 3, 3),
-            strides=(2, 2, 2),
-            padding='same',
-            name='refine_sscnet_19',
-            reuse=tf.AUTO_REUSE)
-
-        x_refine = softmax(base_9, self.batch_size, self.vox_shape)
-
-        return x_refine
 
     def samples_generator(self, visual_size):
 
@@ -2072,329 +1738,3 @@ class FCR_aGAN():
 
         return vox, x_refine
 
-    def refine_generator_sscnet(self, visual_size):
-        vox = tf.placeholder(tf.float32, [
-            visual_size, self.vox_shape[0], self.vox_shape[1],
-            self.vox_shape[2], self.tsdf_shape[-1]
-        ])
-        """
-        ssc1 = tf.nn.relu(
-            tf.nn.conv3d(
-                tf.concat([vox, tsdf], -1),
-                self.refine_ssc_W1,
-                strides=[1, 2, 2, 2, 1],
-                padding='SAME'))
-        ssc2 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc1,
-                self.refine_ssc_W2,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc3 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc2,
-                self.refine_ssc_W3,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        
-        ssc_add1 = tf.nn.max_pool3d(ssc3 + tf.nn.relu(
-            tf.nn.conv3d(
-                ssc1,
-                self.refine_ssc_W4,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME')),
-            ksize = [1,3,3,3,1],
-            strides = [1,2,2,2,1],
-            padding='SAME')
-
-        ssc5 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc_add1,
-                self.refine_ssc_W5,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc6 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc5,
-                self.refine_ssc_W6,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        ssc_add2 = ssc6 + tf.nn.relu(
-            tf.nn.conv3d(
-                ssc5,
-                self.refine_ssc_W7,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        ssc8 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc_add2,
-                self.refine_ssc_W8,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc9 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc8,
-                self.refine_ssc_W9,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        ssc_add3 = ssc8 + ssc9 
-
-        ssc10 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc_add3,
-                self.refine_ssc_W10,
-                strides=[1, 1, 1, 1, 1],
-                dilations=[1, 2, 2, 2, 1],
-                padding='SAME'))
-        ssc11 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc10,
-                self.refine_ssc_W11,
-                strides=[1, 1, 1, 1, 1],
-                dilations=[1, 2, 2, 2, 1],
-                padding='SAME'))
-
-        ssc_add4 = ssc10 + ssc11 
-
-        ssc12 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc_add4,
-                self.refine_ssc_W12,
-                strides=[1, 1, 1, 1, 1],
-                dilations=[1, 2, 2, 2, 1],
-                padding='SAME'))
-        ssc13 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc12,
-                self.refine_ssc_W13,
-                strides=[1, 1, 1, 1, 1],
-                dilations=[1, 2, 2, 2, 1],
-                padding='SAME'))
-
-        ssc_add5 = ssc12 + ssc13 
-
-        ssc_concat = tf.concat([ssc_add3, ssc_add4, ssc_add5], -1)
-
-        ssc14 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc_concat,
-                self.refine_ssc_W14,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc15 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc14,
-                self.refine_ssc_W15,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        ssc16 = tf.nn.relu(
-            tf.nn.conv3d(
-                ssc15,
-                self.refine_ssc_W16,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        ssc17 = tf.nn.relu(
-            tf.nn.conv3d_transpose(
-                ssc16,
-                self.refine_ssc_W17,
-                output_shape=[self.batch_size, 40, 24, 40, 128],
-                strides=[1, 2, 2, 2, 1],
-                padding='SAME'))
-        ssc18 = tf.nn.relu(
-            tf.nn.conv3d_transpose(
-                ssc17,
-                self.refine_ssc_W18,
-                output_shape=[self.batch_size, 80, 48, 80, 12],
-                strides=[1, 2, 2, 2, 1],
-                padding='SAME'))
-
-        x_refine = softmax(ssc18, self.batch_size, self.vox_shape)
-        """
-        base_1 = tf.layers.conv3d(
-            vox,
-            filters=16,
-            kernel_size=(7, 7, 7),
-            strides=(2, 2, 2),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_1',
-            reuse=tf.AUTO_REUSE)
-
-        h = tf.layers.conv3d(
-            base_1,
-            filters=32,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_2',
-            reuse=tf.AUTO_REUSE)
-        h = tf.layers.conv3d(
-            h,
-            filters=32,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_3',
-            reuse=tf.AUTO_REUSE)
-        h = h + tf.layers.conv3d(
-            base_1,
-            filters=32,
-            kernel_size=(1, 1, 1),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_4',
-            reuse=tf.AUTO_REUSE)
-        h = tf.layers.max_pooling3d(
-            h,
-            pool_size=(3, 3, 3),
-            strides=(2, 2, 2),
-            padding='same',
-            name='refine_sscnet_5')
-
-        base_2 = tf.layers.conv3d(
-            h,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_6',
-            reuse=tf.AUTO_REUSE)
-
-        h = tf.layers.conv3d(
-            base_2,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_7',
-            reuse=tf.AUTO_REUSE)
-
-        h = h + tf.layers.conv3d(
-            base_2,
-            filters=64,
-            kernel_size=(1, 1, 1),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_8',
-            reuse=tf.AUTO_REUSE)
-
-        base_3 = tf.layers.conv3d(
-            h,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_9',
-            reuse=tf.AUTO_REUSE)
-
-        base_4 = base_3 + tf.layers.conv3d(
-            base_3,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_10',
-            reuse=tf.AUTO_REUSE)
-
-        base_5 = tf.layers.conv3d(
-            base_4,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(2, 2, 2),
-            name='refine_sscnet_11',
-            reuse=tf.AUTO_REUSE)
-
-        base_6 = base_5 + tf.layers.conv3d(
-            base_5,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(2, 2, 2),
-            name='refine_sscnet_12',
-            reuse=tf.AUTO_REUSE)
-
-        base_7 = tf.layers.conv3d(
-            base_6,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(2, 2, 2),
-            name='refine_sscnet_13',
-            reuse=tf.AUTO_REUSE)
-
-        base_8 = base_7 + tf.layers.conv3d(
-            base_7,
-            filters=64,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(2, 2, 2),
-            name='refine_sscnet_14',
-            reuse=tf.AUTO_REUSE)
-
-        base_9 = tf.concat([base_4, base_6, base_8], -1)
-        base_9 = tf.layers.conv3d(
-            base_9,
-            filters=128,
-            kernel_size=(1, 1, 1),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_15',
-            reuse=tf.AUTO_REUSE)
-        base_9 = tf.layers.conv3d(
-            base_9,
-            filters=128,
-            kernel_size=(1, 1, 1),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_16',
-            reuse=tf.AUTO_REUSE)
-        base_9 = tf.layers.conv3d(
-            base_9,
-            filters=128,
-            kernel_size=(1, 1, 1),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='refine_sscnet_17',
-            reuse=tf.AUTO_REUSE)
-
-        base_9 = tf.layers.conv3d_transpose(
-            base_9,
-            filters=128,
-            kernel_size=(3, 3, 3),
-            strides=(2, 2, 2),
-            padding='same',
-            name='refine_sscnet_18',
-            reuse=tf.AUTO_REUSE)
-        base_9 = tf.layers.conv3d_transpose(
-            base_9,
-            filters=self.vox_shape[-1],
-            kernel_size=(3, 3, 3),
-            strides=(2, 2, 2),
-            padding='same',
-            name='refine_sscnet_19',
-            reuse=tf.AUTO_REUSE)
-
-        x_refine = softmax(base_9, self.batch_size, self.vox_shape)
-
-        return vox, x_refine

@@ -110,9 +110,9 @@ def explode(data):
 
 def expand_coordinates(indices):
     x, y, z = indices
-    x[1::2, :, :] += 1
-    y[:, 1::2, :] += 1
-    z[:, :, 1::2] += 1
+    x[1::2, :, :] += 0.4
+    y[:, 1::2, :] += 0.4
+    z[:, :, 1::2] += 0.4
     return x, y, z
 
 
@@ -135,7 +135,7 @@ def plot_image(arr, name='depth.png'):
     plt.close(fig)
 
 
-def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=12):
+def plot_cube(cube, name='voxel', angle=20, IMG_DIM=80, num_class=12):
     from mpl_toolkits.mplot3d import Axes3D
 
     # cube = normalize(cube)
@@ -143,29 +143,32 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=12):
     # cube[np.where(cube > num_class)] = 10
     if num_class == 12:
         cube[cube == -1] = 0
-        facecolors = cm.Paired((np.round(cube) / 12))
-        facecolors[:, :, :, -1] = 0.06 * np.tanh(
-            cube * 1000) + 0.1 * (cube > 3) + 0.2 * (cube == 2) 
+        facecolors = cm.Paired((np.round(cube) / 13))
+        facecolors[:, :, :, -1] = 0.2 * np.tanh(
+            cube * 1000) + 0.1 * (cube > 5) + 0.1 * (cube == 2) 
     elif num_class == 4:
-        IMG_DIM = 64
-        facecolors = cm.Dark2((np.round(cube) / 8))
-        facecolors[:, :, :, -1] = 0.7 * np.tanh(cube * 1000)
+        facecolors = cm.Dark2((np.round(cube) / 9))
+        facecolors[:, :, :, -1] = 0.4 * np.tanh(cube * 1000)
     elif num_class == 3:
         # cube[cube == -1] = 3
         cube[cube < 0] = 0
-        facecolors = cm.Set2((np.round(cube) / 8))
+        facecolors = cm.Set2((np.round(cube) / 9))
         facecolors[:, :, :, -1] = 0.03 * np.tanh(
             cube * 1000) + 0.6 * (cube == 1)
+    elif num_class == 1:
+        cube[cube < 0] = 0
+        facecolors = cm.Dark2((np.round(cube) / 1))
+        facecolors[:, :, :, -1] =  0.5 * (cube == 1)
 
     # make the alpha channel more similar to each others while 0 is still 0
     facecolors = explode(facecolors)
     filled = facecolors[:, :, :, -1] != 0
 
-    x, y, z = expand_coordinates(np.indices(np.array(filled.shape) + 1))
+    x, y, z = expand_coordinates(np.indices(np.array(filled.shape) + 1).astype(float))
 
     # Here is a loop for generating demo files
     for idx, val in enumerate(np.arange(160, 170, 10)):
-        fig = plt.figure(figsize=(60 / 2.54, 60 / 2.54))  # , dpi=150)
+        fig = plt.figure(figsize=(45 / 2.54, 45 / 2.54))  # , dpi=150)
         # plot
         ax1 = fig.add_subplot(111, projection='3d')
         # For samples in SUNCG, 20, -40 is a good choice for visualization
@@ -181,7 +184,7 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=12):
             z,
             filled,
             facecolors=facecolors,
-            edgecolors=np.clip(3 * facecolors - 0.5, 0, 1),
+            edgecolors=np.clip(2 * facecolors - 0.5, 0, 1),
             linewidth=0.5)
 
         # plt.show()
@@ -191,6 +194,7 @@ def plot_cube(cube, name='voxel', angle=40, IMG_DIM=80, num_class=12):
             pad_inches=0,
             transparent=True)
         plt.close(fig)
+
     """
     objects_name = ['empty', 'ceiling', 'floor', 'wall', 'window', 'door', 'chair', 'bed', 'sofa', 'table', 'tvs', 'furnture', 'object']
     for x in range(1, 11):

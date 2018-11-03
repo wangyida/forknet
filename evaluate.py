@@ -127,13 +127,12 @@ def evaluate(batch_size, checknum, mode):
         generative=generative)
 
 
-    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf, vox_sscnet_tf,\
+    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
     recons_vae_loss_tf, recons_cc_loss_tf, recons_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = fcr_agan_model.build_model()
     Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
         visual_size=batch_size)
-    # sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_sscnet(visual_size=batch_size)
     sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_resnet(
         visual_size=batch_size)
     sess = tf.InteractiveSession()
@@ -181,12 +180,12 @@ def evaluate(batch_size, checknum, mode):
             batch_tsdf_test = tsdf_test[i * batch_size:i * batch_size +
                                         batch_size]
 
-            batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, batch_depth_seg_gen, batch_complete_gen, batch_tsdf_enc_Z, batch_vox_enc_Z, batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf, batch_voxs_sscnet = sess.run(
+            batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, batch_depth_seg_gen, batch_complete_gen, batch_tsdf_enc_Z, batch_vox_enc_Z, batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
                 [
                     vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,
                     tsdf_seg_tf, vox_gen_complete_tf, z_tsdf_enc_tf,
                     z_vox_enc_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf,
-                    tsdf_cc_decode_tf, vox_sscnet_tf
+                    tsdf_cc_decode_tf
                 ],
                 # feed_dict={tsdf_tf: batch_tsdf_test})
                 feed_dict={
@@ -204,9 +203,6 @@ def evaluate(batch_size, checknum, mode):
                 np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
             batch_cc_voxs = np.multiply(
                 batch_cc_voxs,
-                np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
-            batch_voxs_sscnet = np.multiply(
-                batch_voxs_sscnet,
                 np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
             batch_refined_vox = np.multiply(
                 batch_refined_vox,
@@ -228,7 +224,6 @@ def evaluate(batch_size, checknum, mode):
                 generated_tsdf = batch_generated_tsdf
                 vae_tsdf = batch_vae_tsdf
                 cc_tsdf = batch_cc_tsdf
-                voxs_sscnet = batch_voxs_sscnet
             else:
                 generated_voxs = np.concatenate(
                     (generated_voxs, batch_generated_voxs), axis=0)
@@ -248,20 +243,20 @@ def evaluate(batch_size, checknum, mode):
                     (generated_tsdf, batch_generated_tsdf), axis=0)
                 vae_tsdf = np.concatenate((vae_tsdf, batch_vae_tsdf), axis=0)
                 cc_tsdf = np.concatenate((cc_tsdf, batch_cc_tsdf), axis=0)
-                voxs_sscnet = np.concatenate((voxs_sscnet, batch_voxs_sscnet),
-                                             axis=0)
 
         print("forwarded")
 
         # real
         layout = np.array(voxel_test)
         layout[layout > 4] = 0
+        surface = np.array(tsdf_test)
+        surface[surface == 2] = 0
         observe = np.array(tsdf_test)
         observe[observe == -1] = 3
         np.save(save_path + '/scene.npy', voxel_test)
         np.save(save_path + '/layout.npy', layout)
         np.save(save_path + '/observe.npy', observe)
-        np.save(save_path + '/tsdf.npy', tsdf_test)
+        np.save(save_path + '/tsdf.npy', surface)
         depth_seg_real = np.multiply(voxel_test, np.where(
             tsdf_test == 1, 1, 0))
         np.save(save_path + '/depth_seg_scene.npy', depth_seg_real)
@@ -283,7 +278,6 @@ def evaluate(batch_size, checknum, mode):
                 np.argmax(depth_seg_gen, axis=4))
         np.save(save_path + '/complete_gen.npy', np.argmax(
             complete_gen, axis=4))
-        np.save(save_path + '/sscnet_vox.npy', np.argmax(voxs_sscnet, axis=4))
         np.save(save_path + '/decode_z_tsdf.npy', tsdf_enc_Z)
         np.save(save_path + '/decode_z_vox.npy', vox_enc_Z)
 
@@ -358,14 +352,6 @@ def evaluate(batch_size, checknum, mode):
         AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
                                 axis=1)
 
-        print(colored("SSCNet segmentation", 'cyan'))
-        on_recons = onehot(np.argmax(voxs_sscnet, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs,
-                                          IoU_class, AP_class, vox_shape)
-        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
-                                 axis=1)
-        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
-                                axis=1)
 
         np.savetxt(
             save_path + '/IoU.csv',

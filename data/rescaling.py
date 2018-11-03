@@ -13,11 +13,11 @@ from progressbar import ProgressBar
 from skimage.transform import resize
 
 
-def rescale_npy(file_np, dir_tar_voxel, label):
+def rescale_npy(file_np, dir_tar_voxel, category):
     ans = np.load(file_np)
     vox = resize(np.squeeze(ans['arr_0']), (64, 64, 64), preserve_range=True, mode='constant')
-    vox[vox > 0.5] = label
-    vox[vox < 0.5] = 0
+    vox[vox >= 0.3] = category 
+    vox[vox < 0.3] = 0
     name_start = int(file_np.rfind('/'))
     name_end = int(file_np.find('.', name_start))
     np.save(dir_tar_voxel + file_np[name_start:name_end] + '.npy', vox)
