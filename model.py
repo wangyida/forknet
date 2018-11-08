@@ -217,8 +217,8 @@ class FCR_aGAN():
 
         self.encode_x_W2 = tf.Variable(
             tf.random_normal([
-                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4 * 3,
-                self.dim_W3
+                self.kernel4[0], self.kernel4[1], self.kernel4[2],
+                self.dim_W4 * 3, self.dim_W3
             ],
                              stddev=0.02),
             name='encode_x_W2')
@@ -420,8 +420,8 @@ class FCR_aGAN():
 
         self.encode_y_W2 = tf.Variable(
             tf.random_normal([
-                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4 * 3,
-                self.dim_W3
+                self.kernel4[0], self.kernel4[1], self.kernel4[2],
+                self.dim_W4 * 3, self.dim_W3
             ],
                              stddev=0.02),
             name='encode_y_W2')
@@ -658,7 +658,6 @@ class FCR_aGAN():
                              stddev=0.02),
             name='refine_W2')
 
-
         self.saver = tf.train.Saver()
 
     def build_model(self):
@@ -785,6 +784,7 @@ class FCR_aGAN():
         batch_mean_tsdf_real = tf.reduce_mean(tsdf_real, [0, 1, 2, 3])
         # batch_mean_vox_real ranges from 0 to 1
         # inverse ranges from 0.5 to 1
+        """
         inverse = tf.div(
             tf.ones_like(batch_mean_vox_real),
             tf.add(batch_mean_vox_real, tf.ones_like(batch_mean_vox_real)))
@@ -792,6 +792,13 @@ class FCR_aGAN():
         inverse = tf.div(
             tf.ones_like(batch_mean_tsdf_real),
             tf.add(batch_mean_tsdf_real, tf.ones_like(batch_mean_tsdf_real)))
+        weight_tsdf = inverse * tf.div(1., tf.reduce_sum(inverse))
+        """
+        ones = tf.ones_like(batch_mean_vox_real)
+        inverse = tf.div(ones, tf.add(batch_mean_vox_real, ones))
+        weight_vox = inverse * tf.div(1., tf.reduce_sum(inverse))
+        ones = tf.ones_like(batch_mean_tsdf_real)
+        inverse = tf.div(ones, tf.add(batch_mean_tsdf_real, ones))
         weight_tsdf = inverse * tf.div(1., tf.reduce_sum(inverse))
         recons_cc_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -835,14 +842,15 @@ class FCR_aGAN():
                     [1, 2, 3]) * weight_vox, 1))
 
         # from scene, the observed surface can also be produced
-        recons_gen_loss += tf.reduce_mean(
+        """
+        recons_gen_loss += 0.1 * tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
                     self.lamda_gamma * tsdf_real *
                     tf.log(1e-6 + tsdf_gen_decode) + (1 - self.lamda_gamma) *
                     (1 - tsdf_real) * tf.log(1e-6 + 1 - tsdf_gen_decode),
                     [1, 2, 3]) * weight_tsdf, 1))
-
+        """
         # completion loss
         vox_real_complete = tf.stack([
             vox_real[:, :, :, :, 0],
@@ -883,7 +891,7 @@ class FCR_aGAN():
                         vox_real, tf.expand_dims(tsdf_real[:, :, :, :, 1], -1))
                      ) * tf.log(1e-6 + 1 - tsdf_seg), [1, 2, 3]) * weight_vox,
                 1))
-        recons_gen_loss = recons_gen_loss + complete_loss # + tsdf_seg_loss
+        # recons_gen_loss = recons_gen_loss + complete_loss  + tsdf_seg_loss
 
         # refiner
         vox_after_refine_dec = tf.placeholder(tf.float32, [
@@ -1578,7 +1586,6 @@ class FCR_aGAN():
 
         return x_refine
 
-
     def samples_generator(self, visual_size):
 
         Z = tf.placeholder(tf.float32, [
@@ -1737,4 +1744,3 @@ class FCR_aGAN():
         x_refine = softmax(out, self.batch_size, self.vox_shape)
 
         return vox, x_refine
-

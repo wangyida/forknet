@@ -57,6 +57,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
     """
 
     #calc_AP
+    """
     for class_n in np.arange(vox_shape[3]):
         on_recons_ = generated_voxs[:, :, :, :, class_n]
         on_real_ = on_real[:, :, :, :, class_n]
@@ -73,6 +74,7 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
     AP_class[vox_shape[3]] = np.round(
         np.sum(AP_class[1:(vox_shape[3] - 1)]) / (vox_shape[3] - 1), 3)
     print 'AP category-wise = ' + str(AP_class[vox_shape[3]])
+    """
     """
     on_recons_ = generated_voxs[:, :, :, :, 1:vox_shape[3]]
     on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -171,6 +173,9 @@ def evaluate(batch_size, checknum, mode):
         # evaluation for reconstruction
         voxel_test, tsdf_test, num = scene_model_id_pair_test(
             dataset_portion=cfg.TRAIN.DATASET_PORTION)
+
+        if cfg.TYPE_TASK is 'scene':
+            tsdf_test[tsdf_test > 1] = 0
         # voxel_test = np.multiply(voxel_test, np.where(tsdf_test > 0, 1, 0))
         num = voxel_test.shape[0]
         print("test voxels loaded")
@@ -193,6 +198,15 @@ def evaluate(batch_size, checknum, mode):
                     vox_tf: batch_voxel_test
                 })
 
+            batch_refined_vox_gen = sess.run(
+                sample_refine_vox_tf,
+                feed_dict={sample_vox_tf: batch_generated_voxs})
+            batch_refined_vox_vae = sess.run(
+                sample_refine_vox_tf,
+                feed_dict={sample_vox_tf: batch_vae_voxs})
+            batch_refined_vox_cc = sess.run(
+                sample_refine_vox_tf, feed_dict={sample_vox_tf: batch_cc_voxs})
+
             # This can eliminate some false positive
             """
             batch_generated_voxs = np.multiply(
@@ -208,9 +222,6 @@ def evaluate(batch_size, checknum, mode):
                 batch_refined_vox,
                 np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
             """
-            batch_refined_vox = sess.run(
-                sample_refine_vox_tf,
-                feed_dict={sample_vox_tf: batch_generated_voxs})
 
             if i == 0:
                 generated_voxs = batch_generated_voxs
@@ -218,7 +229,9 @@ def evaluate(batch_size, checknum, mode):
                 cc_voxs = batch_cc_voxs
                 depth_seg_gen = batch_depth_seg_gen
                 complete_gen = batch_complete_gen
-                refined_voxs = batch_refined_vox
+                refined_voxs_gen = batch_refined_vox_gen
+                refined_voxs_vae = batch_refined_vox_vae
+                refined_voxs_cc = batch_refined_vox_cc
                 tsdf_enc_Z = batch_tsdf_enc_Z
                 vox_enc_Z = batch_vox_enc_Z
                 generated_tsdf = batch_generated_tsdf
@@ -233,8 +246,12 @@ def evaluate(batch_size, checknum, mode):
                     (depth_seg_gen, batch_depth_seg_gen), axis=0)
                 complete_gen = np.concatenate(
                     (complete_gen, batch_complete_gen), axis=0)
-                refined_voxs = np.concatenate(
-                    (refined_voxs, batch_refined_vox), axis=0)
+                refined_voxs_gen = np.concatenate(
+                    (refined_voxs_gen, batch_refined_vox_gen), axis=0)
+                refined_voxs_vae = np.concatenate(
+                    (refined_voxs_vae, batch_refined_vox_vae), axis=0)
+                refined_voxs_cc = np.concatenate(
+                    (refined_voxs_cc, batch_refined_vox_cc), axis=0)
                 tsdf_enc_Z = np.concatenate((tsdf_enc_Z, batch_tsdf_enc_Z),
                                             axis=0)
                 vox_enc_Z = np.concatenate((vox_enc_Z, batch_vox_enc_Z),
@@ -247,14 +264,11 @@ def evaluate(batch_size, checknum, mode):
         print("forwarded")
 
         # real
-        layout = np.array(voxel_test)
-        layout[layout > 4] = 0
         surface = np.array(tsdf_test)
         surface[surface == 2] = 0
         observe = np.array(tsdf_test)
         observe[observe == -1] = 3
         np.save(save_path + '/scene.npy', voxel_test)
-        np.save(save_path + '/layout.npy', layout)
         np.save(save_path + '/observe.npy', observe)
         np.save(save_path + '/tsdf.npy', surface)
         depth_seg_real = np.multiply(voxel_test, np.where(
@@ -272,8 +286,12 @@ def evaluate(batch_size, checknum, mode):
                 np.argmax(generated_tsdf, axis=4))
         np.save(save_path + '/vae_tsdf.npy', np.argmax(vae_tsdf, axis=4))
         np.save(save_path + '/cc_tsdf.npy', np.argmax(cc_tsdf, axis=4))
-        np.save(save_path + '/recons_refine_vox.npy',
-                np.argmax(refined_voxs, axis=4))
+        np.save(save_path + '/recons_refine_vox_gen.npy',
+                np.argmax(refined_voxs_gen, axis=4))
+        np.save(save_path + '/recons_refine_vox_vae.npy',
+                np.argmax(refined_voxs_cc, axis=4))
+        np.save(save_path + '/recons_refine_vox_cc.npy',
+                np.argmax(refined_voxs_vae, axis=4))
         np.save(save_path + '/depth_seg_gen.npy',
                 np.argmax(depth_seg_gen, axis=4))
         np.save(save_path + '/complete_gen.npy', np.argmax(
@@ -287,9 +305,6 @@ def evaluate(batch_size, checknum, mode):
         on_real = onehot(voxel_test, vox_shape[3])
         on_depth_seg_real = onehot(depth_seg_real, vox_shape[3])
         on_complete_real = onehot(complete_real, 2)
-        on_recons = onehot(np.argmax(generated_voxs, axis=4), vox_shape[3])
-        on_vae = onehot(np.argmax(vae_voxs, axis=4), vox_shape[3])
-        on_cc = onehot(np.argmax(cc_voxs, axis=4), vox_shape[3])
         on_depth_seg_gen = onehot(
             np.multiply(
                 np.argmax(depth_seg_gen, axis=4), np.where(
@@ -319,6 +334,7 @@ def evaluate(batch_size, checknum, mode):
 
         # volume segmentation
         print(colored("Decoded segmentation", 'cyan'))
+        on_recons = onehot(np.argmax(generated_voxs, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, generated_voxs,
                                           IoU_class, AP_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
@@ -327,31 +343,68 @@ def evaluate(batch_size, checknum, mode):
                                 axis=1)
 
         print(colored("VAE segmentation", 'cyan'))
-        IoU_class, AP_class = IoU_AP_calc(on_real, on_vae, vae_voxs, IoU_class,
-                                          AP_class, vox_shape)
-        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
-                                 axis=1)
-        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
-                                axis=1)
-
-        print(colored("Cycle consistency segmentation", 'cyan'))
-        IoU_class, AP_class = IoU_AP_calc(on_real, on_cc, cc_voxs, IoU_class,
-                                          AP_class, vox_shape)
-        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
-                                 axis=1)
-        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
-                                axis=1)
-
-        # refine for volume segmentation
-        print(colored("Refined segmentation", 'cyan'))
-        on_recons = onehot(np.argmax(refined_voxs, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs,
+        on_recons = onehot(np.argmax(vae_voxs, axis=4), vox_shape[3])
+        IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, vae_voxs,
                                           IoU_class, AP_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
         AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
                                 axis=1)
 
+        print(colored("Cycle consistency segmentation", 'cyan'))
+        on_recons = onehot(np.argmax(cc_voxs, axis=4), vox_shape[3])
+        IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, cc_voxs,
+                                          IoU_class, AP_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+                                 axis=1)
+        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
+                                axis=1)
+
+        # refine for volume segmentation
+        print(colored("Refined", 'red'))
+        print(colored("Refined Depth segmentation", 'cyan'))
+        on_recons = onehot(
+            np.argmax(
+                np.multiply(refined_voxs_vae,
+                            np.expand_dims(np.where(tsdf_test == 1, 1, 0),
+                                           -1)),
+                axis=4), vox_shape[3])
+        IoU_class, AP_class = IoU_AP_calc(
+            on_depth_seg_real, on_recons,
+            np.multiply(refined_voxs_vae,
+                        np.expand_dims(np.where(tsdf_test == 1, 1, 0), -1)),
+            IoU_class, AP_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+                                 axis=1)
+        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
+                                axis=1)
+
+        print(colored("Refined segmentation (Generated)", 'cyan'))
+        on_recons = onehot(np.argmax(refined_voxs_gen, axis=4), vox_shape[3])
+        IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs_gen,
+                                          IoU_class, AP_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+                                 axis=1)
+        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
+                                axis=1)
+
+        print(colored("Refined segmentation (VAE)", 'cyan'))
+        on_recons = onehot(np.argmax(refined_voxs_vae, axis=4), vox_shape[3])
+        IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs_vae,
+                                          IoU_class, AP_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+                                 axis=1)
+        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
+                                axis=1)
+
+        print(colored("Refined segmentation (CC)", 'cyan'))
+        on_recons = onehot(np.argmax(refined_voxs_cc, axis=4), vox_shape[3])
+        IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs_cc,
+                                          IoU_class, AP_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+                                 axis=1)
+        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
+                                axis=1)
 
         np.savetxt(
             save_path + '/IoU.csv',

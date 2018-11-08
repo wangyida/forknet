@@ -110,9 +110,9 @@ def explode(data):
 
 def expand_coordinates(indices):
     x, y, z = indices
-    x[1::2, :, :] += 0.4
-    y[:, 1::2, :] += 0.4
-    z[:, :, 1::2] += 0.4
+    x[1::2, :, :] += 0.2
+    y[:, 1::2, :] += 0.2
+    z[:, :, 1::2] += 0.2
     return x, y, z
 
 
@@ -142,10 +142,11 @@ def plot_cube(cube, name='voxel', angle=20, IMG_DIM=80, num_class=12):
     # Note that cm.Paired has 12 colors and Set2 has 8 colors
     # cube[np.where(cube > num_class)] = 10
     if num_class == 12:
-        cube[cube == -1] = 0
+        cube[cube < 0] = 0
+        cube[cube == 255] = 0
         facecolors = cm.Paired((np.round(cube) / 13))
         facecolors[:, :, :, -1] = 0.2 * np.tanh(
-            cube * 1000) + 0.1 * (cube > 5) + 0.1 * (cube == 2) 
+            cube * 1000) + 0.8 * (cube > 5) + 0.2 * (cube == 2) 
     elif num_class == 4:
         facecolors = cm.Dark2((np.round(cube) / 9))
         facecolors[:, :, :, -1] = 0.4 * np.tanh(cube * 1000)

@@ -142,7 +142,13 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             db_inds, epoch_flag = data_process.get_next_minibatch()
             batch_voxel = data_process.get_voxel(db_inds)
             batch_tsdf = data_process.get_tsdf(db_inds)
-            batch_tsdf_train = batch_tsdf
+
+            if cfg.TYPE_TASK is 'scene':
+                batch_tsdf[batch_tsdf > 1] = 0
+                batch_tsdf_train = batch_tsdf
+            elif cfg.TYPE_TASK is 'object':
+                batch_tsdf_train = batch_tsdf
+
             # batch_voxel_train = np.multiply(batch_voxel, np.where(batch_tsdf_train > 0, 1, 0))
             batch_voxel_train = batch_voxel
             lr = learning_rate(cfg.LEARNING_RATE_V, ite)
@@ -152,7 +158,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
-            for s in np.arange(2):
+            for s in np.arange(1):
                 _, recons_vae_loss_val, recons_cc_loss_val, recons_gen_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
                     [
                         train_op_encode, recons_vae_loss_tf, recons_cc_loss_tf,
