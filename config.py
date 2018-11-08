@@ -26,13 +26,13 @@ __C.NET.DILATIONS = [1, 1, 1, 1, 1]
 __C.NET.REFINE_CH = 32
 __C.NET.REFINE_KERNEL = 3
 __C.NET.REFINER = 'sscnet'
-__C.NET.DISCRIMINATIVE = False
-__C.NET.GENERATIVE = False
-__C.NET.VARIATIONAL = False
+__C.NET.DISCRIMINATIVE = True
+__C.NET.GENERATIVE = True
+__C.NET.VARIATIONAL = True
 
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'train'
+__C.TYPE_DATA = 'test'
 if __C.TYPE_TASK is 'scene':
     __C.CONST.N_VOX = [80, 48, 80]
     __C.NET.START_VOX = [5, 3, 5]

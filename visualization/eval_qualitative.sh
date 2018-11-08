@@ -9,9 +9,9 @@ then
 	# python3 visualization/voxviz.py -v ./eval_suncg/complete_gen.npy -t vis_suncg/complete_gen -n 1 &
 	python3 visualization/voxviz.py -v ./eval_suncg/recons_vox.npy -t vis_suncg/scene_gen -n 12 &
 	# python3 visualization/voxviz.py -v ./eval_suncg/recons_tsdf.npy -t vis_suncg/tsdf_recons -n 3 &
-	python3 visualization/voxviz.py -v ./eval_suncg/recons_refine_vox_vae.npy -t vis_suncg/scene_ours -n 12 &
-	python3 visualization/voxviz.py -v ./eval_suncg/recons_refine_vox_gen.npy -t vis_suncg/scene_ours_wo-refiner -n 12 &
-	python3 visualization/voxviz.py -v ./eval_suncg/recons_refine_vox_cc.npy -t vis_suncg/scene_ours_wo-styletrans -n 12 &
+	python3 visualization/voxviz.py -v ./eval_suncg/refined_voxs_vae.npy -t vis_suncg/scene_ours -n 12 &
+	python3 visualization/voxviz.py -v ./eval_suncg/refined_voxs_gen.npy -t vis_suncg/scene_ours_wo-refiner -n 12 &
+	python3 visualization/voxviz.py -v ./eval_suncg/refined_voxs_cc.npy -t vis_suncg/scene_ours_wo-styletrans -n 12 &
 	python3 visualization/voxviz.py -v ./eval_suncg/vae_vox.npy -t vis_suncg/scene_vae -n 12 &
 	# python3 visualization/voxviz.py -v ./eval_suncg/vae_tsdf.npy -t vis_suncg/tsdf_vae -n 3 &
 	# python3 visualization/voxviz.py -v ./eval_suncg/cc_tsdf.npy -t vis_suncg/tsdf_cc -n 3 &
@@ -27,9 +27,9 @@ then
 	# python3 visualization/voxviz.py -v ./eval_nyu/complete_gen.npy -t vis_nyu/complete_gen -n 1 &
 	python3 visualization/voxviz.py -v ./eval_nyu/recons_vox.npy -t vis_nyu/scene_gen -n 12 &
 	# python3 visualization/voxviz.py -v ./eval_nyu/recons_tsdf.npy -t vis_nyu/tsdf_recons -n 3 &
-	python3 visualization/voxviz.py -v ./eval_nyu/recons_refine_vox_vae.npy -t vis_nyu/scene_ours -n 12 &
-	python3 visualization/voxviz.py -v ./eval_nyu/recons_refine_vox_gen.npy -t vis_nyu/scene_ours_wo-refiner -n 12 &
-	python3 visualization/voxviz.py -v ./eval_nyu/recons_refine_vox_cc.npy -t vis_nyu/scene_ours_wo-styletrans -n 12 &
+	python3 visualization/voxviz.py -v ./eval_nyu/refined_voxs_vae.npy -t vis_nyu/scene_ours -n 12 &
+	python3 visualization/voxviz.py -v ./eval_nyu/refined_voxs_gen.npy -t vis_nyu/scene_ours_wo-refiner -n 12 &
+	python3 visualization/voxviz.py -v ./eval_nyu/refined_voxs_cc.npy -t vis_nyu/scene_ours_wo-styletrans -n 12 &
 	python3 visualization/voxviz.py -v ./eval_nyu/vae_vox.npy -t vis_nyu/scene_vae -n 12 &
 	# python3 visualization/voxviz.py -v ./eval_nyu/vae_tsdf.npy -t vis_nyu/tsdf_vae -n 3 &
 	# python3 visualization/voxviz.py -v ./eval_nyu/cc_tsdf.npy -t vis_nyu/tsdf_cc -n 3 &
@@ -45,9 +45,9 @@ then
 	# python3 visualization/voxviz.py -v ./eval_sscnet/complete_gen.npy -t vis_sscnet/complete_gen -n 1 &
 	python3 visualization/voxviz.py -v ./eval_sscnet/recons_vox.npy -t vis_sscnet/scene_gen -n 12 &
 	# python3 visualization/voxviz.py -v ./eval_sscnet/recons_tsdf.npy -t vis_sscnet/tsdf_recons -n 3 &
-	python3 visualization/voxviz.py -v ./eval_sscnet/recons_refine_vox.npy -t vis_sscnet/scene_ours -n 12 &
-	python3 visualization/voxviz.py -v ./eval_sscnet/recons_refine_vox_gen.npy -t vis_sscnet/scene_ours_wo-refiner -n 12 &
-	python3 visualization/voxviz.py -v ./eval_sscnet/recons_refine_vox_cc.npy -t vis_sscnet/scene_ours_wo-styletrans -n 12 &
+	python3 visualization/voxviz.py -v ./eval_sscnet/refined_voxs.npy -t vis_sscnet/scene_ours -n 12 &
+	python3 visualization/voxviz.py -v ./eval_sscnet/refined_voxs_gen.npy -t vis_sscnet/scene_ours_wo-refiner -n 12 &
+	python3 visualization/voxviz.py -v ./eval_sscnet/refined_voxs_cc.npy -t vis_sscnet/scene_ours_wo-styletrans -n 12 &
 	python3 visualization/voxviz.py -v ./eval_sscnet/vae_vox.npy -t vis_sscnet/scene_vae -n 12 &
 	# python3 visualization/voxviz.py -v ./eval_sscnet/vae_tsdf.npy -t vis_sscnet/tsdf_vae -n 3 &
 	# python3 visualization/voxviz.py -v ./eval_sscnet/cc_tsdf.npy -t vis_sscnet/tsdf_cc -n 3 &
@@ -60,7 +60,7 @@ then
 	python3 visualization/voxviz.py -v ./eval_shapenet/complete_gen.npy -t vis_shapenet/complete_gen -n 1 &
 	python3 visualization/voxviz.py -v ./eval_shapenet/recons_vox.npy -t vis_shapenet/scene_gen -n 4 &
 	# python3 visualization/voxviz.py -v ./eval_shapenet/recons_tsdf.npy -t vis_shapenet/tsdf_recons -n 3 &
-	python3 visualization/voxviz.py -v ./eval_shapenet/recons_refine_vox.npy -t vis_shapenet/scene_ours -n 4 &
+	python3 visualization/voxviz.py -v ./eval_shapenet/refined_voxs.npy -t vis_shapenet/scene_ours -n 4 &
 	python3 visualization/voxviz.py -v ./eval_shapenet/vae_vox.npy -t vis_shapenet/scene_ours_wo-refiner -n 4 &
 	python3 visualization/voxviz.py -v ./eval_shapenet/cc_vox.npy -t vis_shapenet/scene_ours_wo-styletrans -n 4 &
 	# python3 visualization/voxviz.py -v ./eval_shapenet/vae_tsdf.npy -t vis_shapenet/tsdf_vae -n 3 &

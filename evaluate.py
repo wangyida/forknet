@@ -158,17 +158,24 @@ def evaluate(batch_size, checknum, mode):
                 Z_var_np_sample = np.concatenate(
                     (Z_var_np_sample, Z_np_sample), axis=0)
         np.save(save_path + '/sample_z.npy', Z_var_np_sample)
+        Z_var_np_sample.astype('float32').tofile(save_path + '/sample_z.bin')
 
         generated_voxs_fromrand = sess.run(
             vox_tf_sample, feed_dict={Z_tf_sample: Z_var_np_sample})
         np.save(save_path + '/generate.npy',
                 np.argmax(generated_voxs_fromrand, axis=4))
+        np.argmax(
+            generated_voxs_fromrand,
+            axis=4).astype('uint8').tofile(save_path + '/generate.bin')
 
         refined_voxs_fromrand = sess.run(
             sample_refine_vox_tf,
             feed_dict={sample_vox_tf: generated_voxs_fromrand})
         np.save(save_path + '/generate_refine.npy',
                 np.argmax(refined_voxs_fromrand, axis=4))
+        np.argmax(
+            refined_voxs_fromrand,
+            axis=4).astype('uint8').tofile(save_path + '/generate_refine.bin')
 
         # evaluation for reconstruction
         voxel_test, tsdf_test, num = scene_model_id_pair_test(
@@ -263,39 +270,94 @@ def evaluate(batch_size, checknum, mode):
 
         print("forwarded")
 
-        # real
-        surface = np.array(tsdf_test)
-        surface[surface == 2] = 0
+        # For visualization
+        np.save(save_path + '/scene.npy', voxel_test)
+        voxel_test.astype('uint8').tofile(save_path + '/scene.bin')
+
         observe = np.array(tsdf_test)
         observe[observe == -1] = 3
-        np.save(save_path + '/scene.npy', voxel_test)
         np.save(save_path + '/observe.npy', observe)
-        np.save(save_path + '/tsdf.npy', surface)
+        observe.astype('uint8').tofile(save_path + '/observe.bin')
+
+        surface = np.array(tsdf_test)
+        surface = np.clip(surface, 0, 1)
+        np.save(save_path + '/surface.npy', surface)
+        surface.astype('uint8').tofile(save_path + '/surface.bin')
+
         depth_seg_real = np.multiply(voxel_test, np.where(
             tsdf_test == 1, 1, 0))
         np.save(save_path + '/depth_seg_scene.npy', depth_seg_real)
+        depth_seg_real.astype('uint8').tofile(save_path +
+                                              '/depth_seg_scene.bin')
+
         complete_real = np.clip(voxel_test, 0, 1)
         np.save(save_path + '/complete_scene.npy', complete_real)
+        complete_real.astype('uint8').tofile(save_path + '/complete_real.bin')
 
         # decoded
         np.save(save_path + '/recons_vox.npy', np.argmax(
             generated_voxs, axis=4))
+        np.argmax(
+            generated_voxs,
+            axis=4).astype('uint8').tofile(save_path + '/recons_vox.bin')
+
         np.save(save_path + '/vae_vox.npy', np.argmax(vae_voxs, axis=4))
+        np.argmax(
+            vae_voxs,
+            axis=4).astype('uint8').tofile(save_path + '/vae_vox.bin')
+
         np.save(save_path + '/cc_vox.npy', np.argmax(cc_voxs, axis=4))
+        np.argmax(
+            cc_voxs, axis=4).astype('uint8').tofile(save_path + '/cc_vox.bin')
+
         np.save(save_path + '/recons_tsdf.npy',
                 np.argmax(generated_tsdf, axis=4))
+        np.argmax(
+            generated_tsdf,
+            axis=4).astype('uint8').tofile(save_path + '/recons_tsdf.bin')
+
         np.save(save_path + '/vae_tsdf.npy', np.argmax(vae_tsdf, axis=4))
+        np.argmax(
+            vae_tsdf,
+            axis=4).astype('uint8').tofile(save_path + '/vae_tsdf.bin')
+
         np.save(save_path + '/cc_tsdf.npy', np.argmax(cc_tsdf, axis=4))
-        np.save(save_path + '/recons_refine_vox_gen.npy',
+        np.argmax(
+            cc_tsdf, axis=4).astype('uint8').tofile(save_path + '/cc_tsdf.bin')
+
+        np.save(save_path + '/reconed_refine_vox_gen.npy',
                 np.argmax(refined_voxs_gen, axis=4))
-        np.save(save_path + '/recons_refine_vox_vae.npy',
-                np.argmax(refined_voxs_cc, axis=4))
-        np.save(save_path + '/recons_refine_vox_cc.npy',
+        np.argmax(
+            refined_voxs_gen,
+            axis=4).astype('uint8').tofile(save_path +
+                                           '/reconed_refine_vox_gen.bin')
+
+        np.save(save_path + '/reconed_refine_vox_vae.npy',
                 np.argmax(refined_voxs_vae, axis=4))
+        np.argmax(
+            refined_voxs_vae,
+            axis=4).astype('uint8').tofile(save_path +
+                                           '/reconed_refine_vox_vae.bin')
+
+        np.save(save_path + '/reconed_refine_vox_cc.npy',
+                np.argmax(refined_voxs_cc, axis=4))
+        np.argmax(
+            refined_voxs_cc,
+            axis=4).astype('uint8').tofile(save_path +
+                                           '/reconed_refine_vox_cc.bin')
+
         np.save(save_path + '/depth_seg_gen.npy',
                 np.argmax(depth_seg_gen, axis=4))
+        np.argmax(
+            depth_seg_gen,
+            axis=4).astype('uint8').tofile(save_path + '/depth_seg_gen.bin')
+
         np.save(save_path + '/complete_gen.npy', np.argmax(
             complete_gen, axis=4))
+        np.argmax(
+            complete_gen,
+            axis=4).astype('uint8').tofile(save_path + '/complete_gen.bin')
+
         np.save(save_path + '/decode_z_tsdf.npy', tsdf_enc_Z)
         np.save(save_path + '/decode_z_vox.npy', vox_enc_Z)
 
