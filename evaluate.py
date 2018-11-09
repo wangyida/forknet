@@ -481,9 +481,9 @@ def evaluate(batch_size, checknum, mode):
 
     # interpolation evaluation
     if mode == 'interpolate':
-        interpolate_num = 30
+        interpolate_num = 8
         #interpolatioin latent vectores
-        decode_z = np.load(save_path + '/decode_z.npy')
+        decode_z = np.load(save_path + '/decode_z_vox.npy')
         decode_z = decode_z[:batch_size]
         for l in np.arange(batch_size):
             for r in np.arange(batch_size):
@@ -554,6 +554,9 @@ def evaluate(batch_size, checknum, mode):
                     np.save(
                         save_path + '/interpolation' + str(l) + '-' + str(r) +
                         '.npy', vox_models_cat)
+                    vox_models_cat.astype(
+                        'uint8').tofile(save_path + '/interpolation' + str(l) +
+                                        '-' + str(r) + '.bin')
         print("voxels saved")
 
     # add noise evaluation
