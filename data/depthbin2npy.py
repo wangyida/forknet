@@ -45,14 +45,15 @@ def bin2array(file_bin, dir_tar_voxel):
         checkVox[checkVox == 29] = 11
         checkVox[checkVox == 31] = 11
         checkVox[checkVox == 34] = 11
-        checkVox[checkVox == 30] = 6 
-        checkVox[checkVox == 33] = 10 
-        checkVox[checkVox == 35] = 10 
-        checkVox[checkVox > 12] = 12 
+        checkVox[checkVox == 30] = 6
+        checkVox[checkVox == 33] = 10
+        checkVox[checkVox == 35] = 10
+        checkVox[checkVox > 12] = 12
 
         name_start = int(file_bin.rfind('/'))
         name_end = int(file_bin.find('.', name_start))
-        np.save(dir_tar_voxel + file_bin[name_start:name_end] + '.npy', checkVox)
+        np.save(dir_tar_voxel + file_bin[name_start:name_end] + '.npy',
+                checkVox)
     f.close()
 
 
@@ -134,9 +135,8 @@ if __name__ == "__main__":
     from joblib import Parallel, delayed
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
-    Parallel(n_jobs=num_cores)(
-        delayed(bin2array)(file_bin, dir_tar_voxel)
-        for file_bin in pbar(files_bin))
+    Parallel(n_jobs=num_cores)(delayed(bin2array)(file_bin, dir_tar_voxel)
+                               for file_bin in pbar(files_bin))
     # below is the normal procedure for processing
     """
     for file_bin in pbar(files_bin):

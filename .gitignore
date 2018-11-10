@@ -7,3 +7,4 @@ tsdf.ply
 .DS*
 vis_*
 eval_*
+eval

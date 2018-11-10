@@ -146,7 +146,7 @@ def plot_cube(cube, name='voxel', angle=20, IMG_DIM=80, num_class=12):
         cube[cube == 255] = 0
         facecolors = cm.Paired((np.round(cube) / 13))
         facecolors[:, :, :, -1] = 0.2 * np.tanh(
-            cube * 1000) + 0.8 * (cube > 5) + 0.2 * (cube == 2) 
+            cube * 1000) + 0.8 * (cube > 5) + 0.2 * (cube == 2)
     elif num_class == 4:
         facecolors = cm.Dark2((np.round(cube) / 9))
         facecolors[:, :, :, -1] = 0.4 * np.tanh(cube * 1000)
@@ -159,13 +159,14 @@ def plot_cube(cube, name='voxel', angle=20, IMG_DIM=80, num_class=12):
     elif num_class == 1:
         cube[cube < 0] = 0
         facecolors = cm.Dark2((np.round(cube) / 1))
-        facecolors[:, :, :, -1] =  0.5 * (cube == 1)
+        facecolors[:, :, :, -1] = 0.5 * (cube == 1)
 
     # make the alpha channel more similar to each others while 0 is still 0
     facecolors = explode(facecolors)
     filled = facecolors[:, :, :, -1] != 0
 
-    x, y, z = expand_coordinates(np.indices(np.array(filled.shape) + 1).astype(float))
+    x, y, z = expand_coordinates(
+        np.indices(np.array(filled.shape) + 1).astype(float))
 
     # Here is a loop for generating demo files
     for idx, val in enumerate(np.arange(160, 170, 10)):
@@ -195,7 +196,6 @@ def plot_cube(cube, name='voxel', angle=20, IMG_DIM=80, num_class=12):
             pad_inches=0,
             transparent=True)
         plt.close(fig)
-
     """
     objects_name = ['empty', 'ceiling', 'floor', 'wall', 'window', 'door', 'chair', 'bed', 'sofa', 'table', 'tvs', 'furnture', 'object']
     for x in range(1, 11):
@@ -276,7 +276,6 @@ if __name__ == "__main__":
     # resized = resize(resized, (48, 80, 80), mode='constant')
     for idx in pbar(sample_range):
         plot_cube(
-        np.flip(np.rollaxis(np.squeeze(arr[idx, :, :, :]), 2, 0), 1),
-        name=target_folder + '/' + format(idx, '03d'),
-        num_class=num_class)
-
+            np.flip(np.rollaxis(np.squeeze(arr[idx, :, :, :]), 2, 0), 1),
+            name=target_folder + '/' + format(idx, '03d'),
+            num_class=num_class)

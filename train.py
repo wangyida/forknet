@@ -27,7 +27,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
-    tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
+    if cfg.TYPE_TASK is 'scene':
+        tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
+    elif cfg.TYPE_TASK is 'object':
+        tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -47,6 +50,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     fcr_agan_model = FCR_aGAN(
         batch_size=batch_size,
         vox_shape=vox_shape,
+        tsdf_shape=tsdf_shape,
         dim_z=dim_z,
         dim=dim,
         start_vox_size=start_vox_size,
