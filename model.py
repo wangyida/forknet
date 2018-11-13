@@ -902,9 +902,9 @@ class FCR_aGAN():
                         vox_real, tf.expand_dims(tsdf_real[:, :, :, :, 1], -1))
                      ) * tf.log(1e-6 + 1 - tsdf_seg), [1, 2, 3]) * weight_vox,
                 1))
-        recons_gen_loss = recons_gen_loss + complete_gen_loss  # + tsdf_seg_loss
-        recons_vae_loss = recons_vae_loss + complete_vae_loss  # + tsdf_seg_loss
-        recons_cc_loss = recons_cc_loss + complete_cc_loss  # + tsdf_seg_loss
+        # recons_gen_loss = recons_gen_loss + complete_gen_loss  # + tsdf_seg_loss
+        # recons_vae_loss = recons_vae_loss + complete_vae_loss  # + tsdf_seg_loss
+        # recons_cc_loss = recons_cc_loss + complete_cc_loss  # + tsdf_seg_loss
 
         # refiner
         vox_after_refine_dec = tf.placeholder(tf.float32, [

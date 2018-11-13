@@ -17,6 +17,12 @@ init()
 def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
                 vox_shape):
     # calc_IoU
+    if vox_shape[3] == 13:
+        name_list = ['empty','ceili','floor',' wall','windo',' door','chair','  bed',' sofa','table','  tvs','furni','objec']
+    elif vox_shape[3] == 5:
+        name_list = ['empty','bench','chair','couch','table']
+    elif vox_shape[3] == 2:
+        name_list = ['empty','objec']
     num = on_real.shape[0]
     for class_n in np.arange(vox_shape[3]):
         on_recons_ = on_recons[:, :, :, :, class_n]
@@ -33,13 +39,20 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
         if count > 0:
             IoU_calc = np.round(IoU_element / count, 3)
             IoU_class[class_n] = IoU_calc
-            print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
+            print 'IoU of ' + name_list[class_n] + ':' + str(IoU_calc)
         else:
             IoU_class[class_n] = 1
-            print 'IoU class ' + str(class_n) + ': nothing exists'
-    IoU_class[vox_shape[3]] = np.round(
-        np.sum(IoU_class[1:(vox_shape[3])]) / (vox_shape[3] - 1), 3)
-    print 'IoU category-wise = ' + str(IoU_class[vox_shape[3]])
+            print 'IoU of ' + name_list[class_n] + ': nothing exists'
+    if vox_shape[3] == 13:
+        IoU_class[vox_shape[3]] = np.round(
+            (np.sum(IoU_class[1:(vox_shape[3])]) - IoU_class[5]) / (vox_shape[3] - 2), 3)
+    elif  vox_shape[3] == 5:
+        IoU_class[vox_shape[3]] = np.round(
+            np.sum(IoU_class[1:(vox_shape[3])]) / (vox_shape[3] - 1), 3)
+    elif  vox_shape[3] == 2:
+        IoU_class[vox_shape[3]] = np.round(
+            np.sum(IoU_class) / vox_shape[3], 3)
+    print 'IoU average: ' + str(IoU_class[vox_shape[3]])
     """
     on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
     on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
@@ -401,8 +414,6 @@ def evaluate(batch_size, checknum, mode):
 
         # volume segmentation
         print(colored("Decoded segmentation", 'cyan'))
-        IoU_class = np.zeros([vox_shape[3] + 1])
-        AP_class = np.zeros([vox_shape[3] + 1])
         on_recons = onehot(np.argmax(generated_voxs, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, generated_voxs,
                                           IoU_class, AP_class, vox_shape)
@@ -412,8 +423,6 @@ def evaluate(batch_size, checknum, mode):
                                 axis=1)
 
         print(colored("VAE segmentation", 'cyan'))
-        IoU_class = np.zeros([vox_shape[3] + 1])
-        AP_class = np.zeros([vox_shape[3] + 1])
         on_recons = onehot(np.argmax(vae_voxs, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, vae_voxs,
                                           IoU_class, AP_class, vox_shape)
@@ -423,8 +432,6 @@ def evaluate(batch_size, checknum, mode):
                                 axis=1)
 
         print(colored("Cycle consistency segmentation", 'cyan'))
-        IoU_class = np.zeros([vox_shape[3] + 1])
-        AP_class = np.zeros([vox_shape[3] + 1])
         on_recons = onehot(np.argmax(cc_voxs, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, cc_voxs,
                                           IoU_class, AP_class, vox_shape)
@@ -436,8 +443,6 @@ def evaluate(batch_size, checknum, mode):
         # refine for volume segmentation
         print(colored("Refined", 'red'))
         print(colored("Refined Depth segmentation", 'cyan'))
-        IoU_class = np.zeros([vox_shape[3] + 1])
-        AP_class = np.zeros([vox_shape[3] + 1])
         on_recons = onehot(
             np.argmax(
                 np.multiply(refined_voxs_vae, np.expand_dims(surface, -1)),
@@ -452,8 +457,6 @@ def evaluate(batch_size, checknum, mode):
                                 axis=1)
 
         print(colored("Refined segmentation (Generated)", 'cyan'))
-        IoU_class = np.zeros([vox_shape[3] + 1])
-        AP_class = np.zeros([vox_shape[3] + 1])
         on_recons = onehot(np.argmax(refined_voxs_gen, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs_gen,
                                           IoU_class, AP_class, vox_shape)
@@ -463,8 +466,6 @@ def evaluate(batch_size, checknum, mode):
                                 axis=1)
 
         print(colored("Refined segmentation (VAE)", 'cyan'))
-        IoU_class = np.zeros([vox_shape[3] + 1])
-        AP_class = np.zeros([vox_shape[3] + 1])
         on_recons = onehot(np.argmax(refined_voxs_vae, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs_vae,
                                           IoU_class, AP_class, vox_shape)
@@ -474,8 +475,6 @@ def evaluate(batch_size, checknum, mode):
                                 axis=1)
 
         print(colored("Refined segmentation (CC)", 'cyan'))
-        IoU_class = np.zeros([vox_shape[3] + 1])
-        AP_class = np.zeros([vox_shape[3] + 1])
         on_recons = onehot(np.argmax(refined_voxs_cc, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_real, on_recons, refined_voxs_cc,
                                           IoU_class, AP_class, vox_shape)
