@@ -1607,9 +1607,9 @@ class FCR_aGAN():
         Z_ = tf.reshape(Z, [visual_size, -1])
         h1 = tf.nn.relu(
             batchnormalize(
-                tf.matmul(Z_, self.gen_y_W1),
-                g=self.gen_y_bn_g1,
-                b=self.gen_y_bn_b1))
+                tf.matmul(Z_, self.gen_x_W1),
+                g=self.gen_x_bn_g1,
+                b=self.gen_x_bn_b1))
         h1 = tf.reshape(h1, [
             visual_size, self.start_vox_size[0], self.start_vox_size[1],
             self.start_vox_size[2], self.dim_W1
@@ -1622,14 +1622,14 @@ class FCR_aGAN():
         ]
         h2 = tf.nn.conv3d_transpose(
             h1,
-            self.gen_y_W2,
+            self.gen_x_W2,
             output_shape=output_shape_l2,
             strides=self.stride)
         h2 = tf.nn.relu(
             batchnormalize(
                 h2,
-                g=self.gen_y_bn_g2,
-                b=self.gen_y_bn_b2,
+                g=self.gen_x_bn_g2,
+                b=self.gen_x_bn_b2,
                 batch_size=self.batch_size))
 
         vox_size_l3 = self.start_vox_size * 4

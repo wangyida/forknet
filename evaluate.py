@@ -174,13 +174,12 @@ def evaluate(batch_size, checknum, mode):
             else:
                 Z_var_np_sample = np.concatenate(
                     (Z_var_np_sample, Z_np_sample), axis=0)
-        np.save(save_path + '/sample_z.npy', Z_var_np_sample)
+        # np.save(save_path + '/sample_z.npy', Z_var_np_sample)
         Z_var_np_sample.astype('float32').tofile(save_path + '/sample_z.bin')
 
         generated_voxs_fromrand = sess.run(
             vox_tf_sample, feed_dict={Z_tf_sample: Z_var_np_sample})
-        np.save(save_path + '/generate.npy',
-                np.argmax(generated_voxs_fromrand, axis=4))
+        # np.save(save_path + '/generate.npy', np.argmax(generated_voxs_fromrand, axis=4))
         np.argmax(
             generated_voxs_fromrand,
             axis=4).astype('uint8').tofile(save_path + '/generate.bin')
@@ -188,8 +187,7 @@ def evaluate(batch_size, checknum, mode):
         refined_voxs_fromrand = sess.run(
             sample_refine_vox_tf,
             feed_dict={sample_vox_tf: generated_voxs_fromrand})
-        np.save(save_path + '/generate_refine.npy',
-                np.argmax(refined_voxs_fromrand, axis=4))
+        # np.save(save_path + '/generate_refine.npy', np.argmax(refined_voxs_fromrand, axis=4))
         np.argmax(
             refined_voxs_fromrand,
             axis=4).astype('uint8').tofile(save_path + '/generate_refine.bin')
@@ -288,91 +286,92 @@ def evaluate(batch_size, checknum, mode):
         print("forwarded")
 
         # For visualization
-        np.save(save_path + '/scene.npy', voxel_test)
+        # np.save(save_path + '/scene.npy', voxel_test)
         voxel_test.astype('uint8').tofile(save_path + '/scene.bin')
 
         observe = np.array(tsdf_test)
         observe[observe == -1] = 3
-        np.save(save_path + '/observe.npy', observe)
+        # np.save(save_path + '/observe.npy', observe)
         observe.astype('uint8').tofile(save_path + '/observe.bin')
 
         surface = np.array(tsdf_test)
+        """
+        surface = np.multiply(
+            surface,
+            np.where(voxel_test > 0, 1, 0))
+        """
         if cfg.TYPE_TASK is 'scene':
             surface[surface > 1] = 0
+            surface[surface < 0] = 0
         elif cfg.TYPE_TASK is 'object':
             surface = np.clip(surface, 0, 1)
-        np.save(save_path + '/surface.npy', surface)
+        # np.save(save_path + '/surface.npy', surface)
         surface.astype('uint8').tofile(save_path + '/surface.bin')
 
         depth_seg_real = np.multiply(voxel_test, surface)
-        np.save(save_path + '/depth_seg_scene.npy', depth_seg_real)
+        if cfg.TYPE_TASK is 'scene':
+            depth_seg_real[depth_seg_real < 0] = 0
+        # np.save(save_path + '/depth_seg_scene.npy', depth_seg_real)
         depth_seg_real.astype('uint8').tofile(save_path +
                                               '/depth_seg_scene.bin')
 
         complete_real = np.clip(voxel_test, 0, 1)
-        np.save(save_path + '/complete_scene.npy', complete_real)
+        # np.save(save_path + '/complete_scene.npy', complete_real)
         complete_real.astype('uint8').tofile(save_path + '/complete_real.bin')
 
         # decoded
-        np.save(save_path + '/recons_vox.npy', np.argmax(
-            generated_voxs, axis=4))
+        # np.save(save_path + '/recons_vox.npy', np.argmax( generated_voxs, axis=4))
         np.argmax(
             generated_voxs,
             axis=4).astype('uint8').tofile(save_path + '/recons_vox.bin')
 
-        np.save(save_path + '/vae_vox.npy', np.argmax(vae_voxs, axis=4))
+        # np.save(save_path + '/vae_vox.npy', np.argmax(vae_voxs, axis=4))
         np.argmax(
             vae_voxs,
             axis=4).astype('uint8').tofile(save_path + '/vae_vox.bin')
 
-        np.save(save_path + '/cc_vox.npy', np.argmax(cc_voxs, axis=4))
+        # np.save(save_path + '/cc_vox.npy', np.argmax(cc_voxs, axis=4))
         np.argmax(
             cc_voxs, axis=4).astype('uint8').tofile(save_path + '/cc_vox.bin')
 
-        np.save(save_path + '/recons_tsdf.npy',
-                np.argmax(generated_tsdf, axis=4))
+        # np.save(save_path + '/recons_tsdf.npy', np.argmax(generated_tsdf, axis=4))
         np.argmax(
             generated_tsdf,
             axis=4).astype('uint8').tofile(save_path + '/recons_tsdf.bin')
 
-        np.save(save_path + '/vae_tsdf.npy', np.argmax(vae_tsdf, axis=4))
+        # np.save(save_path + '/vae_tsdf.npy', np.argmax(vae_tsdf, axis=4))
         np.argmax(
             vae_tsdf,
             axis=4).astype('uint8').tofile(save_path + '/vae_tsdf.bin')
 
-        np.save(save_path + '/cc_tsdf.npy', np.argmax(cc_tsdf, axis=4))
+        # np.save(save_path + '/cc_tsdf.npy', np.argmax(cc_tsdf, axis=4))
         np.argmax(
             cc_tsdf, axis=4).astype('uint8').tofile(save_path + '/cc_tsdf.bin')
 
-        np.save(save_path + '/reconed_refine_vox_gen.npy',
-                np.argmax(refined_voxs_gen, axis=4))
+        # np.save(save_path + '/reconed_refine_vox_gen.npy', np.argmax(refined_voxs_gen, axis=4))
         np.argmax(
             refined_voxs_gen,
             axis=4).astype('uint8').tofile(save_path +
                                            '/reconed_refine_vox_gen.bin')
 
-        np.save(save_path + '/reconed_refine_vox_vae.npy',
-                np.argmax(refined_voxs_vae, axis=4))
+        # np.save(save_path + '/reconed_refine_vox_vae.npy', np.argmax(refined_voxs_vae, axis=4))
         np.argmax(
             refined_voxs_vae,
             axis=4).astype('uint8').tofile(save_path +
                                            '/reconed_refine_vox_vae.bin')
 
-        np.save(save_path + '/reconed_refine_vox_cc.npy',
-                np.argmax(refined_voxs_cc, axis=4))
+        # # np.save(save_path + '/reconed_refine_vox_cc.npy', np.argmax(refined_voxs_cc, axis=4))
         np.argmax(
             refined_voxs_cc,
             axis=4).astype('uint8').tofile(save_path +
                                            '/reconed_refine_vox_cc.bin')
 
-        np.save(save_path + '/depth_seg_gen.npy',
-                np.argmax(depth_seg_gen, axis=4))
+        # np.save(save_path + '/depth_seg_gen.npy', np.argmax(depth_seg_gen, axis=4))
         np.argmax(
             depth_seg_gen,
             axis=4).astype('uint8').tofile(save_path + '/depth_seg_gen.bin')
 
-        np.save(save_path + '/complete_gen.npy', np.argmax(
-            complete_gen, axis=4))
+        # np.save(save_path + '/complete_gen.npy', np.argmax( complete_gen, axis=4))
         np.argmax(
             complete_gen,
             axis=4).astype('uint8').tofile(save_path + '/complete_gen.bin')
@@ -496,9 +495,10 @@ def evaluate(batch_size, checknum, mode):
 
     # interpolation evaluation
     if mode == 'interpolate':
-        interpolate_num = 8
+        interpolate_num = 4
         #interpolatioin latent vectores
         decode_z = np.load(save_path + '/decode_z_vox.npy')
+        print(save_path)
         decode_z = decode_z[:batch_size]
         for l in np.arange(batch_size):
             for r in np.arange(batch_size):
@@ -555,22 +555,36 @@ def evaluate(batch_size, checknum, mode):
                                 1, vox_shape[0], vox_shape[1], vox_shape[2],
                                 vox_shape[3]
                             ])
+                        """
+                        interpolate_vox = np.reshape(
+                            generated_voxs_fromrand[0], [
+                                1, vox_shape[0], vox_shape[1], vox_shape[2],
+                                vox_shape[3]
+                            ])
+                        """
                         if i == 0:
                             generated_voxs = interpolate_vox
                         else:
                             generated_voxs = np.concatenate(
                                 [generated_voxs, interpolate_vox], axis=0)
 
+                    """
                     np.save(
-                        save_path + '/interpolation_z' + str(l) + '-' + str(r)
+                        save_path + '/interpolate/interpolation_z' + str(l) + '-' + str(r)
                         + '.npy', interpolate_z)
+                    """
+                    interpolate_z.astype(
+                        'uint8').tofile(save_path + '/interpolate/interpolation_z' + str(l) +
+                                        '-' + str(r) + '.bin')
 
                     vox_models_cat = np.argmax(generated_voxs, axis=4)
+                    """
                     np.save(
-                        save_path + '/interpolation' + str(l) + '-' + str(r) +
+                        save_path + '/interpolate/interpolation' + str(l) + '-' + str(r) +
                         '.npy', vox_models_cat)
+                    """
                     vox_models_cat.astype(
-                        'uint8').tofile(save_path + '/interpolation' + str(l) +
+                        'uint8').tofile(save_path + '/interpolate/interpolation' + str(l) +
                                         '-' + str(r) + '.bin')
         print("voxels saved")
 
