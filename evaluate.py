@@ -18,11 +18,14 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
                 vox_shape):
     # calc_IoU
     if vox_shape[3] == 13:
-        name_list = ['empty','ceili','floor',' wall','windo',' door','chair','  bed',' sofa','table','  tvs','furni','objec']
+        name_list = [
+            'empty', 'ceili', 'floor', ' wall', 'windo', ' door', 'chair',
+            '  bed', ' sofa', 'table', '  tvs', 'furni', 'objec'
+        ]
     elif vox_shape[3] == 5:
-        name_list = ['empty','bench','chair','couch','table']
+        name_list = ['empty', 'bench', 'chair', 'couch', 'table']
     elif vox_shape[3] == 2:
-        name_list = ['empty','objec']
+        name_list = ['empty', 'objec']
     num = on_real.shape[0]
     for class_n in np.arange(vox_shape[3]):
         on_recons_ = on_recons[:, :, :, :, class_n]
@@ -45,13 +48,13 @@ def IoU_AP_calc(on_real, on_recons, generated_voxs, IoU_class, AP_class,
             print 'IoU of ' + name_list[class_n] + ': nothing exists'
     if vox_shape[3] == 13:
         IoU_class[vox_shape[3]] = np.round(
-            (np.sum(IoU_class[1:(vox_shape[3])]) - IoU_class[5]) / (vox_shape[3] - 2), 3)
-    elif  vox_shape[3] == 5:
+            (np.sum(IoU_class[1:(vox_shape[3])]) - IoU_class[5]) /
+            (vox_shape[3] - 2), 3)
+    elif vox_shape[3] == 5:
         IoU_class[vox_shape[3]] = np.round(
             np.sum(IoU_class[1:(vox_shape[3])]) / (vox_shape[3] - 1), 3)
-    elif  vox_shape[3] == 2:
-        IoU_class[vox_shape[3]] = np.round(
-            np.sum(IoU_class) / vox_shape[3], 3)
+    elif vox_shape[3] == 2:
+        IoU_class[vox_shape[3]] = np.round(np.sum(IoU_class) / vox_shape[3], 3)
     print 'IoU average: ' + str(IoU_class[vox_shape[3]])
     """
     on_recons_ = on_recons[:, :, :, :, 1:vox_shape[3]]
@@ -209,7 +212,9 @@ def evaluate(batch_size, checknum, mode):
 
             # Evaluation masks
             if cfg.TYPE_TASK is 'scene':
-                scene_mask = np.clip(np.where(batch_voxel_test > 0, 1, 0) + np.where(batch_tsdf_test > 0, 1, 0), 0, 1)
+                scene_mask = np.clip(
+                    np.where(batch_voxel_test > 0, 1, 0) + np.where(
+                        batch_tsdf_test > 0, 1, 0), 0, 1)
                 batch_voxel_test *= scene_mask
                 batch_tsdf_test *= scene_mask
 
@@ -245,7 +250,6 @@ def evaluate(batch_size, checknum, mode):
                 batch_refined_vox_gen *= np.expand_dims(scene_mask, -1)
                 batch_refined_vox_vae *= np.expand_dims(scene_mask, -1)
                 batch_refined_vox_cc *= np.expand_dims(scene_mask, -1)
-
             """
             batch_generated_voxs = np.multiply(
                 batch_generated_voxs,
@@ -340,27 +344,27 @@ def evaluate(batch_size, checknum, mode):
         np.argmax(
             generated_voxs,
             axis=4).astype('uint8').tofile(save_path + '/recons_vox.bin')
-        error = np.array(np.clip(np.argmax(generated_voxs, axis=4), 0, 1) + complete_real)
+        error = np.array(
+            np.clip(np.argmax(generated_voxs, axis=4), 0, 1) + complete_real)
         # error[error == 2] = 0
-        error.astype('uint8').tofile(save_path +
-                '/recons_vox_error.bin')
+        error.astype('uint8').tofile(save_path + '/recons_vox_error.bin')
 
         # np.save(save_path + '/vae_vox.npy', np.argmax(vae_voxs, axis=4))
         np.argmax(
             vae_voxs,
             axis=4).astype('uint8').tofile(save_path + '/vae_vox.bin')
-        error = np.array(np.clip(np.argmax(vae_voxs, axis=4), 0, 1) + complete_real)
+        error = np.array(
+            np.clip(np.argmax(vae_voxs, axis=4), 0, 1) + complete_real)
         # error[error == 2] = 0
-        error.astype('uint8').tofile(save_path +
-                '/vae_vox_error.bin')
+        error.astype('uint8').tofile(save_path + '/vae_vox_error.bin')
 
         # np.save(save_path + '/cc_vox.npy', np.argmax(cc_voxs, axis=4))
         np.argmax(
             cc_voxs, axis=4).astype('uint8').tofile(save_path + '/cc_vox.bin')
-        error = np.array(np.clip(np.argmax(cc_voxs, axis=4), 0, 1) + complete_real)
+        error = np.array(
+            np.clip(np.argmax(cc_voxs, axis=4), 0, 1) + complete_real)
         # error[error == 2] = 0
-        error.astype('uint8').tofile(save_path +
-                '/cc_vox_error.bin')
+        error.astype('uint8').tofile(save_path + '/cc_vox_error.bin')
 
         # np.save(save_path + '/recons_tsdf.npy', np.argmax(generated_tsdf, axis=4))
         np.argmax(
@@ -381,31 +385,33 @@ def evaluate(batch_size, checknum, mode):
             refined_voxs_gen,
             axis=4).astype('uint8').tofile(save_path +
                                            '/reconed_refine_vox_gen.bin')
-        error = np.array(np.clip(np.argmax(refined_voxs_gen, axis=4), 0, 1) + complete_real)
+        error = np.array(
+            np.clip(np.argmax(refined_voxs_gen, axis=4), 0, 1) + complete_real)
         # error[error == 2] = 0
         error.astype('uint8').tofile(save_path +
-                '/reconed_refine_vox_gen_error.bin')
-
+                                     '/reconed_refine_vox_gen_error.bin')
 
         # np.save(save_path + '/reconed_refine_vox_vae.npy', np.argmax(refined_voxs_vae, axis=4))
         np.argmax(
             refined_voxs_vae,
             axis=4).astype('uint8').tofile(save_path +
                                            '/reconed_refine_vox_vae.bin')
-        error = np.array(np.clip(np.argmax(refined_voxs_vae, axis=4), 0, 1) + complete_real)
+        error = np.array(
+            np.clip(np.argmax(refined_voxs_vae, axis=4), 0, 1) + complete_real)
         # error[error == 2] = 0
         error.astype('uint8').tofile(save_path +
-                '/reconed_refine_vox_vae_error.bin')
+                                     '/reconed_refine_vox_vae_error.bin')
 
         # # np.save(save_path + '/reconed_refine_vox_cc.npy', np.argmax(refined_voxs_cc, axis=4))
         np.argmax(
             refined_voxs_cc,
             axis=4).astype('uint8').tofile(save_path +
                                            '/reconed_refine_vox_cc.bin')
-        error = np.array(np.clip(np.argmax(refined_voxs_cc, axis=4), 0, 1) + complete_real)
+        error = np.array(
+            np.clip(np.argmax(refined_voxs_cc, axis=4), 0, 1) + complete_real)
         # error[error == 2] = 0
         error.astype('uint8').tofile(save_path +
-                '/reconed_refine_vox_cc_error.bin')
+                                     '/reconed_refine_vox_cc_error.bin')
 
         # np.save(save_path + '/depth_seg_gen.npy', np.argmax(depth_seg_gen, axis=4))
         np.argmax(
@@ -608,15 +614,14 @@ def evaluate(batch_size, checknum, mode):
                         else:
                             generated_voxs = np.concatenate(
                                 [generated_voxs, interpolate_vox], axis=0)
-
                     """
                     np.save(
                         save_path + '/interpolate/interpolation_z' + str(l) + '-' + str(r)
                         + '.npy', interpolate_z)
                     """
-                    interpolate_z.astype(
-                        'uint8').tofile(save_path + '/interpolate/interpolation_z' + str(l) +
-                                        '-' + str(r) + '.bin')
+                    interpolate_z.astype('uint8').tofile(
+                        save_path + '/interpolate/interpolation_z' + str(l) +
+                        '-' + str(r) + '.bin')
 
                     vox_models_cat = np.argmax(generated_voxs, axis=4)
                     """
@@ -624,9 +629,9 @@ def evaluate(batch_size, checknum, mode):
                         save_path + '/interpolate/interpolation' + str(l) + '-' + str(r) +
                         '.npy', vox_models_cat)
                     """
-                    vox_models_cat.astype(
-                        'uint8').tofile(save_path + '/interpolate/interpolation' + str(l) +
-                                        '-' + str(r) + '.bin')
+                    vox_models_cat.astype('uint8').tofile(
+                        save_path + '/interpolate/interpolation' + str(l) +
+                        '-' + str(r) + '.bin')
         print("voxels saved")
 
     # add noise evaluation
