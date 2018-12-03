@@ -207,6 +207,14 @@ def evaluate(batch_size, checknum, mode):
             batch_tsdf_test = tsdf_test[i * batch_size:i * batch_size +
                                         batch_size]
 
+            # Evaluation masks
+            if cfg.TYPE_TASK is 'scene':
+                scene_mask = np.clip(np.where(batch_voxel_test > 0, 1, 0) + np.where(batch_tsdf_test > 0, 1, 0), 0, 1)
+                batch_voxel_test *= scene_mask
+                batch_tsdf_test *= scene_mask
+
+                batch_tsdf_test[batch_tsdf_test > 1] = 0
+
             batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, batch_depth_seg_gen, batch_complete_gen, batch_tsdf_enc_Z, batch_vox_enc_Z, batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
                 [
                     vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,
@@ -229,7 +237,15 @@ def evaluate(batch_size, checknum, mode):
             batch_refined_vox_cc = sess.run(
                 sample_refine_vox_tf, feed_dict={sample_vox_tf: batch_cc_voxs})
 
-            # This can eliminate some false positive
+            # Masked
+            if cfg.TYPE_TASK is 'scene':
+                batch_generated_voxs *= np.expand_dims(scene_mask, -1)
+                batch_vae_voxs *= np.expand_dims(scene_mask, -1)
+                batch_cc_voxs *= np.expand_dims(scene_mask, -1)
+                batch_refined_vox_gen *= np.expand_dims(scene_mask, -1)
+                batch_refined_vox_vae *= np.expand_dims(scene_mask, -1)
+                batch_refined_vox_cc *= np.expand_dims(scene_mask, -1)
+
             """
             batch_generated_voxs = np.multiply(
                 batch_generated_voxs,
@@ -324,15 +340,27 @@ def evaluate(batch_size, checknum, mode):
         np.argmax(
             generated_voxs,
             axis=4).astype('uint8').tofile(save_path + '/recons_vox.bin')
+        error = np.array(np.clip(np.argmax(generated_voxs, axis=4), 0, 1) + complete_real)
+        # error[error == 2] = 0
+        error.astype('uint8').tofile(save_path +
+                '/recons_vox_error.bin')
 
         # np.save(save_path + '/vae_vox.npy', np.argmax(vae_voxs, axis=4))
         np.argmax(
             vae_voxs,
             axis=4).astype('uint8').tofile(save_path + '/vae_vox.bin')
+        error = np.array(np.clip(np.argmax(vae_voxs, axis=4), 0, 1) + complete_real)
+        # error[error == 2] = 0
+        error.astype('uint8').tofile(save_path +
+                '/vae_vox_error.bin')
 
         # np.save(save_path + '/cc_vox.npy', np.argmax(cc_voxs, axis=4))
         np.argmax(
             cc_voxs, axis=4).astype('uint8').tofile(save_path + '/cc_vox.bin')
+        error = np.array(np.clip(np.argmax(cc_voxs, axis=4), 0, 1) + complete_real)
+        # error[error == 2] = 0
+        error.astype('uint8').tofile(save_path +
+                '/cc_vox_error.bin')
 
         # np.save(save_path + '/recons_tsdf.npy', np.argmax(generated_tsdf, axis=4))
         np.argmax(
@@ -353,18 +381,31 @@ def evaluate(batch_size, checknum, mode):
             refined_voxs_gen,
             axis=4).astype('uint8').tofile(save_path +
                                            '/reconed_refine_vox_gen.bin')
+        error = np.array(np.clip(np.argmax(refined_voxs_gen, axis=4), 0, 1) + complete_real)
+        # error[error == 2] = 0
+        error.astype('uint8').tofile(save_path +
+                '/reconed_refine_vox_gen_error.bin')
+
 
         # np.save(save_path + '/reconed_refine_vox_vae.npy', np.argmax(refined_voxs_vae, axis=4))
         np.argmax(
             refined_voxs_vae,
             axis=4).astype('uint8').tofile(save_path +
                                            '/reconed_refine_vox_vae.bin')
+        error = np.array(np.clip(np.argmax(refined_voxs_vae, axis=4), 0, 1) + complete_real)
+        # error[error == 2] = 0
+        error.astype('uint8').tofile(save_path +
+                '/reconed_refine_vox_vae_error.bin')
 
         # # np.save(save_path + '/reconed_refine_vox_cc.npy', np.argmax(refined_voxs_cc, axis=4))
         np.argmax(
             refined_voxs_cc,
             axis=4).astype('uint8').tofile(save_path +
                                            '/reconed_refine_vox_cc.bin')
+        error = np.array(np.clip(np.argmax(refined_voxs_cc, axis=4), 0, 1) + complete_real)
+        # error[error == 2] = 0
+        error.astype('uint8').tofile(save_path +
+                '/reconed_refine_vox_cc_error.bin')
 
         # np.save(save_path + '/depth_seg_gen.npy', np.argmax(depth_seg_gen, axis=4))
         np.argmax(
@@ -495,7 +536,7 @@ def evaluate(batch_size, checknum, mode):
 
     # interpolation evaluation
     if mode == 'interpolate':
-        interpolate_num = 4
+        interpolate_num = 8
         #interpolatioin latent vectores
         decode_z = np.load(save_path + '/decode_z_vox.npy')
         print(save_path)

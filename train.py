@@ -147,7 +147,13 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             batch_voxel = data_process.get_voxel(db_inds)
             batch_tsdf = data_process.get_tsdf(db_inds)
 
+
             if cfg.TYPE_TASK is 'scene':
+                # Evaluation masks
+                scene_mask = np.clip(np.where(batch_voxel > 0, 1, 0) + np.where(batch_tsdf > 0, 1, 0), 0, 1)
+                batch_voxel *= scene_mask
+                batch_tsdf *= scene_mask
+                    
                 batch_tsdf[batch_tsdf > 1] = 0
                 batch_tsdf_train = batch_tsdf
             elif cfg.TYPE_TASK is 'object':

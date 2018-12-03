@@ -9,18 +9,63 @@ from scipy import misc
 import os
 import argparse
 from progressbar import ProgressBar
-# from skimage.measure import block_reduce
+from skimage.measure import block_reduce
 from skimage.transform import resize
 
 
+def voxel_grid_padding(a):
+    x_d = a.shape[0]
+    y_d = a.shape[1]
+    z_d = a.shape[2]
+    ori_vox_res = 256
+    size = [ori_vox_res, ori_vox_res, ori_vox_res]
+    b = np.zeros(size,dtype=np.float32)
+
+    bx_s = 0;bx_e = size[0];by_s = 0;by_e = size[1];bz_s = 0; bz_e = size[2]
+    ax_s = 0;ax_e = x_d;ay_s = 0;ay_e = y_d;az_s = 0;az_e = z_d
+    if x_d > size[0]:
+        ax_s = int((x_d - size[0]) / 2)
+        ax_e = int((x_d - size[0]) / 2) + size[0]
+    else:
+        bx_s = int((size[0] - x_d) / 2)
+        bx_e = int((size[0] - x_d) / 2) + x_d
+
+    if y_d > size[1]:
+        ay_s = int((y_d - size[1]) / 2)
+        ay_e = int((y_d - size[1]) / 2) + size[1]
+    else:
+        by_s = int((size[1] - y_d) / 2)
+        by_e = int((size[1] - y_d) / 2) + y_d
+
+    if z_d > size[2]:
+        az_s = int((z_d - size[2]) / 2)
+        az_e = int((z_d - size[2]) / 2) + size[2]
+    else:
+        bz_s = int((size[2] - z_d) / 2)
+        bz_e = int((size[2] - z_d) / 2) + z_d
+    b[bx_s:bx_e, by_s:by_e, bz_s:bz_e] = a[ax_s:ax_e, ay_s:ay_e, az_s:az_e]
+
+    return b
+
+def vox_down_single(vox, to_res):
+    from_res = vox.shape[0]
+    step = int(from_res / to_res)
+    vox = np.reshape(vox,[from_res,from_res,from_res])
+    new_vox = block_reduce(vox,(step,step,step),func=np.max)
+    return new_vox
+
 def rescale_npy(file_np, dir_tar_voxel, category):
     ans = np.load(file_np)
+    """
     vox = resize(
         np.squeeze(ans['arr_0']), (64, 64, 64),
         preserve_range=True,
         mode='constant')
-    vox[vox >= 0.3] = category
-    vox[vox < 0.3] = 0
+    """
+    vox = np.squeeze(ans['arr_0'])
+    vox = voxel_grid_padding(vox)
+    vox = vox_down_single(vox, to_res=64)
+    vox[vox > 0] = category
     name_start = int(file_np.rfind('/'))
     name_end = int(file_np.find('.', name_start))
     np.save(dir_tar_voxel + file_np[name_start:name_end] + '.npy', vox)

@@ -14,7 +14,7 @@ __C.CONST.BATCH_SIZE_TEST = 8
 __C.SAVER_MAX = 1000
 __C.CHECK_FREQ = 1000
 __C.RECORD_VOX_NUM = 10
-__C.SWITCHING_ITE = 300001
+__C.SWITCHING_ITE = 800001
 
 # Network
 __C.NET = edict()
@@ -31,8 +31,8 @@ __C.NET.GENERATIVE = True
 __C.NET.VARIATIONAL = True
 
 __C.TYPE_TASK = 'scene'
-__C.TYPE_EVAL = 'real'
-__C.TYPE_DATA = 'test'
+__C.TYPE_EVAL = 'synthetic'
+__C.TYPE_DATA = 'train'
 if __C.TYPE_TASK is 'scene':
     __C.CONST.N_VOX = [80, 48, 80]
     __C.NET.START_VOX = [5, 3, 5]
@@ -104,7 +104,7 @@ __C.DIR.LOG_PATH = './log'
 __C.TRAIN = edict()
 
 __C.TRAIN.DATASET_PORTION = [0, 0.9]
-__C.TRAIN.NUM_EPOCH = 5000  # maximum number of training epochs
+__C.TRAIN.NUM_EPOCH = 50000  # maximum number of training epochs
 
 # Learning
 __C.LEARNING_RATE_G = 0.0001
