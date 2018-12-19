@@ -8,3 +8,4 @@ tsdf.ply
 vis_*
 eval_*
 eval
+data/object_registration

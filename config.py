@@ -10,7 +10,7 @@ __C.SUB_CONFIG_FILE = []
 
 __C.CONST = edict()
 __C.CONST.BATCH_SIZE = 8
-__C.CONST.BATCH_SIZE_TEST = 8
+__C.CONST.BATCH_SIZE_TEST = 4
 __C.SAVER_MAX = 1000
 __C.CHECK_FREQ = 1000
 __C.RECORD_VOX_NUM = 10
@@ -89,6 +89,11 @@ elif __C.TYPE_TASK is 'object':
             __C.DIR.ROOT_PATH = '/media/wangyida/D0-P1/database/Shapenet_Yida/train/voxel_semantic_npy'
             __C.DIR.VOXEL_PATH = '/media/wangyida/D0-P1/database/Shapenet_Yida/train/voxel_semantic_npy/%s'
             __C.DIR.TSDF_PATH = '/media/wangyida/D0-P1/database/Shapenet_Yida/train/depth_tsdf_npy/%s'
+    elif __C.TYPE_EVAL == 'register':
+        __C.DIR.CHECK_POINT_PATH = '/media/wangyida/D0-P1/models/depvox-gan-object-s'
+        __C.DIR.ROOT_PATH = './data/object_registration/voxel_semantic_npy'
+        __C.DIR.VOXEL_PATH = './data/object_registration/voxel_semantic_npy/%s'
+        __C.DIR.TSDF_PATH = './data/object_registration/depth_tsdf_npy/%s'
 
 if __C.NET.DISCRIMINATIVE is True:
     __C.DIR.CHECK_POINT_PATH = __C.DIR.CHECK_POINT_PATH + '-d'

@@ -114,10 +114,7 @@ def evaluate(batch_size, checknum, mode):
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
-    if cfg.TYPE_TASK is 'scene':
-        tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
-    elif cfg.TYPE_TASK is 'object':
-        tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
+    tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 2]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -149,8 +146,7 @@ def evaluate(batch_size, checknum, mode):
         generative=generative)
 
 
-    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
-    tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf,\
+    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
     recons_vae_loss_tf, recons_cc_loss_tf, recons_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = fcr_agan_model.build_model()
@@ -197,11 +193,9 @@ def evaluate(batch_size, checknum, mode):
             axis=4).astype('uint8').tofile(save_path + '/generate_refine.bin')
 
         # evaluation for reconstruction
-        voxel_test, tsdf_test, num = scene_model_id_pair_test(
+        voxel_test, tsdf_test, num, data_paths = scene_model_id_pair_test(
             dataset_portion=cfg.TRAIN.DATASET_PORTION)
 
-        if cfg.TYPE_TASK is 'scene':
-            tsdf_test[tsdf_test > 1] = 0
         # voxel_test = np.multiply(voxel_test, np.where(tsdf_test > 0, 1, 0))
         num = voxel_test.shape[0]
         print("test voxels loaded")
@@ -213,6 +207,7 @@ def evaluate(batch_size, checknum, mode):
 
             # Evaluation masks
             if cfg.TYPE_TASK is 'scene':
+                # Evaluation masks
                 scene_mask = np.clip(
                     np.where(batch_voxel_test > 0, 1, 0) + np.where(
                         batch_tsdf_test > 0, 1, 0), 0, 1)
@@ -220,15 +215,14 @@ def evaluate(batch_size, checknum, mode):
                 batch_tsdf_test *= scene_mask
 
                 batch_tsdf_test[batch_tsdf_test > 1] = 0
+                # batch_tsdf_test[np.where(batch_voxel_test == 10)] = 1
 
-            batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, batch_depth_seg_gen, batch_complete_gen, batch_tsdf_enc_Z, batch_vox_enc_Z, batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
+            batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, batch_depth_seg_gen, batch_tsdf_enc_Z, batch_vox_enc_Z, batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
                 [
                     vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,
-                    tsdf_seg_tf, vox_gen_complete_tf, z_tsdf_enc_tf,
-                    z_vox_enc_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf,
-                    tsdf_cc_decode_tf
+                    tsdf_seg_tf, z_tsdf_enc_tf, z_vox_enc_tf,
+                    tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf
                 ],
-                # feed_dict={tsdf_tf: batch_tsdf_test})
                 feed_dict={
                     tsdf_tf: batch_tsdf_test,
                     vox_tf: batch_voxel_test
@@ -251,27 +245,13 @@ def evaluate(batch_size, checknum, mode):
                 batch_refined_vox_gen *= np.expand_dims(scene_mask, -1)
                 batch_refined_vox_vae *= np.expand_dims(scene_mask, -1)
                 batch_refined_vox_cc *= np.expand_dims(scene_mask, -1)
-            """
-            batch_generated_voxs = np.multiply(
-                batch_generated_voxs,
-                np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
-            batch_vae_voxs = np.multiply(
-                batch_vae_voxs,
-                np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
-            batch_cc_voxs = np.multiply(
-                batch_cc_voxs,
-                np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
-            batch_refined_vox = np.multiply(
-                batch_refined_vox,
-                np.expand_dims(np.where(batch_voxel_test > 0, 1, 0), -1))
-            """
 
             if i == 0:
                 generated_voxs = batch_generated_voxs
                 vae_voxs = batch_vae_voxs
                 cc_voxs = batch_cc_voxs
                 depth_seg_gen = batch_depth_seg_gen
-                complete_gen = batch_complete_gen
+                complete_gen = batch_vae_tsdf
                 refined_voxs_gen = batch_refined_vox_gen
                 refined_voxs_vae = batch_refined_vox_vae
                 refined_voxs_cc = batch_refined_vox_cc
@@ -287,8 +267,8 @@ def evaluate(batch_size, checknum, mode):
                 cc_voxs = np.concatenate((cc_voxs, batch_cc_voxs), axis=0)
                 depth_seg_gen = np.concatenate(
                     (depth_seg_gen, batch_depth_seg_gen), axis=0)
-                complete_gen = np.concatenate(
-                    (complete_gen, batch_complete_gen), axis=0)
+                complete_gen = np.concatenate((complete_gen, batch_vae_tsdf),
+                                              axis=0)
                 refined_voxs_gen = np.concatenate(
                     (refined_voxs_gen, batch_refined_vox_gen), axis=0)
                 refined_voxs_vae = np.concatenate(
@@ -316,11 +296,6 @@ def evaluate(batch_size, checknum, mode):
         observe.astype('uint8').tofile(save_path + '/observe.bin')
 
         surface = np.array(tsdf_test)
-        """
-        surface = np.multiply(
-            surface,
-            np.where(voxel_test > 0, 1, 0))
-        """
         if cfg.TYPE_TASK is 'scene':
             surface[surface > 1] = 0
             surface[surface < 0] = 0

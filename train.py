@@ -27,10 +27,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
-    if cfg.TYPE_TASK is 'scene':
-        tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
-    elif cfg.TYPE_TASK is 'object':
-        tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
+    tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 2]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -62,8 +59,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         refiner=refiner,
         generative=generative)
 
-    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, vox_gen_complete_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
-    tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf,\
+    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
     recons_vae_loss_tf, recons_cc_loss_tf, recons_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, discrim_loss_refine_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = fcr_agan_model.build_model()
@@ -145,24 +141,20 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         while epoch_flag:
             print colored('---Iteration:%d, epoch:%d', 'blue') % (ite, epoch)
             db_inds, epoch_flag = data_process.get_next_minibatch()
-            batch_voxel = data_process.get_voxel(db_inds)
-            batch_tsdf = data_process.get_tsdf(db_inds)
+            batch_voxel_train = data_process.get_voxel(db_inds)
+            batch_tsdf_train = data_process.get_tsdf(db_inds)
 
             if cfg.TYPE_TASK is 'scene':
                 # Evaluation masks
                 scene_mask = np.clip(
-                    np.where(batch_voxel > 0, 1, 0) + np.where(
-                        batch_tsdf > 0, 1, 0), 0, 1)
-                batch_voxel *= scene_mask
-                batch_tsdf *= scene_mask
+                    np.where(batch_voxel_train > 0, 1, 0) + np.where(
+                        batch_tsdf_train > 0, 1, 0), 0, 1)
+                batch_voxel_train *= scene_mask
+                batch_tsdf_train *= scene_mask
 
-                batch_tsdf[batch_tsdf > 1] = 0
-                batch_tsdf_train = batch_tsdf
-            elif cfg.TYPE_TASK is 'object':
-                batch_tsdf_train = batch_tsdf
+                batch_tsdf_train[batch_tsdf_train > 1] = 0
+                # batch_tsdf_train[np.where(batch_voxel_train == 10)] = 1
 
-            # batch_voxel_train = np.multiply(batch_voxel, np.where(batch_tsdf_train > 0, 1, 0))
-            batch_voxel_train = batch_voxel
             lr = learning_rate(cfg.LEARNING_RATE_V, ite)
 
             batch_z_var = np.random.normal(

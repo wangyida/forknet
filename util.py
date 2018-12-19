@@ -65,21 +65,6 @@ class DataProcess():
             batch_voxel[batch_id, :, :, :] = voxel_data
         return batch_voxel
 
-    """
-    def get_depth(self, db_inds):
-        batch_depth = np.zeros(
-                    (self.batch_size, self.n_dep[0], self.n_dep[1], self.n_dep[2]), dtype=np.float32)
-    
-        for batch_id, db_ind in enumerate(db_inds):
-            sceneId, model_id = self.data_paths[db_ind]
-
-            depth_fn = cfg.DIR.DEPTH_PATH % (model_id)
-            depth_data = np.load(depth_fn)
-
-            batch_depth[batch_id, :, :, :] = np.reshape(depth_data, [self.n_dep[0], self.n_dep[1], self.n_dep[2]])
-        return batch_depth
-    """
-
 
 def scene_model_id_pair(dataset_portion=[]):
     '''
@@ -117,7 +102,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
     random.seed(1)
     random.shuffle(data_paths_test)
     print(data_paths_test[1])
-    # data_paths = scene_name_pair[int(num_models * dataset_portion[1])+1:int(num_models * dataset_portion[1])+amount_of_test_sample+1]
+
     data_paths = data_paths_test[:amount_of_test_sample]
 
     num_models = len(data_paths)
@@ -151,7 +136,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
         batch_tsdf[i, :, :, :] = tsdf_data
 
-    return batch_voxel, batch_tsdf, num_models
+    return batch_voxel, batch_tsdf, num_models, data_paths
 
 
 def onehot(voxel, class_num):
