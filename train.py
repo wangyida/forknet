@@ -3,12 +3,11 @@ import tensorflow as tf
 
 from config import cfg
 from util import DataProcess, scene_model_id_pair
-from model import FCR_aGAN
+from model import depvox_gan
 
 from colorama import init
 from termcolor import colored
 
-# use Colorama to make Termcolor work on Windows too
 init()
 
 
@@ -27,7 +26,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
-    tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 2]
+    tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -35,16 +34,16 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     dilations = cfg.NET.DILATIONS
     freq = cfg.CHECK_FREQ
     record_vox_num = cfg.RECORD_VOX_NUM
-    refine_ch = cfg.NET.REFINE_CH
-    refine_kernel = cfg.NET.REFINE_KERNEL
-    refiner = cfg.NET.REFINER
+    # refine_ch = cfg.NET.REFINE_CH
+    # refine_kernel = cfg.NET.REFINE_KERNEL
+    # refiner = cfg.NET.REFINER
     discriminative = cfg.NET.DISCRIMINATIVE
     generative = cfg.NET.GENERATIVE
     variational = cfg.NET.VARIATIONAL
 
-    refine_start = cfg.SWITCHING_ITE
+    # refine_start = cfg.SWITCHING_ITE
 
-    fcr_agan_model = FCR_aGAN(
+    depvox_gan_model = depvox_gan(
         batch_size=batch_size,
         vox_shape=vox_shape,
         tsdf_shape=tsdf_shape,
@@ -54,15 +53,15 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         kernel=kernel,
         stride=stride,
         dilations=dilations,
-        refine_ch=refine_ch,
-        refine_kernel=refine_kernel,
-        refiner=refiner,
+        # refine_ch=refine_ch,
+        # refine_kernel=refine_kernel,
+        # refiner=refiner,
         generative=generative)
 
-    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
-    recons_vae_loss_tf, recons_cc_loss_tf, recons_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tf, gen_loss_refine_tf, discrim_loss_refine_tf,\
-    cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
-    tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = fcr_agan_model.build_model()
+    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, tsdf_seg_tf,\
+    recons_vae_loss_tf, recons_cc_loss_tf, recons_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf,\
+    cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, summary_tf,\
+    tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -81,8 +80,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       tf.trainable_variables())
     code_vars = filter(lambda x: x.name.startswith('cod'),
                        tf.trainable_variables())
-    refine_vars = filter(lambda x: x.name.startswith('refine'),
-                         tf.trainable_variables())
 
     lr_VAE = tf.placeholder(tf.float32, shape=[])
     train_op_encode = tf.train.AdamOptimizer(
@@ -97,20 +94,14 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     train_op_code = tf.train.AdamOptimizer(
         lr_VAE, beta1=beta_G, beta2=0.9).minimize(
             cost_code_tf, var_list=code_vars)
-    train_op_refine = tf.train.AdamOptimizer(
-        lr_VAE, beta1=beta_G, beta2=0.9).minimize(
-            cost_gen_ref_tf, var_list=refine_vars)
-    train_op_discrim_refine = tf.train.AdamOptimizer(
-        learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
-            cost_discrim_ref_tf,
-            var_list=discrim_vars,
-            global_step=global_step)
 
-    Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
+    Z_tf_sample, vox_tf_sample = depvox_gan_model.samples_generator(
         visual_size=batch_size)
 
-    sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_resnet(
+    """
+    sample_vox_tf, sample_refine_vox_tf = depvox_gan_model.refine_generator_resnet(
         visual_size=batch_size)
+    """
     writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
     tf.initialize_all_variables().run(session=sess)
 
@@ -152,8 +143,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 batch_voxel_train *= scene_mask
                 batch_tsdf_train *= scene_mask
 
-                batch_tsdf_train[batch_tsdf_train > 1] = 0
-                # batch_tsdf_train[np.where(batch_voxel_train == 10)] = 1
+                # occluded region
+                # batch_tsdf_train[batch_tsdf_train > 1] = 0
 
             lr = learning_rate(cfg.LEARNING_RATE_V, ite)
 
@@ -163,25 +154,16 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             # updating for the main network
             for s in np.arange(1):
-                _, recons_vae_loss_val, recons_cc_loss_val, recons_gen_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
+                _, _, gen_loss_val, cost_gen_val, recons_vae_loss_val, recons_cc_loss_val, recons_gen_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
                     [
-                        train_op_encode, recons_vae_loss_tf, recons_cc_loss_tf,
+                        train_op_encode, train_op_gen, gen_loss_tf,
+                        cost_gen_tf, recons_vae_loss_tf, recons_cc_loss_tf,
                         recons_gen_loss_tf, code_encode_loss_tf, cost_enc_tf
                     ],
                     feed_dict={
                         vox_tf: batch_voxel_train,
                         tsdf_tf: batch_tsdf_train,
                         Z_tf: batch_z_var,
-                        lr_VAE: lr
-                    },
-                )
-
-                _, gen_loss_val, cost_gen_val = sess.run(
-                    [train_op_gen, gen_loss_tf, cost_gen_tf],
-                    feed_dict={
-                        Z_tf: batch_z_var,
-                        vox_tf: batch_voxel_train,
-                        tsdf_tf: batch_tsdf_train,
                         lr_VAE: lr
                     },
                 )
@@ -277,12 +259,12 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     global_step=None)
 
             # updating for the refining network
+            """
             if ite > refine_start:
-                _, recons_loss_val, recons_loss_refine_val, gen_loss_refine_val, cost_gen_ref_val = sess.run(
+                _, recons_loss_val, recons_loss_refine_val, cost_gen_ref_val = sess.run(
                     [
                         train_op_refine, recons_gen_loss_tf,
-                        recons_loss_refine_tf, gen_loss_refine_tf,
-                        cost_gen_ref_tf
+                        recons_loss_refine_tf, cost_gen_ref_tf
                     ],
                     feed_dict={
                         Z_tf: batch_z_var,
@@ -292,25 +274,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     },
                 )
 
-                if discriminative:
-                    _, discrim_loss_refine_val, cost_discrim_ref_val, summary = sess.run(
-                        [
-                            train_op_discrim_refine, discrim_loss_refine_tf,
-                            cost_discrim_ref_tf, summary_tf
-                        ],
-                        feed_dict={
-                            Z_tf: batch_z_var,
-                            vox_tf: batch_voxel_train,
-                            tsdf_tf: batch_tsdf_train
-                        },
-                    )
-
                 print(colored('refine', 'red'))
                 print 'reconstruction loss:', recons_loss_val
                 print ' recons refine loss:', recons_loss_refine_val
-                print '           gen loss:', gen_loss_refine_val
-                print ' cost_discriminator:', cost_discrim_ref_val if (
-                    'cost_discrim_ref_val' in locals()) else 'None'
 
                 if np.mod(ite, freq) == 0:
                     vox_models = sess.run(
@@ -338,6 +304,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         sess,
                         cfg.DIR.CHECK_PT_PATH + str(ite / freq),
                         global_step=None)
+            """
 
             writer.add_summary(summary, global_step=ite)
 

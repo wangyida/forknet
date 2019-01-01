@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from config import cfg
-from model import FCR_aGAN
+from model import depvox_gan
 from util import DataProcess, scene_model_id_pair, onehot, scene_model_id_pair_test
 from sklearn.metrics import average_precision_score
 import copy
@@ -114,23 +114,23 @@ def evaluate(batch_size, checknum, mode):
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
-    tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 2]
+    tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
     stride = cfg.NET.STRIDE
     dilations = cfg.NET.DILATIONS
     freq = cfg.CHECK_FREQ
-    refine_ch = cfg.NET.REFINE_CH
-    refine_kernel = cfg.NET.REFINE_KERNEL
-    refiner = cfg.NET.REFINER
+    # refine_ch = cfg.NET.REFINE_CH
+    # refine_kernel = cfg.NET.REFINE_KERNEL
+    # refiner = cfg.NET.REFINER
     discriminative = cfg.NET.DISCRIMINATIVE
     generative = cfg.NET.GENERATIVE
 
     save_path = cfg.DIR.EVAL_PATH
     chckpt_path = cfg.DIR.CHECK_PT_PATH + str(checknum)
 
-    fcr_agan_model = FCR_aGAN(
+    depvox_gan_model = depvox_gan(
         batch_size=batch_size,
         vox_shape=vox_shape,
         tsdf_shape=tsdf_shape,
@@ -140,20 +140,22 @@ def evaluate(batch_size, checknum, mode):
         kernel=kernel,
         stride=stride,
         dilations=dilations,
-        refine_ch=refine_ch,
-        refine_kernel=refine_kernel,
-        refiner=refiner,
+        # refine_ch=refine_ch,
+        # refine_kernel=refine_kernel,
+        # refiner=refiner,
         generative=generative)
 
 
-    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, tsdf_seg_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
-    recons_vae_loss_tf, recons_cc_loss_tf, recons_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
-    cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
-    tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = fcr_agan_model.build_model()
-    Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(
+    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, tsdf_seg_tf,\
+    recons_vae_loss_tf, recons_cc_loss_tf, recons_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf,\
+    cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, summary_tf,\
+    tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = depvox_gan_model.build_model()
+    Z_tf_sample, vox_tf_sample = depvox_gan_model.samples_generator(
         visual_size=batch_size)
-    sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator_resnet(
+    """
+    sample_vox_tf, sample_refine_vox_tf = depvox_gan_model.refine_generator_resnet(
         visual_size=batch_size)
+    """
     sess = tf.InteractiveSession()
     saver = tf.train.Saver()
 
@@ -183,7 +185,7 @@ def evaluate(batch_size, checknum, mode):
         np.argmax(
             generated_voxs_fromrand,
             axis=4).astype('uint8').tofile(save_path + '/generate.bin')
-
+        """
         refined_voxs_fromrand = sess.run(
             sample_refine_vox_tf,
             feed_dict={sample_vox_tf: generated_voxs_fromrand})
@@ -191,12 +193,12 @@ def evaluate(batch_size, checknum, mode):
         np.argmax(
             refined_voxs_fromrand,
             axis=4).astype('uint8').tofile(save_path + '/generate_refine.bin')
+        """
 
         # evaluation for reconstruction
         voxel_test, tsdf_test, num, data_paths = scene_model_id_pair_test(
             dataset_portion=cfg.TRAIN.DATASET_PORTION)
 
-        # voxel_test = np.multiply(voxel_test, np.where(tsdf_test > 0, 1, 0))
         num = voxel_test.shape[0]
         print("test voxels loaded")
         for i in np.arange(int(num / batch_size)):
@@ -227,7 +229,7 @@ def evaluate(batch_size, checknum, mode):
                     tsdf_tf: batch_tsdf_test,
                     vox_tf: batch_voxel_test
                 })
-
+            """
             batch_refined_vox_gen = sess.run(
                 sample_refine_vox_tf,
                 feed_dict={sample_vox_tf: batch_generated_voxs})
@@ -236,15 +238,18 @@ def evaluate(batch_size, checknum, mode):
                 feed_dict={sample_vox_tf: batch_vae_voxs})
             batch_refined_vox_cc = sess.run(
                 sample_refine_vox_tf, feed_dict={sample_vox_tf: batch_cc_voxs})
+            """
 
             # Masked
             if cfg.TYPE_TASK is 'scene':
                 batch_generated_voxs *= np.expand_dims(scene_mask, -1)
                 batch_vae_voxs *= np.expand_dims(scene_mask, -1)
                 batch_cc_voxs *= np.expand_dims(scene_mask, -1)
+                """
                 batch_refined_vox_gen *= np.expand_dims(scene_mask, -1)
                 batch_refined_vox_vae *= np.expand_dims(scene_mask, -1)
                 batch_refined_vox_cc *= np.expand_dims(scene_mask, -1)
+                """
 
             if i == 0:
                 generated_voxs = batch_generated_voxs
@@ -252,9 +257,11 @@ def evaluate(batch_size, checknum, mode):
                 cc_voxs = batch_cc_voxs
                 depth_seg_gen = batch_depth_seg_gen
                 complete_gen = batch_vae_tsdf
+                """
                 refined_voxs_gen = batch_refined_vox_gen
                 refined_voxs_vae = batch_refined_vox_vae
                 refined_voxs_cc = batch_refined_vox_cc
+                """
                 tsdf_enc_Z = batch_tsdf_enc_Z
                 vox_enc_Z = batch_vox_enc_Z
                 generated_tsdf = batch_generated_tsdf
@@ -269,12 +276,14 @@ def evaluate(batch_size, checknum, mode):
                     (depth_seg_gen, batch_depth_seg_gen), axis=0)
                 complete_gen = np.concatenate((complete_gen, batch_vae_tsdf),
                                               axis=0)
+                """
                 refined_voxs_gen = np.concatenate(
                     (refined_voxs_gen, batch_refined_vox_gen), axis=0)
                 refined_voxs_vae = np.concatenate(
                     (refined_voxs_vae, batch_refined_vox_vae), axis=0)
                 refined_voxs_cc = np.concatenate(
                     (refined_voxs_cc, batch_refined_vox_cc), axis=0)
+                """
                 tsdf_enc_Z = np.concatenate((tsdf_enc_Z, batch_tsdf_enc_Z),
                                             axis=0)
                 vox_enc_Z = np.concatenate((vox_enc_Z, batch_vox_enc_Z),
@@ -355,7 +364,7 @@ def evaluate(batch_size, checknum, mode):
         # np.save(save_path + '/cc_tsdf.npy', np.argmax(cc_tsdf, axis=4))
         np.argmax(
             cc_tsdf, axis=4).astype('uint8').tofile(save_path + '/cc_tsdf.bin')
-
+        """
         # np.save(save_path + '/reconed_refine_vox_gen.npy', np.argmax(refined_voxs_gen, axis=4))
         np.argmax(
             refined_voxs_gen,
@@ -388,6 +397,7 @@ def evaluate(batch_size, checknum, mode):
         # error[error == 2] = 0
         error.astype('uint8').tofile(save_path +
                                      '/reconed_refine_vox_cc_error.bin')
+        """
 
         # np.save(save_path + '/depth_seg_gen.npy', np.argmax(depth_seg_gen, axis=4))
         np.argmax(
@@ -461,7 +471,7 @@ def evaluate(batch_size, checknum, mode):
                                  axis=1)
         AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
                                 axis=1)
-
+        """
         # refine for volume segmentation
         print(colored("Refined", 'red'))
         print(colored("Refined Depth segmentation", 'cyan'))
@@ -504,6 +514,7 @@ def evaluate(batch_size, checknum, mode):
                                  axis=1)
         AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
                                 axis=1)
+        """
 
         np.savetxt(
             save_path + '/IoU.csv',
@@ -570,6 +581,7 @@ def evaluate(batch_size, checknum, mode):
                         generated_voxs_fromrand = sess.run(
                             vox_tf_sample,
                             feed_dict={Z_tf_sample: Z_var_np_sample})
+                        """
                         refined_voxs_fromrand = sess.run(
                             sample_refine_vox_tf,
                             feed_dict={sample_vox_tf: generated_voxs_fromrand})
@@ -578,7 +590,6 @@ def evaluate(batch_size, checknum, mode):
                                 1, vox_shape[0], vox_shape[1], vox_shape[2],
                                 vox_shape[3]
                             ])
-                        """
                         interpolate_vox = np.reshape(
                             generated_voxs_fromrand[0], [
                                 1, vox_shape[0], vox_shape[1], vox_shape[2],
@@ -657,6 +668,7 @@ def evaluate(batch_size, checknum, mode):
                             generated_voxs_fromrand = sess.run(
                                 vox_tf_sample,
                                 feed_dict={Z_tf_sample: Z_var_np_sample})
+                            """
                             refined_voxs_fromrand = sess.run(
                                 sample_refine_vox_tf,
                                 feed_dict={
@@ -666,6 +678,7 @@ def evaluate(batch_size, checknum, mode):
                                 1, vox_shape[0], vox_shape[1], vox_shape[2],
                                 vox_shape[3]
                             ])
+                            """
                             if i == 0:
                                 generated_voxs = noise_vox
                             else:

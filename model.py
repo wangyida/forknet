@@ -79,11 +79,11 @@ def softmax(X, batch_size, vox_shape):
     return soft
 
 
-class FCR_aGAN():
+class depvox_gan():
     def __init__(self,
                  batch_size=16,
                  vox_shape=[80, 48, 80, 13],
-                 tsdf_shape=[80, 48, 80, 2],
+                 tsdf_shape=[80, 48, 80, 3],
                  dim_z=16,
                  dim=[512, 256, 192, 64, 13],
                  start_vox_size=[5, 3, 5],
@@ -582,81 +582,83 @@ class FCR_aGAN():
         self.cod_y_W3 = tf.Variable(
             tf.random_normal([dim_code, 1], stddev=0.02), name='cod_y_W3')
 
-        # parameters of refiner
-        self.refine_W1 = tf.Variable(
+        # parameters of surface reconstructing
+        """
+        self.gen_surface_W1 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.dim_W5, self.refine_ch
+                self.tsdf_shape[-1], self.refine_ch
             ],
                              stddev=0.02),
-            name='refine_W1')
-        self.refine_res1_W1 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.refine_ch
-            ],
-                             stddev=0.02),
-            name='refine__res1_W1')
-        self.refine_res1_W2 = tf.Variable(
+            name='gen_surface_W1')
+        self.gen_surface_res1_W1 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
                 self.refine_ch, self.refine_ch
             ],
                              stddev=0.02),
-            name='refine__res1_W2')
+            name='gen_surface_res1_W1')
+        self.gen_surface_res1_W2 = tf.Variable(
+            tf.random_normal([
+                self.refine_kernel, self.refine_kernel, self.refine_kernel,
+                self.refine_ch, self.refine_ch
+            ],
+                             stddev=0.02),
+            name='gen_surface_res1_W2')
 
-        self.refine_res2_W1 = tf.Variable(
+        self.gen_surface_res2_W1 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
                 self.refine_ch, self.refine_ch
             ],
                              stddev=0.02),
-            name='refine__res2_W1')
-        self.refine_res2_W2 = tf.Variable(
+            name='gen_surface_res2_W1')
+        self.gen_surface_res2_W2 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
                 self.refine_ch, self.refine_ch
             ],
                              stddev=0.02),
-            name='refine__res2_W2')
+            name='gen_surface_res2_W2')
 
-        self.refine_res3_W1 = tf.Variable(
+        self.gen_surface_res3_W1 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
                 self.refine_ch, self.refine_ch
             ],
                              stddev=0.02),
-            name='refine__res3_W1')
-        self.refine_res3_W2 = tf.Variable(
+            name='gen_surface_res3_W1')
+        self.gen_surface_res3_W2 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
                 self.refine_ch, self.refine_ch
             ],
                              stddev=0.02),
-            name='refine__res3_W2')
+            name='gen_surface_res3_W2')
 
-        self.refine_res4_W1 = tf.Variable(
+        self.gen_surface_res4_W1 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
                 self.refine_ch, self.refine_ch
             ],
                              stddev=0.02),
-            name='refine__res4_W1')
-        self.refine_res4_W2 = tf.Variable(
+            name='gen_surface_res4_W1')
+        self.gen_surface_res4_W2 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
                 self.refine_ch, self.refine_ch
             ],
                              stddev=0.02),
-            name='refine__res4_W2')
+            name='gen_surface_res4_W2')
 
-        self.refine_W2 = tf.Variable(
+        self.gen_surface_W2 = tf.Variable(
             tf.random_normal([
                 self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.dim_W5
+                self.refine_ch, self.tsdf_shape[-1]
             ],
                              stddev=0.02),
-            name='refine_W2')
+            name='gen_surface_W2')
+        """
 
         self.saver = tf.train.Saver()
 
@@ -668,6 +670,7 @@ class FCR_aGAN():
         ])
         com_seg_gt = tf.one_hot(com_seg_gt_, self.n_class)
         com_seg_gt = tf.cast(com_seg_gt, tf.float32)
+
         # tsdf--start
         tsdf_gt_ = tf.placeholder(tf.int32, [
             self.batch_size, self.vox_shape[0], self.vox_shape[1],
@@ -676,36 +679,53 @@ class FCR_aGAN():
         tsdf_gt = tf.one_hot(tsdf_gt_, self.tsdf_shape[-1])
         tsdf_gt = tf.cast(tsdf_gt, tf.float32)
         # tsdf--end
+
         Z = tf.placeholder(tf.float32, [
             self.batch_size, self.start_vox_size[0], self.start_vox_size[1],
             self.start_vox_size[2], self.dim_z
         ])
 
-        filter_bilateral = tf.placeholder(
-            tf.float32, [self.batch_size] +
-            [self.vox_shape[0], self.vox_shape[1], self.vox_shape[2], 4])
-
         # encode from tsdf and vox
         Z_encode_tsdf, sigma_tsdf = self.encoder_tsdf(tsdf_gt)
+        com_vae_dec = self.generate_tsdf(Z_encode_tsdf)
 
-        raycasting = True
-        if raycasting is True:
-            seg_gt = tf.multiply(com_seg_gt,
-                                 tf.expand_dims(tsdf_gt[:, :, :, :, 1], -1))
-            Z_encode_seg, sigma_seg = self.encoder_vox(seg_gt)
+        # reconstructed surface
+        # surface_dec = tf.placeholder(tf.float32, self.tsdf_shape)
+        # surface_dec = self.surface_net(com_vae_dec + tsdf_gt)
+
+        # reconstruction
+        """
+        com_gt = tf.stack([
+            com_seg_gt[:, :, :, :, 0],
+            tf.reduce_sum(com_seg_gt[:, :, :, :, 1:], 4)
+        ], 4)
+        """
+
+        batch_mean_com_seg_gt = tf.reduce_mean(com_seg_gt, [0, 1, 2, 3])
+        ones = tf.ones_like(batch_mean_com_seg_gt)
+        inverse = tf.div(ones, tf.add(batch_mean_com_seg_gt, ones))
+        weight_com_seg = inverse * tf.div(1., tf.reduce_sum(inverse))
+
+        batch_mean_com_gt = tf.reduce_mean(tsdf_gt, [0, 1, 2, 3])
+        ones = tf.ones_like(batch_mean_com_gt)
+        inverse = tf.div(ones, tf.add(batch_mean_com_gt, ones))
+        weight_com = inverse * tf.div(1., tf.reduce_sum(inverse))
+
+        seg_gt = com_seg_gt
+        Z_encode_seg, sigma_seg = self.encoder_vox(seg_gt)
+        com_seg_vae_dec = self.generate_vox(Z_encode_seg)
 
         # cross generators
         com_seg_gen_dec = self.generate_vox(Z_encode_tsdf)
         com_gen_dec = self.generate_tsdf(Z_encode_seg)
 
         # encode again from the bridge
-        if raycasting is True:
-            tsdf_gen_dec = tf.multiply(
-                com_gen_dec, tf.expand_dims(tsdf_gt[:, :, :, :, 1], -1))
-            seg_gen_dec = tf.multiply(
-                com_seg_gen_dec, tf.expand_dims(tsdf_gt[:, :, :, :, 1], -1))
+        seg_gen_dec = com_seg_gen_dec
         Z_encode_tsdf_seg, sigma_tsdf_seg = self.encoder_vox(seg_gen_dec)
-        Z_encode_seg_tsdf, sigma_seg_tsdf = self.encoder_tsdf(tsdf_gen_dec)
+        Z_encode_seg_tsdf, sigma_seg_tsdf = self.encoder_tsdf(com_gen_dec)
+
+        com_seg_cc_dec = self.generate_vox(Z_encode_seg_tsdf)
+        com_cc_dec = self.generate_tsdf(Z_encode_tsdf_seg)
 
         # code_discriminator
         h_code_tsdf_gt = self.code_discriminator_x(Z)
@@ -714,6 +734,15 @@ class FCR_aGAN():
         h_code_encode_vox = self.code_discriminator_y(Z_encode_seg)
         h_code_encode_tsdf_seg = self.code_discriminator_y(Z_encode_tsdf_seg)
         h_code_encode_seg_tsdf = self.code_discriminator_x(Z_encode_seg_tsdf)
+        """
+        recons_loss_surface = tf.reduce_mean(
+            tf.reduce_sum(
+                -tf.reduce_sum(
+                    self.lamda_gamma * tsdf_gt * tf.log(1e-6 + surface_dec) +
+                    (1 - self.lamda_gamma) *
+                    (1 - tsdf_gt) * tf.log(1e-6 + 1 - surface_dec), [1, 2, 3])
+                * weight_com, 1))
+        """
 
         code_encode_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -777,26 +806,6 @@ class FCR_aGAN():
                             labels=tf.zeros_like(h_code_encode_seg_tsdf)),
                         [1]))
 
-        # reconstruction
-        com_gt = tf.stack([
-            com_seg_gt[:, :, :, :, 0],
-            tf.reduce_sum(com_seg_gt[:, :, :, :, 1:], 4)
-        ], 4)
-
-        com_seg_vae_dec = self.generate_vox(Z_encode_seg)
-        com_vae_dec = self.generate_tsdf(Z_encode_tsdf)
-        com_seg_cc_dec = self.generate_vox(Z_encode_seg_tsdf)
-        com_cc_dec = self.generate_tsdf(Z_encode_tsdf_seg)
-        batch_mean_com_seg_gt = tf.reduce_mean(com_seg_gt, [0, 1, 2, 3])
-        batch_mean_com_gt = tf.reduce_mean(com_gt, [0, 1, 2, 3])
-
-        ones = tf.ones_like(batch_mean_com_seg_gt)
-        inverse = tf.div(ones, tf.add(batch_mean_com_seg_gt, ones))
-        weight_com_seg = inverse * tf.div(1., tf.reduce_sum(inverse))
-        ones = tf.ones_like(batch_mean_com_gt)
-        inverse = tf.div(ones, tf.add(batch_mean_com_gt, ones))
-        weight_com = inverse * tf.div(1., tf.reduce_sum(inverse))
-
         # Completing from depth and semantic depth
         recons_vae_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -809,12 +818,12 @@ class FCR_aGAN():
         recons_vae_loss += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * com_gt * tf.log(1e-6 + com_vae_dec) +
+                    self.lamda_gamma * tsdf_gt * tf.log(1e-6 + com_vae_dec) +
                     (1 - self.lamda_gamma) *
-                    (1 - com_gt) * tf.log(1e-6 + 1 - com_vae_dec), [1, 2, 3]) *
-                weight_com, 1))
-        """
+                    (1 - tsdf_gt) * tf.log(1e-6 + 1 - com_vae_dec), [1, 2, 3])
+                * weight_com, 1))
         # latent consistency
+        """
         recons_vae_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.squared_difference(Z_encode_tsdf, Z_encode_seg_tsdf),
@@ -831,8 +840,8 @@ class FCR_aGAN():
             tf.reduce_sum(
                 tf.squared_difference(Z_encode_seg, Z_encode_seg_tsdf),
                 [1, 2, 3, 4]))
-        # latent consistency
         """
+        # latent consistency
 
         # Cycle consistencies
         recons_cc_loss = tf.reduce_mean(
@@ -846,18 +855,18 @@ class FCR_aGAN():
         recons_cc_loss += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * com_gt * tf.log(1e-6 + com_cc_dec) +
+                    self.lamda_gamma * tsdf_gt * tf.log(1e-6 + com_cc_dec) +
                     (1 - self.lamda_gamma) *
-                    (1 - com_gt) * tf.log(1e-6 + 1 - com_cc_dec), [1, 2, 3]) *
+                    (1 - tsdf_gt) * tf.log(1e-6 + 1 - com_cc_dec), [1, 2, 3]) *
                 weight_com, 1))
-        """
         # latent consistency
+        """
         recons_cc_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.squared_difference(Z_encode_tsdf_seg, Z_encode_seg_tsdf),
                 [1, 2, 3, 4]))
-        # latent consistency
         """
+        # latent consistency
         # SUPERVISED (paired data)
         recons_gen_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -871,57 +880,36 @@ class FCR_aGAN():
         recons_gen_loss += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * com_gt * tf.log(1e-6 + com_gen_dec) +
+                    self.lamda_gamma * tsdf_gt * tf.log(1e-6 + com_gen_dec) +
                     (1 - self.lamda_gamma) *
-                    (1 - com_gt) * tf.log(1e-6 + 1 - com_gen_dec), [1, 2, 3]) *
-                weight_com, 1))
-        """
+                    (1 - tsdf_gt) * tf.log(1e-6 + 1 - com_gen_dec), [1, 2, 3])
+                * weight_com, 1))
         # latent consistency
         recons_gen_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.squared_difference(Z_encode_tsdf, Z_encode_seg),
                 [1, 2, 3, 4]))
         # latent consistency
-        """
-
-        # refiner
-        vox_after_refine_dec = tf.placeholder(tf.float32, [
-            self.batch_size, self.vox_shape[0], self.vox_shape[1],
-            self.vox_shape[2], self.n_class
-        ])
-
-        vox_after_refine_dec = self.refine_resnet(com_seg_vae_dec)
-
-        recons_loss_refine = tf.reduce_mean(
-            tf.reduce_sum(
-                -tf.reduce_sum(
-                    self.lamda_gamma * com_seg_gt *
-                    tf.log(1e-6 + vox_after_refine_dec) +
-                    (1 - self.lamda_gamma) *
-                    (1 - com_seg_gt) * tf.log(1e-6 + 1 - vox_after_refine_dec),
-                    [1, 2, 3]) * weight_com_seg, 1))
 
         # GAN_generate
         com_seg_gen = self.generate_vox(Z)
         com_gen = self.generate_tsdf(Z)
-        vox_after_refine_gen = tf.placeholder(tf.float32, [
-            self.batch_size, self.vox_shape[0], self.vox_shape[1],
-            self.vox_shape[2], self.n_class
-        ])
 
-        vox_after_refine_gen = self.refine_resnet(com_seg_gen)
+        # surface_gen = self.surface_net(com_gen + tsdf_gt)
 
         h_com_seg_gt = self.discriminate_vox(com_seg_gt)
         h_com_seg_gen = self.discriminate_vox(com_seg_gen)
         h_com_seg_gen_dec = self.discriminate_vox(com_seg_gen_dec)
 
-        h_com_gt = self.discriminate_tsdf(com_gt)
+        h_com_gt = self.discriminate_tsdf(tsdf_gt)
         h_com_gen = self.discriminate_tsdf(com_gen)
         h_com_gen_dec = self.discriminate_tsdf(com_gen_dec)
 
         # refined
-        h_gen_ref_y = self.discriminate_vox(vox_after_refine_gen)
-        h_gen_dec_ref_y = self.discriminate_vox(vox_after_refine_dec)
+        """
+        h_gen_ref_y = self.discriminate_tsdf(surface_gen)
+        h_gen_dec_ref_y = self.discriminate_tsdf(surface_dec)
+        """
 
         # Standard_GAN_Loss
         discrim_loss = tf.reduce_mean(
@@ -963,36 +951,15 @@ class FCR_aGAN():
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_com_gen, labels=tf.ones_like(h_com_gen)))
 
-        # for refine
-        discrim_loss_refine = tf.reduce_mean(
-            tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=h_com_seg_gt,
-                labels=tf.ones_like(h_com_seg_gt))) + tf.reduce_mean(
-                    tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=h_gen_ref_y,
-                        labels=tf.zeros_like(h_gen_ref_y))) + tf.reduce_mean(
-                            tf.nn.sigmoid_cross_entropy_with_logits(
-                                logits=h_gen_dec_ref_y,
-                                labels=tf.zeros_like(h_gen_dec_ref_y)))
-
-        gen_loss_refine = tf.reduce_mean(
-            tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=h_gen_dec_ref_y, labels=tf.ones_like(h_gen_dec_ref_y)))
-
-        if self.generative is True:
-            gen_loss_refine += tf.reduce_mean(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_gen_ref_y, labels=tf.ones_like(h_gen_ref_y)))
-
         # Cost
         cost_enc = code_encode_loss + self.lamda_recons * (
-            recons_vae_loss + recons_cc_loss + recons_gen_loss)
+            recons_vae_loss + recons_cc_loss + recons_gen_loss
+        )  # + recons_loss_surface)
         cost_gen = self.lamda_recons * (
-            recons_vae_loss + recons_cc_loss + recons_gen_loss) + 10 * gen_loss
+            recons_vae_loss + recons_cc_loss +
+            recons_gen_loss) + 10 * gen_loss  # + recons_loss_surface)
         cost_discrim = 10 * discrim_loss
-        cost_code = code_discrim_loss
-        cost_gen_ref = self.lamda_recons * recons_loss_refine + 10 * gen_loss_refine
-        cost_discrim_ref = 10 * discrim_loss_refine
+        cost_code = 10 * code_discrim_loss
 
         tf.summary.scalar("recons_vae_loss", tf.reduce_mean(recons_vae_loss))
         tf.summary.scalar("recons_cc_loss", tf.reduce_mean(recons_cc_loss))
@@ -1004,9 +971,9 @@ class FCR_aGAN():
 
         summary_op = tf.summary.merge_all()
 
-        return Z, Z_encode_tsdf, Z_encode_seg, com_seg_gt_, com_seg_gen, com_seg_gen_dec, com_seg_vae_dec, com_seg_cc_dec, seg_gen_dec, vox_after_refine_dec, vox_after_refine_gen,\
-        recons_vae_loss, recons_cc_loss, recons_gen_loss, code_encode_loss, gen_loss, discrim_loss, recons_loss_refine, gen_loss_refine, discrim_loss_refine,\
-        cost_enc, cost_code, cost_gen, cost_discrim, cost_gen_ref, cost_discrim_ref, summary_op,\
+        return Z, Z_encode_tsdf, Z_encode_seg, com_seg_gt_, com_seg_gen, com_seg_gen_dec, com_seg_vae_dec, com_seg_cc_dec, seg_gen_dec,\
+        recons_vae_loss, recons_cc_loss, recons_gen_loss, code_encode_loss, gen_loss, discrim_loss,\
+        cost_enc, cost_code, cost_gen, cost_discrim, summary_op,\
         tsdf_gt_, com_gen, com_gen_dec, com_vae_dec, com_cc_dec
 
     def encoder_tsdf(self, vox):
@@ -1142,16 +1109,6 @@ class FCR_aGAN():
                     padding='SAME'),
                 g=self.discrim_y_bn_g4,
                 b=self.discrim_y_bn_b4))
-        # this is added for patch GAN
-        """
-        h4 = tf.nn.conv3d(
-            h4,
-            self.discrim_y_W5,
-            strides=self.stride,
-            dilations=self.dilations,
-            padding='SAME')
-        """
-        # end of patch GAN
         h4 = tf.reshape(h4, [self.batch_size, -1])
         h5 = tf.matmul(h4, self.discrim_y_W5)
         y = tf.nn.sigmoid(h5)
@@ -1291,16 +1248,6 @@ class FCR_aGAN():
                     padding='SAME'),
                 g=self.discrim_x_bn_g4,
                 b=self.discrim_x_bn_b4))
-        # this is added for patch GAN
-        """
-        h4 = tf.nn.conv3d(
-            h4,
-            self.discrim_x_W5,
-            strides=self.stride,
-            dilations=self.dilations,
-            padding='SAME')
-        # end of patch GAN
-        """
         h4 = tf.reshape(h4, [self.batch_size, -1])
         h5 = tf.matmul(h4, self.discrim_x_W5)
         y = tf.nn.sigmoid(h5)
@@ -1495,21 +1442,24 @@ class FCR_aGAN():
         x = softmax(h5, self.batch_size, self.tsdf_shape)
         return x
 
-    def refine_resnet(self, vox):
+    def surface_net(self, vox):
         base = tf.nn.relu(
             tf.nn.conv3d(
-                vox, self.refine_W1, strides=[1, 1, 1, 1, 1], padding='SAME'))
+                vox,
+                self.gen_surface_W1,
+                strides=[1, 1, 1, 1, 1],
+                padding='SAME'))
 
         #res1
         res1_1 = tf.nn.relu(
             tf.nn.conv3d(
                 base,
-                self.refine_res1_W1,
+                self.gen_surface_res1_W1,
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME'))
         res1_2 = tf.nn.conv3d(
             res1_1,
-            self.refine_res1_W2,
+            self.gen_surface_res1_W2,
             strides=[1, 1, 1, 1, 1],
             padding='SAME')
 
@@ -1519,12 +1469,12 @@ class FCR_aGAN():
         res2_1 = tf.nn.relu(
             tf.nn.conv3d(
                 res1,
-                self.refine_res2_W1,
+                self.gen_surface_res2_W1,
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME'))
         res2_2 = tf.nn.conv3d(
             res2_1,
-            self.refine_res2_W2,
+            self.gen_surface_res2_W2,
             strides=[1, 1, 1, 1, 1],
             padding='SAME')
 
@@ -1534,12 +1484,12 @@ class FCR_aGAN():
         res3_1 = tf.nn.relu(
             tf.nn.conv3d(
                 res2,
-                self.refine_res3_W1,
+                self.gen_surface_res3_W1,
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME'))
         res3_2 = tf.nn.conv3d(
             res3_1,
-            self.refine_res3_W2,
+            self.gen_surface_res3_W2,
             strides=[1, 1, 1, 1, 1],
             padding='SAME')
 
@@ -1549,22 +1499,22 @@ class FCR_aGAN():
         res4_1 = tf.nn.relu(
             tf.nn.conv3d(
                 res3,
-                self.refine_res4_W1,
+                self.gen_surface_res4_W1,
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME'))
         res4_2 = tf.nn.conv3d(
             res4_1,
-            self.refine_res4_W2,
+            self.gen_surface_res4_W2,
             strides=[1, 1, 1, 1, 1],
             padding='SAME')
 
         res4 = tf.nn.relu(tf.add(res3, res4_2))
 
         out = tf.nn.conv3d(
-            res4, self.refine_W2, strides=[1, 1, 1, 1, 1], padding='SAME')
-        x_refine = softmax(out, self.batch_size, self.vox_shape)
+            res4, self.gen_surface_W2, strides=[1, 1, 1, 1, 1], padding='SAME')
+        x_gen_surface = softmax(out, self.batch_size, self.tsdf_shape)
 
-        return x_refine
+        return x_gen_surface
 
     def samples_generator(self, visual_size):
 
@@ -1649,26 +1599,30 @@ class FCR_aGAN():
         x = softmax(h5, visual_size, self.vox_shape)
         return Z, x
 
+    """
     def refine_generator_resnet(self, visual_size):
         vox = tf.placeholder(tf.float32, [
-            visual_size, self.vox_shape[0], self.vox_shape[1],
-            self.vox_shape[2], self.vox_shape[3]
+            visual_size, self.tsdf_shape[0], self.tsdf_shape[1],
+            self.tsdf_shape[2], self.tsdf_shape[3]
         ])
 
         base = tf.nn.relu(
             tf.nn.conv3d(
-                vox, self.refine_W1, strides=[1, 1, 1, 1, 1], padding='SAME'))
+                vox,
+                self.gen_surface_W1,
+                strides=[1, 1, 1, 1, 1],
+                padding='SAME'))
 
         #res1
         res1_1 = tf.nn.relu(
             tf.nn.conv3d(
                 base,
-                self.refine_res1_W1,
+                self.gen_surface_res1_W1,
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME'))
         res1_2 = tf.nn.conv3d(
             res1_1,
-            self.refine_res1_W2,
+            self.gen_surface_res1_W2,
             strides=[1, 1, 1, 1, 1],
             padding='SAME')
 
@@ -1678,12 +1632,12 @@ class FCR_aGAN():
         res2_1 = tf.nn.relu(
             tf.nn.conv3d(
                 res1,
-                self.refine_res2_W1,
+                self.gen_surface_res2_W1,
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME'))
         res2_2 = tf.nn.conv3d(
             res2_1,
-            self.refine_res2_W2,
+            self.gen_surface_res2_W2,
             strides=[1, 1, 1, 1, 1],
             padding='SAME')
 
@@ -1693,12 +1647,12 @@ class FCR_aGAN():
         res3_1 = tf.nn.relu(
             tf.nn.conv3d(
                 res2,
-                self.refine_res3_W1,
+                self.gen_surface_res3_W1,
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME'))
         res3_2 = tf.nn.conv3d(
             res3_1,
-            self.refine_res3_W2,
+            self.gen_surface_res3_W2,
             strides=[1, 1, 1, 1, 1],
             padding='SAME')
 
@@ -1708,19 +1662,20 @@ class FCR_aGAN():
         res4_1 = tf.nn.relu(
             tf.nn.conv3d(
                 res3,
-                self.refine_res4_W1,
+                self.gen_surface_res4_W1,
                 strides=[1, 1, 1, 1, 1],
                 padding='SAME'))
         res4_2 = tf.nn.conv3d(
             res4_1,
-            self.refine_res4_W2,
+            self.gen_surface_res4_W2,
             strides=[1, 1, 1, 1, 1],
             padding='SAME')
 
         res4 = tf.nn.relu(tf.add(res3, res4_2))
 
         out = tf.nn.conv3d(
-            res4, self.refine_W2, strides=[1, 1, 1, 1, 1], padding='SAME')
-        x_refine = softmax(out, self.batch_size, self.vox_shape)
+            res4, self.gen_surface_W2, strides=[1, 1, 1, 1, 1], padding='SAME')
+        x_gen_surface = softmax(out, self.batch_size, self.tsdf_shape)
 
-        return vox, x_refine
+        return vox, x_gen_surface
+        """
