@@ -18,6 +18,7 @@ from skimage.util import view_as_blocks
 from joblib import Parallel, delayed
 import multiprocessing
 
+
 def label_assign(vox):
     vox = np.reshape(vox,
                      (np.shape(vox)[0], np.shape(vox)[1], np.shape(vox)[2],
@@ -111,15 +112,17 @@ def bin2array(file_bin, dir_tar_voxel):
         locations = np.where((vox_max > 0) & (vox_com > 0))
         vox_max[locations] = vox_com[locations]
 
-        # Correct for surface observed from +z axis 
+        # Correct for surface observed from +z axis
+        """
         vox_temp = vox_max
         vox_max[:,:,1:] = vox_temp[:,:,0:-1]
         vox_max[vox_temp == 0] = 0
         vox_max[vox_temp == -1] = -1 
         locations = np.where((vox_max == 0) & (vox_temp != 0))
         vox_max[locations] = vox_temp[locations]
+        """
 
-        # Save 
+        # Save
         name_start = int(file_bin.rfind('/'))
         name_end = int(file_bin.find('.', name_start))
         np.save(dir_tar_voxel + file_bin[name_start:name_end] + '.npy',

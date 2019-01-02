@@ -241,26 +241,6 @@ class depvox_gan():
         self.encode_x_bn_b3 = tf.Variable(
             tf.zeros([self.dim_W2]), name='encode_x_bn_b3')
 
-        self.encode_x_W4 = tf.Variable(
-            tf.random_normal([
-                self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
-                self.dim_W1
-            ],
-                             stddev=0.02),
-            name='encode_x_W4')
-        self.encode_x_bn_g4 = tf.Variable(
-            tf.random_normal([self.dim_W1], mean=1.0, stddev=0.02),
-            name='encode_x_bn_g4')
-        self.encode_x_bn_b4 = tf.Variable(
-            tf.zeros([self.dim_W1]), name='encode_x_bn_b4')
-
-        self.encode_x_W5 = tf.Variable(
-            tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
-            name='encode_x_W5')
-        self.encode_x_W5_sigma = tf.Variable(
-            tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
-            name='encode_x_W5_sigma')
-
         self.discrim_y_W1 = tf.Variable(
             tf.random_normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2], self.dim_W5,
