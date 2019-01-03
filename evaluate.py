@@ -302,18 +302,19 @@ def evaluate(batch_size, checknum, mode):
         error.astype('uint8').tofile(save_path + '/cc_vox_error.bin')
 
         # np.save(save_path + '/gen_tsdf.npy', np.argmax(generated_tsdf, axis=4))
-        np.argmax(
-            generated_tsdf,
-            axis=4).astype('uint8').tofile(save_path + '/gen_tsdf.bin')
-
-        # np.save(save_path + '/vae_tsdf.npy', np.argmax(vae_tsdf, axis=4))
-        np.argmax(
-            vae_tsdf,
-            axis=4).astype('uint8').tofile(save_path + '/vae_tsdf.bin')
-
-        # np.save(save_path + '/cc_tsdf.npy', np.argmax(cc_tsdf, axis=4))
-        np.argmax(
-            cc_tsdf, axis=4).astype('uint8').tofile(save_path + '/cc_tsdf.bin')
+        if cfg.TYPE_TASK is 'scene':
+            generated_tsdf = np.argmax(generated_tsdf, axis=4)
+            generated_tsdf[generated_tsdf < 0] = 0
+            generated_tsdf[generated_tsdf > 1] = 0
+            vae_tsdf = np.argmax(vae_tsdf, axis=4)
+            vae_tsdf[vae_tsdf < 0] = 0
+            vae_tsdf[vae_tsdf > 1] = 0
+            cc_tsdf = np.argmax(cc_tsdf, axis=4)
+            cc_tsdf[cc_tsdf < 0] = 0
+            cc_tsdf[cc_tsdf > 1] = 0
+        generated_tsdf.astype('uint8').tofile(save_path + '/gen_tsdf.bin')
+        vae_tsdf.astype('uint8').tofile(save_path + '/vae_tsdf.bin')
+        cc_tsdf.astype('uint8').tofile(save_path + '/cc_tsdf.bin')
 
         # np.save(save_path + '/depth_seg_gen.npy', np.argmax(depth_seg_gen, axis=4))
         np.argmax(
