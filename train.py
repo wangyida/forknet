@@ -34,14 +34,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     dilations = cfg.NET.DILATIONS
     freq = cfg.CHECK_FREQ
     record_vox_num = cfg.RECORD_VOX_NUM
-    # refine_ch = cfg.NET.REFINE_CH
-    # refine_kernel = cfg.NET.REFINE_KERNEL
-    # refiner = cfg.NET.REFINER
     discriminative = cfg.NET.DISCRIMINATIVE
     generative = cfg.NET.GENERATIVE
     variational = cfg.NET.VARIATIONAL
-
-    # refine_start = cfg.SWITCHING_ITE
 
     depvox_gan_model = depvox_gan(
         batch_size=batch_size,
@@ -53,9 +48,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         kernel=kernel,
         stride=stride,
         dilations=dilations,
-        # refine_ch=refine_ch,
-        # refine_kernel=refine_kernel,
-        # refiner=refiner,
         generative=generative)
 
     Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, tsdf_seg_tf,\
@@ -203,9 +195,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 'gen_cc_loss_val' in locals()) else 'None'
 
             print(
-                colored('reconstruct gen loss: ' + str(gen_gen_loss_val),
-                        'green')) if (
-                            'gen_gen_loss_val' in locals()) else 'None'
+                colored(
+                    'reconstruct gen loss: ' + str(gen_gen_loss_val),
+                    'green')) if ('gen_gen_loss_val' in locals()) else 'None'
 
             print '    code encode loss:', code_encode_loss_val if (
                 'code_encode_loss_val' in locals()) else 'None'

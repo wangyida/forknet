@@ -91,9 +91,6 @@ class depvox_gan():
                  stride=[1, 2, 2, 2, 1],
                  dilations=[1, 1, 1, 1, 1],
                  dim_code=512,
-                 refine_ch=32,
-                 refine_kernel=3,
-                 refiner="resnet",
                  generative=True):
 
         self.batch_size = batch_size
@@ -120,9 +117,6 @@ class depvox_gan():
         self.lamda_gamma = cfg.LAMDA_GAMMA
 
         self.dim_code = dim_code
-        self.refine_ch = refine_ch
-        self.refine_kernel = refine_kernel
-        self.refiner = refiner
         self.generative = generative
 
         # parameters of generator y
@@ -562,84 +556,6 @@ class depvox_gan():
         self.cod_y_W3 = tf.Variable(
             tf.random_normal([dim_code, 1], stddev=0.02), name='cod_y_W3')
 
-        # parameters of surface reconstructing
-        """
-        self.gen_surface_W1 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.tsdf_shape[-1], self.refine_ch
-            ],
-                             stddev=0.02),
-            name='gen_surface_W1')
-        self.gen_surface_res1_W1 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.refine_ch
-            ],
-                             stddev=0.02),
-            name='gen_surface_res1_W1')
-        self.gen_surface_res1_W2 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.refine_ch
-            ],
-                             stddev=0.02),
-            name='gen_surface_res1_W2')
-
-        self.gen_surface_res2_W1 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.refine_ch
-            ],
-                             stddev=0.02),
-            name='gen_surface_res2_W1')
-        self.gen_surface_res2_W2 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.refine_ch
-            ],
-                             stddev=0.02),
-            name='gen_surface_res2_W2')
-
-        self.gen_surface_res3_W1 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.refine_ch
-            ],
-                             stddev=0.02),
-            name='gen_surface_res3_W1')
-        self.gen_surface_res3_W2 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.refine_ch
-            ],
-                             stddev=0.02),
-            name='gen_surface_res3_W2')
-
-        self.gen_surface_res4_W1 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.refine_ch
-            ],
-                             stddev=0.02),
-            name='gen_surface_res4_W1')
-        self.gen_surface_res4_W2 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.refine_ch
-            ],
-                             stddev=0.02),
-            name='gen_surface_res4_W2')
-
-        self.gen_surface_W2 = tf.Variable(
-            tf.random_normal([
-                self.refine_kernel, self.refine_kernel, self.refine_kernel,
-                self.refine_ch, self.tsdf_shape[-1]
-            ],
-                             stddev=0.02),
-            name='gen_surface_W2')
-        """
-
         self.saver = tf.train.Saver()
 
     def build_model(self):
@@ -884,12 +800,6 @@ class depvox_gan():
         h_com_gt = self.discriminate_tsdf(tsdf_gt)
         h_com_gen = self.discriminate_tsdf(com_gen)
         h_com_gen_dec = self.discriminate_tsdf(com_gen_dec)
-
-        # refined
-        """
-        h_gen_ref_y = self.discriminate_tsdf(surface_gen)
-        h_gen_dec_ref_y = self.discriminate_tsdf(surface_dec)
-        """
 
         # Standard_GAN_Loss
         discrim_loss = tf.reduce_mean(
@@ -1578,84 +1488,3 @@ class depvox_gan():
 
         x = softmax(h5, visual_size, self.vox_shape)
         return Z, x
-
-    """
-    def refine_generator_resnet(self, visual_size):
-        vox = tf.placeholder(tf.float32, [
-            visual_size, self.tsdf_shape[0], self.tsdf_shape[1],
-            self.tsdf_shape[2], self.tsdf_shape[3]
-        ])
-
-        base = tf.nn.relu(
-            tf.nn.conv3d(
-                vox,
-                self.gen_surface_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-
-        #res1
-        res1_1 = tf.nn.relu(
-            tf.nn.conv3d(
-                base,
-                self.gen_surface_res1_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        res1_2 = tf.nn.conv3d(
-            res1_1,
-            self.gen_surface_res1_W2,
-            strides=[1, 1, 1, 1, 1],
-            padding='SAME')
-
-        res1 = tf.nn.relu(tf.add(base, res1_2))
-
-        #res2
-        res2_1 = tf.nn.relu(
-            tf.nn.conv3d(
-                res1,
-                self.gen_surface_res2_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        res2_2 = tf.nn.conv3d(
-            res2_1,
-            self.gen_surface_res2_W2,
-            strides=[1, 1, 1, 1, 1],
-            padding='SAME')
-
-        res2 = tf.nn.relu(tf.add(res1, res2_2))
-
-        #res3
-        res3_1 = tf.nn.relu(
-            tf.nn.conv3d(
-                res2,
-                self.gen_surface_res3_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        res3_2 = tf.nn.conv3d(
-            res3_1,
-            self.gen_surface_res3_W2,
-            strides=[1, 1, 1, 1, 1],
-            padding='SAME')
-
-        res3 = tf.nn.relu(tf.add(res2, res3_2))
-
-        #res4
-        res4_1 = tf.nn.relu(
-            tf.nn.conv3d(
-                res3,
-                self.gen_surface_res4_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        res4_2 = tf.nn.conv3d(
-            res4_1,
-            self.gen_surface_res4_W2,
-            strides=[1, 1, 1, 1, 1],
-            padding='SAME')
-
-        res4 = tf.nn.relu(tf.add(res3, res4_2))
-
-        out = tf.nn.conv3d(
-            res4, self.gen_surface_W2, strides=[1, 1, 1, 1, 1], padding='SAME')
-        x_gen_surface = softmax(out, self.batch_size, self.tsdf_shape)
-
-        return vox, x_gen_surface
-        """

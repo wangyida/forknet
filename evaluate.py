@@ -106,9 +106,6 @@ def evaluate(batch_size, checknum, mode):
     stride = cfg.NET.STRIDE
     dilations = cfg.NET.DILATIONS
     freq = cfg.CHECK_FREQ
-    # refine_ch = cfg.NET.REFINE_CH
-    # refine_kernel = cfg.NET.REFINE_KERNEL
-    # refiner = cfg.NET.REFINER
     discriminative = cfg.NET.DISCRIMINATIVE
     generative = cfg.NET.GENERATIVE
 
@@ -125,9 +122,6 @@ def evaluate(batch_size, checknum, mode):
         kernel=kernel,
         stride=stride,
         dilations=dilations,
-        # refine_ch=refine_ch,
-        # refine_kernel=refine_kernel,
-        # refiner=refiner,
         generative=generative)
 
 
