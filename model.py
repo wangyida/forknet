@@ -615,11 +615,13 @@ class depvox_gan():
         tsdf_gen_dec = self.generate_tsdf(Z_encode_seg)
 
         # encode again from the bridge
-        com_seg_gen_dec = tf.argmax(com_seg_gen_dec, axis=4, output_type=tf.int32)
-        com_seg_gen_dec = tf.one_hot(com_seg_gen_dec, self.n_class)
+        com_seg_gen_dec = tf.one_hot(
+            tf.argmax(com_seg_gen_dec, axis=4, output_type=tf.int32),
+            self.n_class)
         com_seg_gen_dec = tf.cast(com_seg_gen_dec, tf.float32)
-        tsdf_gen_dec = tf.argmax(tsdf_gen_dec, axis=4, output_type=tf.int32)
-        tsdf_gen_dec = tf.one_hot(tsdf_gen_dec, self.tsdf_shape[-1])
+        tsdf_gen_dec = tf.one_hot(
+            tf.argmax(tsdf_gen_dec, axis=4, output_type=tf.int32),
+            self.tsdf_shape[-1])
         tsdf_gen_dec = tf.cast(tsdf_gen_dec, tf.float32)
         Z_encode_tsdf_seg, sigma_tsdf_seg = self.encoder_vox(com_seg_gen_dec)
         Z_encode_seg_tsdf, sigma_seg_tsdf = self.encoder_tsdf(tsdf_gen_dec)
@@ -634,15 +636,6 @@ class depvox_gan():
         h_code_encode_vox = self.code_discriminator_y(Z_encode_seg)
         h_code_encode_tsdf_seg = self.code_discriminator_y(Z_encode_tsdf_seg)
         h_code_encode_seg_tsdf = self.code_discriminator_x(Z_encode_seg_tsdf)
-        """
-        recons_loss_surface = tf.reduce_mean(
-            tf.reduce_sum(
-                -tf.reduce_sum(
-                    self.lamda_gamma * tsdf_gt * tf.log(1e-6 + surface_dec) +
-                    (1 - self.lamda_gamma) *
-                    (1 - tsdf_gt) * tf.log(1e-6 + 1 - surface_dec), [1, 2, 3])
-                * weight_tsdf, 1))
-        """
 
         code_encode_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -678,7 +671,8 @@ class depvox_gan():
         code_discrim_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_code_com_seg_gt, labels=tf.ones_like(h_code_com_seg_gt)),
+                    logits=h_code_com_seg_gt,
+                    labels=tf.ones_like(h_code_com_seg_gt)),
                 [1])) + tf.reduce_mean(
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
@@ -687,7 +681,8 @@ class depvox_gan():
         code_discrim_loss += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_code_com_seg_gt, labels=tf.ones_like(h_code_com_seg_gt)),
+                    logits=h_code_com_seg_gt,
+                    labels=tf.ones_like(h_code_com_seg_gt)),
                 [1])) + tf.reduce_mean(
                     tf.reduce_sum(
                         tf.nn.sigmoid_cross_entropy_with_logits(
@@ -757,8 +752,8 @@ class depvox_gan():
                 -tf.reduce_sum(
                     self.lamda_gamma * tsdf_gt * tf.log(1e-6 + tsdf_cc_dec) +
                     (1 - self.lamda_gamma) *
-                    (1 - tsdf_gt) * tf.log(1e-6 + 1 - tsdf_cc_dec), [1, 2, 3]) *
-                weight_tsdf, 1))
+                    (1 - tsdf_gt) * tf.log(1e-6 + 1 - tsdf_cc_dec), [1, 2, 3])
+                * weight_tsdf, 1))
         # latent consistency
         """
         recons_cc_loss += tf.reduce_mean(
@@ -794,8 +789,6 @@ class depvox_gan():
         # GAN_generate
         com_seg_gen = self.generate_vox(Z)
         tsdf_gen = self.generate_tsdf(Z)
-
-        # surface_gen = self.surface_net(tsdf_gen + tsdf_gt)
 
         h_com_seg_gt = self.discriminate_vox(com_seg_gt)
         h_com_seg_gen = self.discriminate_vox(com_seg_gen)
@@ -847,11 +840,9 @@ class depvox_gan():
 
         # Cost
         cost_enc = code_encode_loss + self.lamda_recons * (
-            recons_vae_loss + recons_cc_loss + recons_gen_loss
-        )  # + recons_loss_surface)
+            recons_vae_loss + recons_cc_loss + recons_gen_loss)
         cost_gen = self.lamda_recons * (
-            recons_vae_loss + recons_cc_loss +
-            recons_gen_loss) + 10 * gen_loss  # + recons_loss_surface)
+            recons_vae_loss + recons_cc_loss + recons_gen_loss) + 10 * gen_loss
         cost_discrim = 10 * discrim_loss
         cost_code = 10 * code_discrim_loss
 

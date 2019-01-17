@@ -46,7 +46,7 @@ def byproduct(batch_size, checknum):
         generative=generative)
 
 
-    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, tsdf_seg_tf,\
+    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,\
     recon_vae_loss_tf, recon_cc_loss_tf, recon_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, summary_tf,\
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = depvox_gan_model.build_model()
@@ -64,10 +64,10 @@ def byproduct(batch_size, checknum):
     scene_name_pair.extend([(model_path, model_id) for model_id in models])
     num_models = len(scene_name_pair)
 
-    batch_tsdf = np.zeros(
-        (batch_size, n_vox[0], n_vox[1], n_vox[2]), dtype=np.float32)
-    batch_voxel = np.zeros(
-        (batch_size, n_vox[0], n_vox[1], n_vox[2]), dtype=np.float32)
+    batch_tsdf = np.zeros((batch_size, n_vox[0], n_vox[1], n_vox[2]),
+                          dtype=np.float32)
+    batch_voxel = np.zeros((batch_size, n_vox[0], n_vox[1], n_vox[2]),
+                           dtype=np.float32)
 
     for i in np.arange(num_models):
         sceneId, model_id = scene_name_pair[i]
@@ -82,7 +82,8 @@ def byproduct(batch_size, checknum):
 
         # Evaluation masks
         if cfg.TYPE_TASK is 'scene':
-            volume_effective = np.clip(np.where(batch_voxel > 0, 1, 0) + np.where(
+            volume_effective = np.clip(
+                np.where(batch_voxel > 0, 1, 0) + np.where(
                     batch_tsdf > 0, 1, 0), 0, 1)
             batch_voxel *= volume_effective
             batch_tsdf *= volume_effective
@@ -90,7 +91,7 @@ def byproduct(batch_size, checknum):
             # batch_tsdf[batch_tsdf > 1] = 0
             # batch_tsdf_test[np.where(batch_voxel_test == 10)] = 1
 
-        batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, 
+        batch_generated_voxs, batch_vae_voxs, batch_cc_voxs,\
         batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
             [
                 vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,
@@ -101,12 +102,13 @@ def byproduct(batch_size, checknum):
                 vox_tf: batch_voxel
             })
 
-
         batch_generated_tsdf = np.argmax(
             batch_generated_tsdf, axis=4).astype('float32')
         # batch_generated_tsdf[batch_tsdf == -1] = -1
-        import ipdb; ipdb.set_trace()
-        np.save('/media/wangyida/SSD2T/database/SUNCG_Yida/test/depth_tsdf_vae_npy/'+models[i], batch_generated_tsdf[0])
+        np.save(
+            '/media/wangyida/SSD2T/database/SUNCG_Yida/test/depth_tsdf_vae_npy/'
+            + models[i], batch_generated_tsdf[0])
+
 
 if __name__ == '__main__':
-    byproduct(1, 206)
+    byproduct(1, 208)

@@ -188,8 +188,8 @@ def evaluate(batch_size, checknum, mode):
             batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, batch_tsdf_enc_Z, batch_vox_enc_Z, batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
                 [
                     vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,
-                    z_tsdf_enc_tf, z_vox_enc_tf,
-                    tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf
+                    z_tsdf_enc_tf, z_vox_enc_tf, tsdf_gen_decode_tf,
+                    tsdf_vae_decode_tf, tsdf_cc_decode_tf
                 ],
                 feed_dict={
                     tsdf_tf: batch_tsdf_test,
@@ -339,8 +339,8 @@ def evaluate(batch_size, checknum, mode):
         AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(
             on_depth_seg_real, on_depth_seg_real,
-            np.multiply(generated_voxs, np.expand_dims(surface, -1)), IoU_class,
-            AP_class, vox_shape)
+            np.multiply(generated_voxs, np.expand_dims(surface, -1)),
+            IoU_class, AP_class, vox_shape)
         IoU_all = np.expand_dims(IoU_class, axis=1)
         AP_all = np.expand_dims(AP_class, axis=1)
 
