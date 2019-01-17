@@ -125,8 +125,8 @@ def evaluate(batch_size, checknum, mode):
         generative=generative)
 
 
-    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, tsdf_seg_tf,\
-    gen_vae_loss_tf, gen_cc_loss_tf, gen_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf,\
+    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,\
+    recon_vae_loss_tf, recon_cc_loss_tf, recon_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, summary_tf,\
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = depvox_gan_model.build_model()
     Z_tf_sample, vox_tf_sample = depvox_gan_model.samples_generator(
@@ -182,13 +182,13 @@ def evaluate(batch_size, checknum, mode):
                 batch_voxel_test *= volume_effective
                 batch_tsdf_test *= volume_effective
 
-                batch_tsdf_test[batch_tsdf_test > 1] = 0
+                # batch_tsdf_test[batch_tsdf_test > 1] = 0
                 # batch_tsdf_test[np.where(batch_voxel_test == 10)] = 1
 
-            batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, batch_depth_seg_gen, batch_tsdf_enc_Z, batch_vox_enc_Z, batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
+            batch_generated_voxs, batch_vae_voxs, batch_cc_voxs, batch_tsdf_enc_Z, batch_vox_enc_Z, batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
                 [
                     vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,
-                    tsdf_seg_tf, z_tsdf_enc_tf, z_vox_enc_tf,
+                    z_tsdf_enc_tf, z_vox_enc_tf,
                     tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf
                 ],
                 feed_dict={
@@ -206,7 +206,6 @@ def evaluate(batch_size, checknum, mode):
                 generated_voxs = batch_generated_voxs
                 vae_voxs = batch_vae_voxs
                 cc_voxs = batch_cc_voxs
-                depth_seg_gen = batch_depth_seg_gen
                 complete_gen = batch_vae_tsdf
                 tsdf_enc_Z = batch_tsdf_enc_Z
                 vox_enc_Z = batch_vox_enc_Z
@@ -218,8 +217,6 @@ def evaluate(batch_size, checknum, mode):
                     (generated_voxs, batch_generated_voxs), axis=0)
                 vae_voxs = np.concatenate((vae_voxs, batch_vae_voxs), axis=0)
                 cc_voxs = np.concatenate((cc_voxs, batch_cc_voxs), axis=0)
-                depth_seg_gen = np.concatenate(
-                    (depth_seg_gen, batch_depth_seg_gen), axis=0)
                 complete_gen = np.concatenate((complete_gen, batch_vae_tsdf),
                                               axis=0)
                 tsdf_enc_Z = np.concatenate((tsdf_enc_Z, batch_tsdf_enc_Z),
@@ -310,11 +307,6 @@ def evaluate(batch_size, checknum, mode):
         vae_tsdf.astype('uint8').tofile(save_path + '/vae_tsdf.bin')
         cc_tsdf.astype('uint8').tofile(save_path + '/cc_tsdf.bin')
 
-        # np.save(save_path + '/depth_seg_gen.npy', np.argmax(depth_seg_gen, axis=4))
-        np.argmax(
-            depth_seg_gen,
-            axis=4).astype('uint8').tofile(save_path + '/depth_seg_gen.bin')
-
         # np.save(save_path + '/complete_gen.npy', np.argmax( complete_gen, axis=4))
         np.argmax(
             complete_gen,
@@ -330,9 +322,6 @@ def evaluate(batch_size, checknum, mode):
         on_depth_seg_real = onehot(
             np.multiply(voxel_test, surface), vox_shape[3])
         on_complete_real = onehot(complete_real, 2)
-        on_depth_seg_gen = onehot(
-            np.multiply(np.argmax(depth_seg_gen, axis=4), surface),
-            vox_shape[3])
         on_complete_gen = onehot(np.argmax(complete_gen, axis=4), 2)
 
         # calc_IoU
@@ -349,8 +338,8 @@ def evaluate(batch_size, checknum, mode):
         IoU_class = np.zeros([vox_shape[3] + 1])
         AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(
-            on_depth_seg_real, on_depth_seg_gen,
-            np.multiply(depth_seg_gen, np.expand_dims(surface, -1)), IoU_class,
+            on_depth_seg_real, on_depth_seg_real,
+            np.multiply(generated_voxs, np.expand_dims(surface, -1)), IoU_class,
             AP_class, vox_shape)
         IoU_all = np.expand_dims(IoU_class, axis=1)
         AP_all = np.expand_dims(AP_class, axis=1)

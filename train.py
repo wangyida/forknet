@@ -50,8 +50,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         dilations=dilations,
         generative=generative)
 
-    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf, tsdf_seg_tf,\
-    gen_vae_loss_tf, gen_cc_loss_tf, gen_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf,\
+    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,\
+    recon_vae_loss_tf, recon_cc_loss_tf, recon_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf,\
     cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, summary_tf,\
     tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -145,8 +145,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 _, _, gen_loss_val, cost_gen_val, gen_vae_loss_val, gen_cc_loss_val, gen_gen_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
                     [
                         train_op_encode, train_op_gen, gen_loss_tf,
-                        cost_gen_tf, recons_vae_loss_tf, recons_cc_loss_tf,
-                        recons_gen_loss_tf, code_encode_loss_tf, cost_enc_tf
+                        cost_gen_tf, recon_vae_loss_tf, recon_cc_loss_tf,
+                        recon_gen_loss_tf, code_encode_loss_tf, cost_enc_tf
                     ],
                     feed_dict={
                         vox_tf: batch_voxel_train,
