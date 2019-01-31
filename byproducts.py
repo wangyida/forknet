@@ -91,8 +91,8 @@ def byproduct(batch_size, checknum):
             # batch_tsdf[batch_tsdf > 1] = 0
             # batch_tsdf_test[np.where(batch_voxel_test == 10)] = 1
 
-        batch_generated_voxs, batch_vae_voxs, batch_cc_voxs,\
-        batch_generated_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
+        batch_pred_voxs, batch_vae_voxs, batch_cc_voxs,\
+        batch_pred_tsdf, batch_vae_tsdf, batch_cc_tsdf = sess.run(
             [
                 vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,
                 tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf
@@ -102,13 +102,15 @@ def byproduct(batch_size, checknum):
                 vox_tf: batch_voxel
             })
 
-        batch_generated_tsdf = np.argmax(
-            batch_generated_tsdf, axis=4).astype('float32')
-        # batch_generated_tsdf[batch_tsdf == -1] = -1
+        batch_pred_tsdf = np.argmax(
+            batch_pred_tsdf, axis=4).astype('float32')
+        import ipdb
+        ipdb.set_trace()
+        # batch_pred_tsdf[batch_tsdf == -1] = -1
         np.save(
             '/media/wangyida/SSD2T/database/SUNCG_Yida/test/depth_tsdf_vae_npy/'
-            + models[i], batch_generated_tsdf[0])
+            + models[i], batch_pred_tsdf[0])
 
 
 if __name__ == '__main__':
-    byproduct(1, 208)
+    byproduct(1, 464)

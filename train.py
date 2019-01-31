@@ -120,19 +120,19 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         while epoch_flag:
             print colored('---Iteration:%d, epoch:%d', 'blue') % (ite, epoch)
             db_inds, epoch_flag = data_process.get_next_minibatch()
-            batch_voxel_train = data_process.get_voxel(db_inds)
-            batch_tsdf_train = data_process.get_tsdf(db_inds)
+            batch_voxel = data_process.get_voxel(db_inds)
+            batch_tsdf = data_process.get_tsdf(db_inds)
 
             if cfg.TYPE_TASK is 'scene':
                 # Evaluation masks
                 volume_effective = np.clip(
-                    np.where(batch_voxel_train > 0, 1, 0) + np.where(
-                        batch_tsdf_train > 0, 1, 0), 0, 1)
-                batch_voxel_train *= volume_effective
-                batch_tsdf_train *= volume_effective
+                    np.where(batch_voxel > 0, 1, 0) + np.where(
+                        batch_tsdf > 0, 1, 0), 0, 1)
+                batch_voxel *= volume_effective
+                batch_tsdf *= volume_effective
 
                 # occluded region
-                # batch_tsdf_train[batch_tsdf_train > 1] = 0
+                # batch_tsdf[batch_tsdf > 1] = 0
 
             lr = learning_rate(cfg.LEARNING_RATE_V, ite)
 
@@ -149,8 +149,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         recon_gen_loss_tf, code_encode_loss_tf, cost_enc_tf
                     ],
                     feed_dict={
-                        vox_tf: batch_voxel_train,
-                        tsdf_tf: batch_tsdf_train,
+                        vox_tf: batch_voxel,
+                        tsdf_tf: batch_tsdf,
                         Z_tf: batch_z_var,
                         lr_VAE: lr
                     },
@@ -161,8 +161,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     [train_op_discrim, discrim_loss_tf, cost_discrim_tf],
                     feed_dict={
                         Z_tf: batch_z_var,
-                        vox_tf: batch_voxel_train,
-                        tsdf_tf: batch_tsdf_train
+                        vox_tf: batch_voxel,
+                        tsdf_tf: batch_tsdf
                     },
                 )
 
@@ -171,8 +171,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     [train_op_code, cost_code_tf, z_tsdf_enc_tf, z_vox_enc_tf],
                     feed_dict={
                         Z_tf: batch_z_var,
-                        vox_tf: batch_voxel_train,
-                        tsdf_tf: batch_tsdf_train,
+                        vox_tf: batch_voxel,
+                        tsdf_tf: batch_tsdf,
                         lr_VAE: lr
                     },
                 )
@@ -181,8 +181,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 summary_tf,
                 feed_dict={
                     Z_tf: batch_z_var,
-                    vox_tf: batch_voxel_train,
-                    tsdf_tf: batch_tsdf_train,
+                    vox_tf: batch_voxel,
+                    tsdf_tf: batch_tsdf,
                     lr_VAE: lr
                 },
             )
