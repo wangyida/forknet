@@ -102,8 +102,7 @@ def byproduct(batch_size, checknum):
                 vox_tf: batch_voxel
             })
 
-        batch_pred_tsdf = np.argmax(
-            batch_pred_tsdf, axis=4).astype('float32')
+        batch_pred_tsdf = np.argmax(batch_pred_tsdf, axis=4).astype('float32')
         import ipdb
         ipdb.set_trace()
         # batch_pred_tsdf[batch_tsdf == -1] = -1

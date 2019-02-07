@@ -56,61 +56,97 @@ def bin2array(file_bin, dir_tar_voxel):
         vox_max = np.reshape(checkVox, (240, 144, 240))
         # convert 255 to -1
         vox_max[vox_max == 255] = -1
-        # mapping
-        vox_max[vox_max == 10] = 9
-        vox_max[vox_max == 12] = 11
-        vox_max[vox_max == 13] = 11
-        vox_max[vox_max == 14] = 12
-        vox_max[vox_max == 16] = 10
-        vox_max[vox_max == 17] = 9
+        vox_max[vox_max == 0] = 0
+        vox_max[vox_max == 1] = 1
+        vox_max[vox_max == 2] = 2
+        vox_max[vox_max == 3] = 3
+        vox_max[vox_max == 4] = 4
+        vox_max[vox_max == 5] = 11
+        vox_max[vox_max == 6] = 5
+        vox_max[vox_max == 7] = 6
+        vox_max[vox_max == 8] = 7
+        vox_max[vox_max == 9] = 8
+        vox_max[vox_max == 10] = 8
+        vox_max[vox_max == 11] = 10
+        vox_max[vox_max == 12] = 10
+        vox_max[vox_max == 13] = 10
+        vox_max[vox_max == 14] = 11
+        vox_max[vox_max == 15] = 11
+        vox_max[vox_max == 16] = 9
+        vox_max[vox_max == 17] = 8
+        vox_max[vox_max == 18] = 11
+        vox_max[vox_max == 19] = 11
+        vox_max[vox_max == 20] = 11
+        vox_max[vox_max == 21] = 11
+        vox_max[vox_max == 22] = 11
+        vox_max[vox_max == 23] = 11
+        vox_max[vox_max == 24] = 11
         vox_max[vox_max == 25] = 11
+        vox_max[vox_max == 26] = 11
+        vox_max[vox_max == 27] = 10
+        vox_max[vox_max == 28] = 10
         vox_max[vox_max == 29] = 11
-        vox_max[vox_max == 31] = 11
+        vox_max[vox_max == 30] = 8
+        vox_max[vox_max == 31] = 10
+        vox_max[vox_max == 32] = 11
+        vox_max[vox_max == 33] = 9
         vox_max[vox_max == 34] = 11
-        vox_max[vox_max == 30] = 6
-        vox_max[vox_max == 33] = 10
-        vox_max[vox_max == 35] = 10
-        vox_max[vox_max > 12] = 12
-
-        # layout enhancement
-        vox_max[vox_max == 1] = 51
-        vox_max[vox_max == 2] = 52
-        vox_max[vox_max == 3] = 53
-        vox_max[vox_max == 4] = 54
+        vox_max[vox_max == 35] = 11
+        vox_max[vox_max == 36] = 11
 
         vox_max = block_reduce(vox_max, block_size=(3, 3, 3), func=np.max)
-        vox_max[vox_max == 51] = 1
-        vox_max[vox_max == 52] = 2
-        vox_max[vox_max == 53] = 3
-        vox_max[vox_max == 54] = 4
 
         # Down sampling according to common label
         vox_com = np.reshape(checkVox, (240, 144, 240))
 
         # mapping
+        """
         vox_com[vox_com == 255] = -1
-        vox_com[vox_com == 10] = 9
-        vox_com[vox_com == 12] = 11
-        vox_com[vox_com == 13] = 11
-        vox_com[vox_com == 14] = 12
-        vox_com[vox_com == 16] = 10
-        vox_com[vox_com == 17] = 9
+        vox_com[vox_com == 0] = 0
+        vox_com[vox_com == 1] = 1
+        vox_com[vox_com == 2] = 2
+        vox_com[vox_com == 3] = 3
+        vox_com[vox_com == 4] = 4
+        vox_com[vox_com == 5] = 11
+        vox_com[vox_com == 6] = 5
+        vox_com[vox_com == 7] = 6
+        vox_com[vox_com == 8] = 7
+        vox_com[vox_com == 9] = 8
+        vox_com[vox_com == 10] = 8
+        vox_com[vox_com == 11] = 10
+        vox_com[vox_com == 12] = 10
+        vox_com[vox_com == 13] = 10
+        vox_com[vox_com == 14] = 11
+        vox_com[vox_com == 15] = 11
+        vox_com[vox_com == 16] = 9
+        vox_com[vox_com == 17] = 8
+        vox_com[vox_com == 18] = 11
+        vox_com[vox_com == 19] = 11
+        vox_com[vox_com == 20] = 11
+        vox_com[vox_com == 21] = 11
+        vox_com[vox_com == 22] = 11
+        vox_com[vox_com == 23] = 11
+        vox_com[vox_com == 24] = 11
         vox_com[vox_com == 25] = 11
+        vox_com[vox_com == 26] = 11
+        vox_com[vox_com == 27] = 10
+        vox_com[vox_com == 28] = 10
         vox_com[vox_com == 29] = 11
-        vox_com[vox_com == 31] = 11
+        vox_com[vox_com == 30] = 8
+        vox_com[vox_com == 31] = 10
+        vox_com[vox_com == 32] = 11
+        vox_com[vox_com == 33] = 9
         vox_com[vox_com == 34] = 11
-        vox_com[vox_com == 30] = 6
-        vox_com[vox_com == 33] = 10
-        vox_com[vox_com == 35] = 10
-        vox_com[vox_com > 12] = 12
+        vox_com[vox_com == 35] = 11
+        vox_com[vox_com == 36] = 11
         vox_com[vox_com == -1] = 255
-        temp = label_assign(view_as_blocks(vox_com, (3, 3, 3)))
-        vox_com = temp
+        vox_com = label_assign(view_as_blocks(vox_com, (3, 3, 3)))
         vox_com[vox_com == 255] = -1
 
         # Merge 2 results
         locations = np.where((vox_max > 0) & (vox_com > 0))
         vox_max[locations] = vox_com[locations]
+        """
 
         # Correct for surface observed from +z axis
         """
@@ -128,13 +164,6 @@ def bin2array(file_bin, dir_tar_voxel):
         np.save(dir_tar_voxel + file_bin[name_start:name_end] + '.npy',
                 vox_max)
     f.close()
-
-
-def png2array(file):
-    image = misc.imread(file)
-    image = misc.imresize(image, 50)
-    return image
-
 
 class ScanFile(object):
     def __init__(self, directory, prefix=None, postfix='.bin'):

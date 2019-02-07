@@ -48,7 +48,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         kernel=kernel,
         stride=stride,
         dilations=dilations,
-        generative=generative)
+        generative=generative,
+        is_train=True)
 
     Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,\
     recon_vae_loss_tf, recon_cc_loss_tf, recon_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf,\
@@ -123,7 +124,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             batch_voxel = data_process.get_voxel(db_inds)
             batch_tsdf = data_process.get_tsdf(db_inds)
 
-            if cfg.TYPE_TASK is 'scene':
+            if cfg.TYPE_TASK == 'scene':
                 # Evaluation masks
                 volume_effective = np.clip(
                     np.where(batch_voxel > 0, 1, 0) + np.where(

@@ -19,7 +19,7 @@ from joblib import Parallel, delayed
 def voxel2pcd(file_npy, dir_tar_pcd, type='partial'):
     voxels = np.load(file_npy)
     pcd = PointCloud()
-    if type is 'partial':
+    if type == 'partial':
         coordinate = np.transpose(np.where(voxels == 1))
         pcd.points = Vector3dVector(coordinate)
         colors_cat = np.transpose(np.tile(voxels[voxels == 1], ( 3, 1)))
@@ -27,7 +27,7 @@ def voxel2pcd(file_npy, dir_tar_pcd, type='partial'):
     else:
         coordinate = np.transpose(np.where(voxels > 0))
         pcd.points = Vector3dVector(coordinate)
-        colors_cat = np.float32(np.transpose(np.tile(voxels[voxels > 0], ( 3, 1))))
+        colors_cat = np.float32(np.transpose(np.tile(voxels[voxels > 0], ( 3, 1))))/12
         pcd.colors = Vector3dVector(colors_cat)
     # Save
     name_start = int(file_npy.rfind('/'))
