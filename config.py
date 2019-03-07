@@ -29,7 +29,7 @@ __C.NET.VARIATIONAL = True
 
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'test'
+__C.TYPE_DATA = 'train'
 if __C.TYPE_TASK is 'scene':
     __C.CONST.N_VOX = [80, 48, 80]
     __C.NET.START_VOX = [5, 3, 5]
@@ -114,8 +114,8 @@ __C.LEARNING_RATE_D = 0.0001
 __C.LEARNING_RATE_V = [0.0001, 1000, 0.00001]
 __C.TRAIN.ADAM_BETA_G = 0.5
 __C.TRAIN.ADAM_BETA_D = 0.5
-__C.LAMDA_RECONS = 1
-__C.LAMDA_GAMMA = 0.6  # 0.97
+__C.LAMDA_RECONS = 100
+__C.LAMDA_GAMMA = 0.6
 
 
 def cfg_from_file(filename):

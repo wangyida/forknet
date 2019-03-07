@@ -26,7 +26,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
-    tsdf_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
+    part_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -41,7 +41,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     depvox_gan_model = depvox_gan(
         batch_size=batch_size,
         vox_shape=vox_shape,
-        tsdf_shape=tsdf_shape,
+        part_shape=part_shape,
         dim_z=dim_z,
         dim=dim,
         start_vox_size=start_vox_size,
@@ -51,10 +51,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         generative=generative,
         is_train=True)
 
-    Z_tf, z_tsdf_enc_tf, z_vox_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_vae_decode_tf, vox_cc_decode_tf,\
-    recon_vae_loss_tf, recon_cc_loss_tf, recon_gen_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf,\
-    cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, summary_tf,\
-    tsdf_tf, tsdf_gen_tf, tsdf_gen_decode_tf, tsdf_vae_decode_tf, tsdf_cc_decode_tf = depvox_gan_model.build_model()
+    Z_tf, z_part_enc_tf, z_full_enc_tf, full_tf, full_gen_tf, full_gen_decode_tf, full_vae_decode_tf, full_cc_decode_tf,\
+    recon_vae_loss_tf, recon_cc_loss_tf, recon_gen_loss_tf, gen_loss_tf, discrim_loss_tf,\
+    cost_pred_tf, cost_code_encode_tf, cost_code_discrim_tf, cost_gen_tf, cost_discrim_tf, summary_tf,\
+    part_tf, part_gen_tf, part_gen_decode_tf, part_vae_decode_tf, part_cc_decode_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -77,18 +77,21 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     lr_VAE = tf.placeholder(tf.float32, shape=[])
     train_op_encode = tf.train.AdamOptimizer(
         lr_VAE, beta1=beta_D, beta2=0.9).minimize(
-            cost_enc_tf, var_list=encode_vars)
+            cost_code_encode_tf, var_list=encode_vars)
     train_op_discrim = tf.train.AdamOptimizer(
         learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
             cost_discrim_tf, var_list=discrim_vars, global_step=global_step)
+    train_op_pred = tf.train.AdamOptimizer(
+        learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
+            cost_pred_tf, var_list=gen_vars + encode_vars)
     train_op_gen = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             cost_gen_tf, var_list=gen_vars + encode_vars)
     train_op_code = tf.train.AdamOptimizer(
         lr_VAE, beta1=beta_G, beta2=0.9).minimize(
-            cost_code_tf, var_list=code_vars)
+            cost_code_discrim_tf, var_list=code_vars)
 
-    Z_tf_sample, vox_tf_sample = depvox_gan_model.samples_generator(
+    Z_tf_sample, full_tf_sample = depvox_gan_model.samples_generator(
         visual_size=batch_size)
 
     writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
@@ -142,39 +145,73 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
-            for s in np.arange(1):
-                _, _, gen_loss_val, cost_gen_val, gen_vae_loss_val, gen_cc_loss_val, gen_gen_loss_val, code_encode_loss_val, cost_enc_val = sess.run(
+            for s in np.arange(2):
+                _, gen_vae_loss_val, gen_cc_loss_val, gen_gen_loss_val = sess.run(
                     [
-                        train_op_encode, train_op_gen, gen_loss_tf,
-                        cost_gen_tf, recon_vae_loss_tf, recon_cc_loss_tf,
-                        recon_gen_loss_tf, code_encode_loss_tf, cost_enc_tf
+                        train_op_pred, recon_vae_loss_tf, recon_cc_loss_tf,
+                        recon_gen_loss_tf
                     ],
                     feed_dict={
-                        vox_tf: batch_voxel,
-                        tsdf_tf: batch_tsdf,
                         Z_tf: batch_z_var,
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf,
                         lr_VAE: lr
                     },
                 )
 
             if discriminative:
+                for s in np.arange(2):
+                    _, gen_loss_val, cost_gen_val, gen_vae_loss_val, gen_cc_loss_val, gen_gen_loss_val = sess.run(
+                        [
+                            train_op_gen, gen_loss_tf, cost_gen_tf,
+                            recon_vae_loss_tf, recon_cc_loss_tf,
+                            recon_gen_loss_tf
+                        ],
+                        feed_dict={
+                            Z_tf: batch_z_var,
+                            full_tf: batch_voxel,
+                            part_tf: batch_tsdf,
+                            lr_VAE: lr
+                        },
+                    )
                 _, discrim_loss_val, cost_discrim_val = sess.run(
                     [train_op_discrim, discrim_loss_tf, cost_discrim_tf],
                     feed_dict={
                         Z_tf: batch_z_var,
-                        vox_tf: batch_voxel,
-                        tsdf_tf: batch_tsdf
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf
                     },
                 )
 
             if variational:
-                _, cost_code_val, z_tsdf_enc_val, z_vox_enc_val = sess.run(
-                    [train_op_code, cost_code_tf, z_tsdf_enc_tf, z_vox_enc_tf],
+                for s in np.arange(2):
+                    _, cost_code_encode_val = sess.run(
+                        [train_op_encode, cost_code_encode_tf],
+                        feed_dict={
+                            Z_tf: batch_z_var,
+                            full_tf: batch_voxel,
+                            part_tf: batch_tsdf,
+                            lr_VAE: lr
+                        },
+                    )
+                _, cost_code_discrim_val, z_part_enc_val, z_full_enc_val = sess.run(
+                    [
+                        train_op_code, cost_code_discrim_tf, z_part_enc_tf,
+                        z_full_enc_tf
+                    ],
                     feed_dict={
                         Z_tf: batch_z_var,
-                        vox_tf: batch_voxel,
-                        tsdf_tf: batch_tsdf,
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf,
                         lr_VAE: lr
+                    },
+                )
+            else:
+                z_part_enc_val, z_full_enc_val = sess.run(
+                    [z_part_enc_tf, z_full_enc_tf],
+                    feed_dict={
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf,
                     },
                 )
 
@@ -182,8 +219,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 summary_tf,
                 feed_dict={
                     Z_tf: batch_z_var,
-                    vox_tf: batch_voxel,
-                    tsdf_tf: batch_tsdf,
+                    full_tf: batch_voxel,
+                    part_tf: batch_tsdf,
                     lr_VAE: lr
                 },
             )
@@ -200,14 +237,11 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     'reconstruct gen loss: ' + str(gen_gen_loss_val),
                     'green')) if ('gen_gen_loss_val' in locals()) else 'None'
 
-            print '    code encode loss:', code_encode_loss_val if (
-                'code_encode_loss_val' in locals()) else 'None'
-
             print '            gen loss:', gen_loss_val if (
                 'gen_loss_val' in locals()) else 'None'
 
-            print '        cost_encoder:', cost_enc_val if (
-                'cost_enc_val' in locals()) else 'None'
+            print '        cost_encoder:', cost_code_encode_val if (
+                'cost_code_encode_val' in locals()) else 'None'
 
             print '      cost_generator:', cost_gen_val if (
                 'cost_gen_val' in locals()) else 'None'
@@ -215,30 +249,32 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             print '  cost_discriminator:', cost_discrim_val if (
                 'cost_discrim_val' in locals()) else 'None'
 
-            print '           cost_code:', cost_code_val if (
-                'cost_code_val' in locals()) else 'None'
+            print '   cost_code_discrim:', cost_code_discrim_val if (
+                'cost_code_discrim_val' in locals()) else 'None'
 
-            print '   avarage of tsdf_z:', np.mean(
-                np.mean(z_tsdf_enc_val,
-                        4)) if ('z_tsdf_enc_val' in locals()) else 'None'
+            print '   avarage of part_z:', np.mean(
+                np.mean(z_part_enc_val,
+                        4)) if ('z_part_enc_val' in locals()) else 'None'
 
-            print '       std of tsdf_z:', np.mean(
-                np.std(z_tsdf_enc_val,
-                       4)) if ('z_tsdf_enc_val' in locals()) else 'None'
+            print '       std of part_z:', np.mean(
+                np.std(z_part_enc_val,
+                       4)) if ('z_part_enc_val' in locals()) else 'None'
 
-            print '    avarage of vox_z:', np.mean(np.mean(
-                z_vox_enc_val, 4)) if ('z_vox_enc_val' in locals()) else 'None'
+            print '    avarage of full_z:', np.mean(
+                np.mean(z_full_enc_val,
+                        4)) if ('z_full_enc_val' in locals()) else 'None'
 
-            print '        std of vox_z:', np.mean(np.std(
-                z_vox_enc_val, 4)) if ('z_vox_enc_val' in locals()) else 'None'
+            print '        std of full_z:', np.mean(
+                np.std(z_full_enc_val,
+                       4)) if ('z_full_enc_val' in locals()) else 'None'
 
             if np.mod(ite, freq) == 0:
-                vox_models = sess.run(
-                    vox_tf_sample,
+                full_models = sess.run(
+                    full_tf_sample,
                     feed_dict={Z_tf_sample: Z_var_np_sample},
                 )
-                vox_models_cat = np.argmax(vox_models, axis=4)
-                record_vox = vox_models_cat[:record_vox_num]
+                full_models_cat = np.argmax(full_models, axis=4)
+                record_vox = full_models_cat[:record_vox_num]
                 np.save(
                     cfg.DIR.TRAIN_OBJ_PATH + '/' + str(ite / freq) + '.npy',
                     record_vox)
