@@ -94,7 +94,7 @@ def evaluate(batch_size, checknum, mode):
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
-    part_shape = [n_vox[0], n_vox[1], n_vox[2], 3]
+    part_shape = [n_vox[0], n_vox[1], n_vox[2], 1]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -123,7 +123,7 @@ def evaluate(batch_size, checknum, mode):
 
     Z_tf, z_part_enc_tf, z_full_enc_tf, full_tf, full_gen_tf, full_gen_decode_tf, full_vae_decode_tf, full_cc_decode_tf,\
     recon_vae_loss_tf, recon_cc_loss_tf, recon_gen_loss_tf, gen_loss_tf, discrim_loss_tf,\
-    cost_pred_tf, cost_code_encode_tf, cost_code_discrim_tf, cost_gen_tf, cost_discrim_tf, summary_tf,\
+    cost_pred_tf, cost_code_encode_tf, cost_gen_tf, cost_discrim_tf, summary_tf,\
     part_tf, part_gen_tf, part_gen_decode_tf, part_vae_decode_tf, part_cc_decode_tf = depvox_gan_model.build_model()
     Z_tf_sample, full_tf_sample = depvox_gan_model.samples_generator(
         visual_size=batch_size)
@@ -173,9 +173,9 @@ def evaluate(batch_size, checknum, mode):
                 # Evaluation masks
                 volume_effective = np.clip(
                     np.where(batch_voxel > 0, 1, 0) + np.where(
-                        batch_tsdf > 0, 1, 0), 0, 1)
+                        batch_tsdf > -1.01, 1, 0), 0, 1)
                 batch_voxel *= volume_effective
-                batch_tsdf *= volume_effective
+                # batch_tsdf *= volume_effective
 
                 # batch_tsdf[batch_tsdf > 1] = 0
                 # batch_tsdf[np.where(batch_voxel == 10)] = 1
