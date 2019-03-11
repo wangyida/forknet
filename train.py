@@ -148,7 +148,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
-            for s in np.arange(2):
+            for s in np.arange(1):
                 _, gen_vae_loss_val, gen_cc_loss_val, gen_gen_loss_val = sess.run(
                     [
                         train_op_pred, recon_vae_loss_tf, recon_cc_loss_tf,
@@ -163,7 +163,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 )
 
             if discriminative:
-                for s in np.arange(2):
+                for s in np.arange(1):
                     _, gen_loss_val, cost_gen_val, gen_vae_loss_val, gen_cc_loss_val, gen_gen_loss_val = sess.run(
                         [
                             train_op_gen, gen_loss_tf, cost_gen_tf,
@@ -232,7 +232,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 },
             )
 
-            print(colored('gan', 'red'))
+            print(colored('  GAN', 'red'))
             print '       vae loss:', gen_vae_loss_val if (
                 'gen_vae_loss_val' in locals()) else 'None'
 
@@ -247,10 +247,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             print '       gen loss:', gen_loss_val if (
                 'gen_loss_val' in locals()) else 'None'
 
-            print '   encoder:', cost_code_encode_val if (
+            print '        encoder:', cost_code_encode_val if (
                 'cost_code_encode_val' in locals()) else 'None'
 
-            print ' generator:', cost_gen_val if (
+            print '      generator:', cost_gen_val if (
                 'cost_gen_val' in locals()) else 'None'
 
             print '  discriminator:', cost_discrim_val if (
