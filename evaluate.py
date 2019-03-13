@@ -14,7 +14,7 @@ from termcolor import colored
 init()
 
 
-def IoU_AP_calc(on_real, on_pred, pred_voxs, IoU_class, AP_class, vox_shape):
+def IoU_AP_calc(on_gt, on_pred, pred_voxs, IoU_class, AP_class, vox_shape):
     # calc_IoU
     if vox_shape[3] == 12:
         name_list = [
@@ -25,13 +25,12 @@ def IoU_AP_calc(on_real, on_pred, pred_voxs, IoU_class, AP_class, vox_shape):
         name_list = ['empty', 'bench', 'chair', 'couch', 'table']
     elif vox_shape[3] == 2:
         name_list = ['empty', 'objec']
-    num = on_real.shape[0]
+    num = on_gt.shape[0]
     for class_n in np.arange(vox_shape[3]):
         on_pred_ = on_pred[:, :, :, :, class_n]
-        on_real_ = on_real[:, :, :, :, class_n]
-        mother = np.sum(np.add(on_pred_, on_real_), (1, 2, 3))
-        # Here the child must be doubled because the mother is calculated twice
-        child = np.sum(np.multiply(on_pred_, on_real_), (1, 2, 3)) * 2
+        on_gt_ = on_gt[:, :, :, :, class_n]
+        mother = np.sum(np.clip(np.add(on_pred_, on_gt_), 0, 1), (1, 2, 3))
+        child = np.sum(np.multiply(on_pred_, on_gt_), (1, 2, 3))
         count = 0
         IoU_element = 0
         for i in np.arange(num):
@@ -47,7 +46,7 @@ def IoU_AP_calc(on_real, on_pred, pred_voxs, IoU_class, AP_class, vox_shape):
             print 'IoU of ' + name_list[class_n] + ': nothing exists'
     if vox_shape[3] != 2:
         IoU_class[vox_shape[3]] = np.round(
-            np.sum(IoU_class[1:(vox_shape[3])]) / (vox_shape[3] - 1), 3)
+            np.sum(IoU_class[1:vox_shape[3]]) / (vox_shape[3] - 1), 3)
     elif vox_shape[3] == 2:
         IoU_class[vox_shape[3]] = np.round(np.sum(IoU_class) / vox_shape[3], 3)
     print 'IoU average: ' + str(IoU_class[vox_shape[3]])
@@ -56,11 +55,11 @@ def IoU_AP_calc(on_real, on_pred, pred_voxs, IoU_class, AP_class, vox_shape):
     """
     for class_n in np.arange(vox_shape[3]):
         on_pred_ = pred_voxs[:, :, :, :, class_n]
-        on_real_ = on_real[:, :, :, :, class_n]
+        on_gt_ = on_gt[:, :, :, :, class_n]
 
         AP = 0.
         for i in np.arange(num):
-            y_true = np.reshape(on_real_[i], [-1])
+            y_true = np.reshape(on_gt_[i], [-1])
             y_scores = np.reshape(on_pred_[i], [-1])
             if np.sum(y_true) > 0.:
                 AP += average_precision_score(y_true, y_scores)
@@ -73,10 +72,10 @@ def IoU_AP_calc(on_real, on_pred, pred_voxs, IoU_class, AP_class, vox_shape):
     """
     """
     on_pred_ = pred_voxs[:, :, :, :, 1:vox_shape[3]]
-    on_real_ = on_real[:, :, :, :, 1:vox_shape[3]]
+    on_gt_ = on_gt[:, :, :, :, 1:vox_shape[3]]
     AP = 0.
     for i in np.arange(num):
-        y_true = np.reshape(on_real_[i], [-1])
+        y_true = np.reshape(on_gt_[i], [-1])
         y_scores = np.reshape(on_pred_[i], [-1])
         if np.sum(y_true) > 0.:
             AP += average_precision_score(y_true, y_scores)
@@ -161,24 +160,22 @@ def evaluate(batch_size, checknum, mode):
         voxel_test, part_test, num, data_paths = scene_model_id_pair_test(
             dataset_portion=cfg.TRAIN.DATASET_PORTION)
 
+        # Evaluation masks
+        if cfg.TYPE_TASK == 'scene':
+            space_effective = np.clip(
+                np.where(voxel_test > 0, 1, 0) + np.where(
+                    part_test > -1.01, 1, 0), 0, 1)
+            voxel_test *= space_effective
+            part_test *= space_effective
+            part_test[part_test < -1] = 0
+
         num = voxel_test.shape[0]
         print("test voxels loaded")
         for i in np.arange(int(num / batch_size)):
             batch_voxel = voxel_test[i * batch_size:i * batch_size +
                                      batch_size]
             batch_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
-
-            # Evaluation masks
-            if cfg.TYPE_TASK == 'scene':
-                # Evaluation masks
-                volume_effective = np.clip(
-                    np.where(batch_voxel > 0, 1, 0) + np.where(
-                        batch_tsdf > -1.01, 1, 0), 0, 1)
-                batch_voxel *= volume_effective
-                # batch_tsdf *= volume_effective
-
-                # batch_tsdf[batch_tsdf > 1] = 0
-                # batch_tsdf[np.where(batch_voxel == 10)] = 1
+            batch_effective = space_effective[i * batch_size:i * batch_size + batch_size]
 
             batch_pred_voxs, batch_vae_voxs, batch_cc_voxs,\
                batch_part_enc_Z, batch_full_enc_Z,\
@@ -195,33 +192,31 @@ def evaluate(batch_size, checknum, mode):
 
             # Masked
             if cfg.TYPE_TASK == 'scene':
-                batch_pred_voxs *= np.expand_dims(volume_effective, -1)
-                batch_vae_voxs *= np.expand_dims(volume_effective, -1)
-                batch_cc_voxs *= np.expand_dims(volume_effective, -1)
+                batch_pred_voxs *= np.expand_dims(batch_effective, -1)
+                batch_vae_voxs *= np.expand_dims(batch_effective, -1)
+                batch_cc_voxs *= np.expand_dims(batch_effective, -1)
+                """
+                batch_pred_tsdf *= np.expand_dims(batch_effective, -1)
+                batch_vae_tsdf *= np.expand_dims(batch_effective, -1)
+                batch_cc_tsdf *= np.expand_dims(batch_effective, -1)
+                """
 
             if i == 0:
                 pred_voxs = batch_pred_voxs
                 vae_voxs = batch_vae_voxs
                 cc_voxs = batch_cc_voxs
-                complete_gen = batch_vae_tsdf
                 part_enc_Z = batch_part_enc_Z
                 full_enc_Z = batch_full_enc_Z
                 pred_tsdf = batch_pred_tsdf
                 vae_tsdf = batch_vae_tsdf
                 cc_tsdf = batch_cc_tsdf
             else:
-                pred_voxs = np.concatenate((pred_voxs, batch_pred_voxs),
-                                           axis=0)
+                pred_voxs = np.concatenate((pred_voxs, batch_pred_voxs), axis=0)
                 vae_voxs = np.concatenate((vae_voxs, batch_vae_voxs), axis=0)
                 cc_voxs = np.concatenate((cc_voxs, batch_cc_voxs), axis=0)
-                complete_gen = np.concatenate((complete_gen, batch_vae_tsdf),
-                                              axis=0)
-                part_enc_Z = np.concatenate((part_enc_Z, batch_part_enc_Z),
-                                            axis=0)
-                full_enc_Z = np.concatenate((full_enc_Z, batch_full_enc_Z),
-                                            axis=0)
-                pred_tsdf = np.concatenate((pred_tsdf, batch_pred_tsdf),
-                                           axis=0)
+                part_enc_Z = np.concatenate((part_enc_Z, batch_part_enc_Z), axis=0)
+                full_enc_Z = np.concatenate((full_enc_Z, batch_full_enc_Z), axis=0)
+                pred_tsdf = np.concatenate((pred_tsdf, batch_pred_tsdf), axis=0)
                 vae_tsdf = np.concatenate((vae_tsdf, batch_vae_tsdf), axis=0)
                 cc_tsdf = np.concatenate((cc_tsdf, batch_cc_tsdf), axis=0)
 
@@ -231,30 +226,26 @@ def evaluate(batch_size, checknum, mode):
         # np.save(save_path + '/scene.npy', voxel_test)
         voxel_test.astype('uint8').tofile(save_path + '/scene.bin')
 
-        observe = np.array(part_test)
-        observe[observe == -1] = 3
-        # np.save(save_path + '/observe.npy', observe)
-        observe.astype('uint8').tofile(save_path + '/observe.bin')
-
         surface = np.array(part_test)
         if cfg.TYPE_TASK == 'scene':
-            surface[surface < 0] = 0
+            surface[surface < -1] = 0
             surface[surface > 1] = 0
+            surface[surface != 0] = 1
         elif cfg.TYPE_TASK == 'object':
             surface = np.clip(surface, 0, 1)
         # np.save(save_path + '/surface.npy', surface)
         surface.astype('uint8').tofile(save_path + '/surface.bin')
 
-        depth_seg_real = np.multiply(voxel_test, surface)
+        depth_seg_gt = np.multiply(voxel_test, surface)
         if cfg.TYPE_TASK == 'scene':
-            depth_seg_real[depth_seg_real < 0] = 0
-        # np.save(save_path + '/depth_seg_scene.npy', depth_seg_real)
-        depth_seg_real.astype('uint8').tofile(save_path +
+            depth_seg_gt[depth_seg_gt < 0] = 0
+        # np.save(save_path + '/depth_seg_scene.npy', depth_seg_gt)
+        depth_seg_gt.astype('uint8').tofile(save_path +
                                               '/depth_seg_scene.bin')
 
-        complete_real = np.clip(voxel_test, 0, 1)
-        # np.save(save_path + '/complete_scene.npy', complete_real)
-        complete_real.astype('uint8').tofile(save_path + '/complete_real.bin')
+        complete_gt = np.clip(voxel_test, 0, 1)
+        # np.save(save_path + '/complete_scene.npy', complete_gt)
+        complete_gt.astype('uint8').tofile(save_path + '/complete_gt.bin')
 
         # decoded
         # np.save(save_path + '/gen_vox.npy', np.argmax( pred_voxs, axis=4))
@@ -262,7 +253,7 @@ def evaluate(batch_size, checknum, mode):
             pred_voxs,
             axis=4).astype('uint8').tofile(save_path + '/gen_vox.bin')
         error = np.array(
-            np.clip(np.argmax(pred_voxs, axis=4), 0, 1) + complete_real)
+            np.clip(np.argmax(pred_voxs, axis=4), 0, 1) + complete_gt)
         # error[error == 2] = 0
         error.astype('uint8').tofile(save_path + '/gen_vox_error.bin')
 
@@ -271,7 +262,7 @@ def evaluate(batch_size, checknum, mode):
             vae_voxs,
             axis=4).astype('uint8').tofile(save_path + '/vae_vox.bin')
         error = np.array(
-            np.clip(np.argmax(vae_voxs, axis=4), 0, 1) + complete_real)
+            np.clip(np.argmax(vae_voxs, axis=4), 0, 1) + complete_gt)
         # error[error == 2] = 0
         error.astype('uint8').tofile(save_path + '/vae_vox_error.bin')
 
@@ -279,21 +270,21 @@ def evaluate(batch_size, checknum, mode):
         np.argmax(
             cc_voxs, axis=4).astype('uint8').tofile(save_path + '/cc_vox.bin')
         error = np.array(
-            np.clip(np.argmax(cc_voxs, axis=4), 0, 1) + complete_real)
+            np.clip(np.argmax(cc_voxs, axis=4), 0, 1) + complete_gt)
         # error[error == 2] = 0
         error.astype('uint8').tofile(save_path + '/cc_vox_error.bin')
 
         # np.save(save_path + '/gen_tsdf.npy', np.argmax(pred_tsdf, axis=4))
         if cfg.TYPE_TASK == 'scene':
-            pred_tsdf = np.argmax(pred_tsdf, axis=4)
-            # pred_tsdf[pred_tsdf < 0] = 0
-            pred_tsdf[pred_tsdf > 1] = 0
-            vae_tsdf = np.argmax(vae_tsdf, axis=4)
-            # vae_tsdf[vae_tsdf < 0] = 0
-            vae_tsdf[vae_tsdf > 1] = 0
-            cc_tsdf = np.argmax(cc_tsdf, axis=4)
-            # cc_tsdf[cc_tsdf < 0] = 0
-            cc_tsdf[cc_tsdf > 1] = 0
+            pred_tsdf = np.abs(pred_tsdf)
+            pred_tsdf[pred_tsdf < 0.1] = 0
+            pred_tsdf[pred_tsdf >= 0.1] = 1
+            vae_tsdf = np.abs(vae_tsdf)
+            vae_tsdf[vae_tsdf < 0.1] = 0
+            vae_tsdf[vae_tsdf >= 0.1] = 1
+            cc_tsdf = np.abs(cc_tsdf)
+            cc_tsdf[cc_tsdf < 0.1] = 0
+            cc_tsdf[cc_tsdf >= 0.1] = 1
         elif cfg.TYPE_TASK == 'object':
             pred_tsdf = np.argmax(pred_tsdf, axis=4)
             vae_tsdf = np.argmax(vae_tsdf, axis=4)
@@ -302,22 +293,18 @@ def evaluate(batch_size, checknum, mode):
         vae_tsdf.astype('uint8').tofile(save_path + '/vae_tsdf.bin')
         cc_tsdf.astype('uint8').tofile(save_path + '/cc_tsdf.bin')
 
-        # np.save(save_path + '/complete_gen.npy', np.argmax( complete_gen, axis=4))
-        np.argmax(
-            complete_gen,
-            axis=4).astype('uint8').tofile(save_path + '/complete_gen.bin')
-
         np.save(save_path + '/decode_z_tsdf.npy', part_enc_Z)
         np.save(save_path + '/decode_z_vox.npy', full_enc_Z)
 
         print("voxels saved")
 
         # numerical evalutation
-        on_real = onehot(voxel_test, vox_shape[3])
-        on_depth_seg_real = onehot(
-            np.multiply(voxel_test, surface), vox_shape[3])
-        on_complete_real = onehot(complete_real, 2)
-        on_complete_gen = onehot(np.argmax(complete_gen, axis=4), 2)
+        on_gt = onehot(voxel_test, vox_shape[3])
+        on_depth_seg_gt = onehot(depth_seg_gt, vox_shape[3])
+        on_depth_seg_pred = np.multiply(onehot(np.argmax(pred_voxs, axis=4), vox_shape[3]), np.expand_dims(surface, -1))
+        on_complete_gt = onehot(complete_gt, 2)
+        complete_gen = np.clip(np.argmax(pred_voxs, axis=4), 0, 1)
+        on_complete_gen = onehot(complete_gen, 2)
 
         # calc_IoU
         # completion
@@ -325,24 +312,24 @@ def evaluate(batch_size, checknum, mode):
         AP_comp = np.zeros([2 + 1])
         print(colored("Completion", 'cyan'))
         IoU_comp, AP_comp = IoU_AP_calc(
-            on_complete_real, on_complete_gen, complete_gen, IoU_comp, AP_comp,
+            on_complete_gt, on_complete_gen, complete_gen, IoU_comp, AP_comp,
             [vox_shape[0], vox_shape[1], vox_shape[2], 2])
 
         # depth segmentation
         print(colored("Depth segmentation", 'cyan'))
         IoU_class = np.zeros([vox_shape[3] + 1])
         AP_class = np.zeros([vox_shape[3] + 1])
-        IoU_class, AP_class = IoU_AP_calc(
-            on_depth_seg_real, on_depth_seg_real,
+        IoU_all, AP_all = IoU_AP_calc(
+            on_depth_seg_gt, on_depth_seg_pred,
             np.multiply(pred_voxs, np.expand_dims(surface, -1)), IoU_class,
             AP_class, vox_shape)
-        IoU_all = np.expand_dims(IoU_class, axis=1)
-        AP_all = np.expand_dims(AP_class, axis=1)
+        IoU_all = np.expand_dims(IoU_all, axis=1)
+        AP_all = np.expand_dims(AP_all, axis=1)
 
         # volume segmentation
         print(colored("Decoded segmentation", 'cyan'))
         on_pred = onehot(np.argmax(pred_voxs, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_real, on_pred, pred_voxs,
+        IoU_class, AP_class = IoU_AP_calc(on_gt, on_pred, pred_voxs,
                                           IoU_class, AP_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
@@ -351,7 +338,7 @@ def evaluate(batch_size, checknum, mode):
 
         print(colored("VAE segmentation", 'cyan'))
         on_pred = onehot(np.argmax(vae_voxs, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_real, on_pred, vae_voxs,
+        IoU_class, AP_class = IoU_AP_calc(on_gt, on_pred, vae_voxs,
                                           IoU_class, AP_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
@@ -360,7 +347,7 @@ def evaluate(batch_size, checknum, mode):
 
         print(colored("Cycle consistency segmentation", 'cyan'))
         on_pred = onehot(np.argmax(cc_voxs, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_real, on_pred, cc_voxs, IoU_class,
+        IoU_class, AP_class = IoU_AP_calc(on_gt, on_pred, cc_voxs, IoU_class,
                                           AP_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)

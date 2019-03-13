@@ -23,9 +23,9 @@ __C.NET.DIM_Z = 16
 __C.NET.KERNEL = [[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
-__C.NET.DISCRIMINATIVE = True
-__C.NET.GENERATIVE = True
-__C.NET.VARIATIONAL = True
+__C.NET.DISCRIMINATIVE = False
+__C.NET.GENERATIVE = False
+__C.NET.VARIATIONAL = False
 
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'

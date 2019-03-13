@@ -87,11 +87,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     train_op_gen = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             cost_gen_tf, var_list=gen_vars + encode_vars)
-    """
-    train_op_code = tf.train.AdamOptimizer(
-        lr_VAE, beta1=beta_G, beta2=0.9).minimize(
-            cost_code_discrim_tf, var_list=code_vars)
-    """
 
     Z_tf_sample, full_tf_sample = depvox_gan_model.samples_generator(
         visual_size=batch_size)
@@ -128,7 +123,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             db_inds, epoch_flag = data_process.get_next_minibatch()
             batch_voxel = data_process.get_voxel(db_inds)
             batch_tsdf = data_process.get_tsdf(db_inds)
-            # import ipdb; ipdb.set_trace()
 
             if cfg.TYPE_TASK == 'scene':
                 # Evaluation masks
@@ -136,10 +130,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     np.where(batch_voxel > 0, 1, 0) + np.where(
                         batch_tsdf > -1.01, 1, 0), 0, 1)
                 batch_voxel *= volume_effective
-                # batch_tsdf *= volume_effective
+                batch_tsdf *= volume_effective
 
                 # occluded region
-                # batch_tsdf[batch_tsdf > 1] = 0
+                batch_tsdf[batch_tsdf < -1] = 0
 
             lr = learning_rate(cfg.LEARNING_RATE_V, ite)
 
