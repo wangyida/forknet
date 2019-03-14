@@ -23,9 +23,9 @@ __C.NET.DIM_Z = 16
 __C.NET.KERNEL = [[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
-__C.NET.DISCRIMINATIVE = False
-__C.NET.GENERATIVE = False
-__C.NET.VARIATIONAL = False
+__C.NET.DISCRIMINATIVE = True
+__C.NET.GENERATIVE = True
+__C.NET.VARIATIONAL = True
 
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
@@ -48,23 +48,23 @@ if __C.TYPE_TASK is 'scene':
     if __C.TYPE_EVAL == 'real':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-r'
         if __C.TYPE_DATA == 'test':
-            __C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/test/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/test/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/test/depth_tsdf_camera_npy/%s'
+            __C.DIR.ROOT_PATH = '/media/wangyida/HDD/database/NYU_Yida/test/voxel_semantic_npy'
+            __C.DIR.VOXEL_PATH = '/media/wangyida/HDD/database/NYU_Yida/test/voxel_semantic_npy/%s'
+            __C.DIR.TSDF_PATH = '/media/wangyida/HDD/database/NYU_Yida/test/depth_tsdf_camera_npy/%s'
         elif __C.TYPE_DATA == 'train':
-            __C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/train/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/train/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/NYU_Yida/train/depth_tsdf_camera_npy/%s'
+            __C.DIR.ROOT_PATH = '/media/wangyida/HDD/database/NYU_Yida/train/voxel_semantic_npy'
+            __C.DIR.VOXEL_PATH = '/media/wangyida/HDD/database/NYU_Yida/train/voxel_semantic_npy/%s'
+            __C.DIR.TSDF_PATH = '/media/wangyida/HDD/database/NYU_Yida/train/depth_tsdf_camera_npy/%s'
     elif __C.TYPE_EVAL == 'synthetic':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-s'
         if __C.TYPE_DATA == 'test':
-            __C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/test/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/test/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/test/depth_tsdf_camera_npy/%s'
+            __C.DIR.ROOT_PATH = '/media/wangyida/HDD/database/SUNCG_Yida/test/voxel_semantic_npy'
+            __C.DIR.VOXEL_PATH = '/media/wangyida/HDD/database/SUNCG_Yida/test/voxel_semantic_npy/%s'
+            __C.DIR.TSDF_PATH = '/media/wangyida/HDD/database/SUNCG_Yida/test/depth_tsdf_camera_npy/%s'
         elif __C.TYPE_DATA == 'train':
-            __C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/depth_tsdf_camera_npy/%s'
+            __C.DIR.ROOT_PATH = '/media/wangyida/HDD/database/SUNCG_Yida/train/voxel_semantic_npy'
+            __C.DIR.VOXEL_PATH = '/media/wangyida/HDD/database/SUNCG_Yida/train/voxel_semantic_npy/%s'
+            __C.DIR.TSDF_PATH = '/media/wangyida/HDD/database/SUNCG_Yida/train/depth_tsdf_camera_npy/%s'
 elif __C.TYPE_TASK is 'object':
     if __C.TYPE_EVAL == 'real':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-object-r'
@@ -114,7 +114,7 @@ __C.LEARNING_RATE_D = 0.0001
 __C.LEARNING_RATE_V = [0.0001, 1000, 0.00001]
 __C.TRAIN.ADAM_BETA_G = 0.5
 __C.TRAIN.ADAM_BETA_D = 0.5
-__C.LAMDA_RECONS = 100
+__C.LAMDA_RECONS = 1
 __C.LAMDA_GAMMA = 0.6
 
 

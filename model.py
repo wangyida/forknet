@@ -161,7 +161,7 @@ class depvox_gan():
         self.gen_y_W3 = tf.Variable(
             tf.random_normal([
                 self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
-                self.dim_W2 * 2
+                self.dim_W2 
             ],
                              stddev=0.02),
             name='gen_y_W3')
@@ -174,7 +174,7 @@ class depvox_gan():
         self.gen_y_W4 = tf.Variable(
             tf.random_normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
-                self.dim_W3 * 2
+                self.dim_W3 
             ],
                              stddev=0.02),
             name='gen_y_W4')
@@ -187,7 +187,7 @@ class depvox_gan():
         self.gen_y_W5 = tf.Variable(
             tf.random_normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2], self.dim_W5,
-                self.dim_W4 * 2
+                self.dim_W4 
             ],
                              stddev=0.02),
             name='gen_y_W5')
@@ -640,9 +640,18 @@ class depvox_gan():
                     (1 - self.lamda_gamma) *
                     (1 - full_gt) * tf.log(1e-6 + 1 - full_vae_dec), [1, 2, 3])
                 * weight_full, 1))
-        recons_vae_loss += 0.1 * tf.reduce_mean(
+        """
+        recons_vae_loss += tf.reduce_mean(
             tf.reduce_sum(
-                tf.squared_difference(tf.abs(part_gt), part_vae_dec), [1, 2, 3, 4]))
+                -tf.reduce_sum(
+                    self.lamda_gamma * part_gt * tf.log(1e-6 + part_vae_dec) +
+                    (1 - self.lamda_gamma) *
+                    (1 - part_gt) * tf.log(1e-6 + 1 - part_vae_dec), [1, 2, 3])
+                , 1))
+        """
+        recons_vae_loss += tf.reduce_mean(
+            tf.reduce_sum(
+                tf.squared_difference(part_gt, part_vae_dec), [1, 2, 3, 4]))
 
         # Cycle consistencies
         recons_cc_loss = tf.reduce_mean(
@@ -652,10 +661,18 @@ class depvox_gan():
                     (1 - self.lamda_gamma) *
                     (1 - full_gt) * tf.log(1e-6 + 1 - full_cc_dec), [1, 2, 3])
                 * weight_full, 1))
-        recons_cc_loss += 0.1*tf.reduce_mean(
+        """
+        recons_cc_loss += tf.reduce_mean(
             tf.reduce_sum(
-                tf.squared_difference(tf.abs(part_gt), part_cc_dec), [1, 2, 3, 4]))
-
+                -tf.reduce_sum(
+                    self.lamda_gamma * part_gt * tf.log(1e-6 + part_cc_dec) +
+                    (1 - self.lamda_gamma) *
+                    (1 - part_gt) * tf.log(1e-6 + 1 - part_cc_dec), [1, 2, 3])
+                , 1))
+        """
+        recons_cc_loss += tf.reduce_mean(
+            tf.reduce_sum(
+                tf.squared_difference(part_gt, part_cc_dec), [1, 2, 3, 4]))
         # SUPERVISED (paired data)
         recons_gen_loss = tf.reduce_mean(
             tf.reduce_sum(
@@ -666,9 +683,18 @@ class depvox_gan():
                 * weight_full, 1))
 
         # from scene, the observed surface can also be produced
-        recons_gen_loss += 0.1*tf.reduce_mean(
+        """
+        recons_gen_loss += tf.reduce_mean(
             tf.reduce_sum(
-                tf.squared_difference(tf.abs(part_gt), part_gen_dec), [1, 2, 3, 4]))
+                -tf.reduce_sum(
+                    self.lamda_gamma * part_gt * tf.log(1e-6 + part_gen_dec) +
+                    (1 - self.lamda_gamma) *
+                    (1 - part_gt) * tf.log(1e-6 + 1 - part_gen_dec), [1, 2, 3])
+                , 1))
+        """
+        recons_gen_loss += tf.reduce_mean(
+            tf.reduce_sum(
+                tf.squared_difference(part_gt, part_gen_dec), [1, 2, 3, 4]))
         # latent consistency
 
         # GAN_generate
@@ -679,7 +705,7 @@ class depvox_gan():
         h_full_gen = self.discriminate_full(full_gen)
         h_full_gen_dec = self.discriminate_full(full_gen_dec)
 
-        h_part_gt = self.discriminate_part(tf.abs(part_gt))
+        h_part_gt = self.discriminate_part(part_gt)
         h_part_gen = self.discriminate_part(part_gen)
         h_part_gen_dec = self.discriminate_part(part_gen_dec)
 
@@ -1159,7 +1185,7 @@ class depvox_gan():
             self.dim_W3
         ]
         h3 = tf.nn.conv3d_transpose(
-            tf.concat([h2, h2_], -1),
+            h2,
             self.gen_y_W3,
             output_shape=output_shape_l3,
             strides=self.stride)
@@ -1176,7 +1202,7 @@ class depvox_gan():
             self.dim_W4
         ]
         h4 = tf.nn.conv3d_transpose(
-            tf.concat([h3, h3_], -1),
+            h3,
             self.gen_y_W4,
             output_shape=output_shape_l4,
             strides=self.stride)
@@ -1193,7 +1219,7 @@ class depvox_gan():
             self.dim_W5
         ]
         h5 = tf.nn.conv3d_transpose(
-            tf.concat([h4, h4_], -1),
+            h4,
             self.gen_y_W5,
             output_shape=output_shape_l5,
             strides=self.stride)
@@ -1334,7 +1360,7 @@ class depvox_gan():
             self.dim_W3
         ]
         h3 = tf.nn.conv3d_transpose(
-            tf.concat([h2, h2_], -1),
+            h2,
             self.gen_y_W3,
             output_shape=output_shape_l3,
             strides=self.stride)
@@ -1363,7 +1389,7 @@ class depvox_gan():
             self.dim_W4
         ]
         h4 = tf.nn.conv3d_transpose(
-            tf.concat([h3, h3_], -1),
+            h3,
             self.gen_y_W4,
             output_shape=output_shape_l4,
             strides=self.stride)
@@ -1392,7 +1418,7 @@ class depvox_gan():
             self.dim_W5
         ]
         h5 = tf.nn.conv3d_transpose(
-            tf.concat([h4, h4_], -1),
+            h4,
             self.gen_y_W5,
             output_shape=output_shape_l5,
             strides=self.stride)
