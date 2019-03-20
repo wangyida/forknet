@@ -58,25 +58,29 @@ void Integrate(float * cam_K, float * cam2base, float * depth_im,
     float diff = depth_val - pt_cam_z;
 
     // This is for labeling the -1 space (occluded space)
-    if (diff < -0.12 || depth_val == 0.0) {
+    // sdf_threshold = 0.12
+    float sdf_threshold = 0.3;
+    /*
+    if (diff < -sdf_threshold || depth_val == 0.0) {
       voxel_grid_TSDF[volume_idx] = 2.0f;
       continue;
     }
 
     // This is for labeling the empty space
-    if (diff > 0.12) {
+    if (diff > sdf_threshold) {
       voxel_grid_TSDF[volume_idx] = -1.0f;
       continue;
     }
-
+    */
     // Integrate
     // float dist = fmin(1.0f, diff / trunc_margin);
     // float weight_old = voxel_grid_weight[volume_idx];
     // float weight_new = weight_old + 1.0f;
     // voxel_grid_weight[volume_idx] = weight_new;
     // voxel_grid_TSDF[volume_idx] = (voxel_grid_TSDF[volume_idx] * weight_old + dist) / weight_new;
-    if (abs(diff) < 0.12) {
-      voxel_grid_TSDF[volume_idx] = 1.0f;
+    if (abs(diff) < sdf_threshold) {
+      // voxel_grid_TSDF[volume_idx] = 1.0f;
+      voxel_grid_TSDF[volume_idx] = ((diff > 0) - (diff <= 0)) * (sdf_threshold - abs(diff)) / sdf_threshold;
     }
   }
 }
