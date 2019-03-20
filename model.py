@@ -83,15 +83,16 @@ class depvox_gan():
     def __init__(self,
                  batch_size=16,
                  vox_shape=[80, 48, 80, 12],
-                 part_shape=[80, 48, 80, 3],
+                 part_shape=[80, 48, 80, 1],
                  dim_z=16,
-                 dim=[512, 256, 192, 64, 32],
+                 dim=[512, 256, 192, 64, 12],
                  start_vox_size=[5, 3, 5],
                  kernel=[[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]],
                  stride=[1, 2, 2, 2, 1],
                  dilations=[1, 1, 1, 1, 1],
                  dim_code=512,
                  generative=True,
+                 discriminative=True,
                  is_train=True):
 
         self.batch_size = batch_size
@@ -119,6 +120,7 @@ class depvox_gan():
 
         self.dim_code = dim_code
         self.generative = generative
+        self.discriminative = discriminative
         self.is_train = is_train
 
         # parameters of generator y
@@ -239,7 +241,7 @@ class depvox_gan():
 
         self.discrim_y_W1 = tf.Variable(
             tf.random_normal([
-                self.kernel5[0], self.kernel5[1], self.kernel5[2], self.dim_W5,
+                self.kernel5[0], self.kernel5[1], self.kernel5[2], self.dim_W5+self.part_shape[-1],
                 self.dim_W4
             ],
                              stddev=0.02),
@@ -570,12 +572,11 @@ class depvox_gan():
         full_gt = tf.cast(full_gt, tf.float32)
 
         # tsdf--start
-        part_gt_ = tf.placeholder(tf.int32, [
+        part_gt_ = tf.placeholder(tf.float32, [
             self.batch_size, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2]
-        ])
-        part_gt = tf.one_hot(part_gt_, self.part_shape[-1])
-        part_gt = tf.cast(part_gt, tf.float32)
+        ])  
+        part_gt = tf.abs(tf.expand_dims(part_gt_, -1))
         # tsdf--end
 
         Z = tf.placeholder(tf.float32, [
@@ -589,53 +590,75 @@ class depvox_gan():
         inverse = tf.div(ones, tf.add(batch_mean_full_gt, ones))
         weight_full = inverse * tf.div(1., tf.reduce_sum(inverse))
 
-        batch_mean_part_gt = tf.reduce_mean(part_gt, [0, 1, 2, 3])
-        ones = tf.ones_like(batch_mean_part_gt)
-        inverse = tf.div(ones, tf.add(batch_mean_part_gt, ones))
-        weight_part = inverse * tf.div(1., tf.reduce_sum(inverse))
-
         # encode from tsdf and vox
         Z_encode_part = self.encoder_part(part_gt)
+        scene_mask_1 = tf.random_uniform([self.batch_size,1,1,1,self.n_class - 1], minval=0, maxval=1, dtype=tf.int32)
+        scene_mask_2 = 1 - scene_mask_1
+        scene_mask_1 = tf.concat([tf.ones([self.batch_size,1,1,1,1], dtype=tf.int32), scene_mask_1], -1)
+        scene_mask_2 = tf.concat([tf.ones([self.batch_size,1,1,1,1], dtype=tf.int32), scene_mask_2], -1)
+        feature_mask_1 = tf.concat([scene_mask_1, tf.ones([self.batch_size,1,1,1,self.dim_z-self.n_class], dtype=tf.int32)], -1)
+        feature_mask_2 = tf.concat([scene_mask_2, tf.ones([self.batch_size,1,1,1,self.dim_z-self.n_class], dtype=tf.int32)], -1) 
+        scene_mask_1 = tf.cast(scene_mask_1, dtype=tf.float32)
+        feature_mask_1 = tf.cast(feature_mask_1, dtype=tf.float32)
+        scene_mask_2 = tf.cast(scene_mask_2, dtype=tf.float32)
+        feature_mask_2 = tf.cast(feature_mask_2, dtype=tf.float32)
+        # test_mask = tf.ones([1,1,1,1,self.dim_z]) * [1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0]
+        # test_mask = tf.ones([1,1,1,1,self.dim_z]) * [1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1]
+        # test_mask = tf.ones([1,1,1,1,self.dim_z]) * [1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1]
+        """
         Z_encode_full = self.encoder_full(full_gt)
+        """
 
         part_vae_dec, h2_t, h3_t, h4_t = self.generate_part(Z_encode_part)
+        # h2_t = tf.zeros_like(h2_t)
+        # h3_t = tf.zeros_like(h3_t)
+        # h4_t = tf.zeros_like(h4_t)
+        """
         part_gen_dec, h2_v, h3_v, h4_v = self.generate_part(Z_encode_full)
+        """
 
+        """
         full_vae_dec = self.generate_full(Z_encode_full, h2_v, h3_v, h4_v)
+        """
         full_gen_dec = self.generate_full(Z_encode_part, h2_t, h3_t, h4_t)
+        full_gen_dec_1 = self.generate_full(Z_encode_part * feature_mask_1, h2_t, h3_t, h4_t)
+        full_gen_dec_2 = self.generate_full(Z_encode_part * feature_mask_2, h2_t, h3_t, h4_t)
 
         # encode again from loops
+        """
         full_gen_dec_o = tf.one_hot(
             tf.argmax(full_gen_dec, axis=4, output_type=tf.int32),
             self.n_class)
         full_gen_dec_o = tf.cast(full_gen_dec_o, tf.float32)
-        part_gen_dec_o = tf.one_hot(
-            tf.argmax(part_gen_dec, axis=4, output_type=tf.int32),
-            self.part_shape[-1])
-        part_gen_dec_o = tf.cast(part_gen_dec_o, tf.float32)
         Z_encode_part_full = self.encoder_full(full_gen_dec_o)
-        Z_encode_full_part = self.encoder_part(part_gen_dec_o)
+        Z_encode_full_part = self.encoder_part(part_gen_dec)
 
         part_cc_dec, _, _, _ = self.generate_part(Z_encode_part_full)
         _, h2_vt, h3_vt, h4_vt = self.generate_part(Z_encode_full_part)
         full_cc_dec = self.generate_full(Z_encode_full_part, h2_vt, h3_vt,
                                          h4_vt)
+         """
 
         # code_discriminator
         h_code_part_gt = self.code_discriminator_x(Z)
+        """
         h_code_full_gt = self.code_discriminator_y(Z)
+        """
 
         h_code_encode_part = self.code_discriminator_x(Z_encode_part)
+        """
         h_code_encode_full = self.code_discriminator_y(Z_encode_full)
 
         h_code_encode_part_full = self.code_discriminator_y(Z_encode_part_full)
         h_code_encode_full_part = self.code_discriminator_x(Z_encode_full_part)
+        """
 
         cost_code_encode = tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_code_encode_part,
                     labels=tf.ones_like(h_code_encode_part)), [1]))
+        """
         cost_code_encode += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
@@ -651,6 +674,7 @@ class depvox_gan():
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_code_encode_full_part,
                     labels=tf.ones_like(h_code_encode_full_part)), [1]))
+        """
 
         cost_code_discrim = tf.reduce_mean(
             tf.reduce_sum(
@@ -662,6 +686,7 @@ class depvox_gan():
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_code_encode_part,
                             labels=tf.zeros_like(h_code_encode_part)), [1]))
+        """
         cost_code_discrim += tf.reduce_mean(
             tf.reduce_sum(
                 tf.nn.sigmoid_cross_entropy_with_logits(
@@ -694,8 +719,10 @@ class depvox_gan():
                             logits=h_code_encode_full_part,
                             labels=tf.zeros_like(h_code_encode_full_part)),
                         [1]))
+        """
 
         # Completing from depth and semantic depth
+        """
         recons_vae_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
@@ -703,14 +730,10 @@ class depvox_gan():
                     (1 - self.lamda_gamma) *
                     (1 - full_gt) * tf.log(1e-6 + 1 - full_vae_dec), [1, 2, 3])
                 * weight_full, 1))
-
-        recons_vae_loss += tf.reduce_mean(
+        """
+        recons_vae_loss = tf.reduce_mean(
             tf.reduce_sum(
-                -tf.reduce_sum(
-                    self.lamda_gamma * part_gt * tf.log(1e-6 + part_vae_dec) +
-                    (1 - self.lamda_gamma) *
-                    (1 - part_gt) * tf.log(1e-6 + 1 - part_vae_dec), [1, 2, 3])
-                * weight_part, 1))
+                tf.squared_difference(part_gt, part_vae_dec), [1, 2, 3, 4]))
         # latent consistency
         """
         recons_vae_loss += tf.reduce_mean(
@@ -733,6 +756,7 @@ class depvox_gan():
         # latent consistency
 
         # Cycle consistencies
+        """
         recons_cc_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
@@ -740,14 +764,11 @@ class depvox_gan():
                     (1 - self.lamda_gamma) *
                     (1 - full_gt) * tf.log(1e-6 + 1 - full_cc_dec), [1, 2, 3])
                 * weight_full, 1))
-
         recons_cc_loss += tf.reduce_mean(
             tf.reduce_sum(
-                -tf.reduce_sum(
-                    self.lamda_gamma * part_gt * tf.log(1e-6 + part_cc_dec) +
-                    (1 - self.lamda_gamma) *
-                    (1 - part_gt) * tf.log(1e-6 + 1 - part_cc_dec), [1, 2, 3])
-                * weight_part, 1))
+                tf.squared_difference(part_gt, part_cc_dec), [1, 2, 3, 4]))
+        """
+
         # latent consistency
         """
         recons_cc_loss += tf.reduce_mean(
@@ -764,15 +785,28 @@ class depvox_gan():
                     (1 - self.lamda_gamma) *
                     (1 - full_gt) * tf.log(1e-6 + 1 - full_gen_dec), [1, 2, 3])
                 * weight_full, 1))
-
-        # from scene, the observed surface can also be produced
+        """
         recons_gen_loss += tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * part_gt * tf.log(1e-6 + part_gen_dec) +
+                    self.lamda_gamma * full_gt * tf.log(1e-6 + full_gen_dec_1) * scene_mask_1 +
                     (1 - self.lamda_gamma) *
-                    (1 - part_gt) * tf.log(1e-6 + 1 - part_gen_dec), [1, 2, 3])
-                * weight_part, 1))
+                    (1 - full_gt * scene_mask_1) * tf.log(1e-6 + 1 - full_gen_dec_1), [1, 2, 3])
+                * weight_full, 1))
+        recons_gen_loss += tf.reduce_mean(
+            tf.reduce_sum(
+                -tf.reduce_sum(
+                    self.lamda_gamma * full_gt * tf.log(1e-6 + full_gen_dec_2) * scene_mask_2 +
+                    (1 - self.lamda_gamma) *
+                    (1 - full_gt * scene_mask_2) * tf.log(1e-6 + 1 - full_gen_dec_2), [1, 2, 3])
+                * weight_full, 1))
+        """
+        """
+        recons_gen_loss += tf.reduce_mean(
+            tf.reduce_sum(
+                tf.squared_difference(part_gt, part_gen_dec), [1, 2, 3, 4]))
+        """
+        # from scene, the observed surface can also be produced
         # latent consistency
         """
         recons_gen_loss += tf.reduce_mean(
@@ -786,67 +820,75 @@ class depvox_gan():
         part_gen, h2_z, h3_z, h4_z = self.generate_part(Z)
         full_gen = self.generate_full(Z, h2_z, h3_z, h4_z)
 
-        h_full_gt = self.discriminate_full(full_gt)
-        h_full_gen = self.discriminate_full(full_gen)
-        h_full_gen_dec = self.discriminate_full(full_gen_dec)
+        if self.discriminative is True:
+            h_full_gt = self.discriminate_full(tf.concat([full_gt, part_gt], -1))
+            h_full_gen = self.discriminate_full(tf.concat([full_gen, part_gen], -1))
+            """
+            h_full_gen_dec = self.discriminate_full(full_gen_dec)
+            """
 
-        h_part_gt = self.discriminate_part(part_gt)
-        h_part_gen = self.discriminate_part(part_gen)
-        h_part_gen_dec = self.discriminate_part(part_gen_dec)
+            h_part_gt = self.discriminate_part(part_gt)
+            h_part_gen = self.discriminate_part(part_gen)
+            """
+            h_part_gen_dec = self.discriminate_part(part_gen_dec)
+            """
+            # Standard_GAN_Loss
+            """
+            discrim_loss = tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_full_gt,
+                    labels=tf.ones_like(h_full_gt))) + tf.reduce_mean(
+                        tf.nn.sigmoid_cross_entropy_with_logits(
+                            logits=h_full_gen_dec,
+                            labels=tf.zeros_like(h_full_gen_dec)))
 
-        # Standard_GAN_Loss
-        discrim_loss = tf.reduce_mean(
-            tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=h_full_gt,
-                labels=tf.ones_like(h_full_gt))) + tf.reduce_mean(
-                    tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=h_full_gen_dec,
-                        labels=tf.zeros_like(h_full_gen_dec)))
-
-        discrim_loss += tf.reduce_mean(
-            tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=h_part_gt,
-                labels=tf.ones_like(h_part_gt))) + tf.reduce_mean(
-                    tf.nn.sigmoid_cross_entropy_with_logits(
-                        logits=h_part_gen_dec,
-                        labels=tf.zeros_like(h_part_gen_dec)))
-
-        gen_loss = tf.reduce_mean(
-            tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=h_full_gen_dec, labels=tf.ones_like(h_full_gen_dec)))
-
-        gen_loss += tf.reduce_mean(
-            tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=h_part_gen_dec, labels=tf.ones_like(h_part_gen_dec)))
-
-        if self.generative is True:
             discrim_loss += tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_part_gt,
+                    labels=tf.ones_like(h_part_gt))) + tf.reduce_mean(
+                        tf.nn.sigmoid_cross_entropy_with_logits(
+                            logits=h_part_gen_dec,
+                            labels=tf.zeros_like(h_part_gen_dec)))
+
+            gen_loss = tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_full_gen_dec, labels=tf.ones_like(h_full_gen_dec)))
+
+            gen_loss += tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_part_gen_dec, labels=tf.ones_like(h_part_gen_dec)))
+            """
+
+            discrim_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_full_gen, labels=tf.zeros_like(h_full_gen)))
             discrim_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_part_gen, labels=tf.zeros_like(h_part_gen)))
-            gen_loss += tf.reduce_mean(
+            gen_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_full_gen, labels=tf.ones_like(h_full_gen)))
             gen_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_part_gen, labels=tf.ones_like(h_part_gen)))
+        else:
+            gen_loss = tf.zeros([1])
+            discrim_loss = tf.zeros([1])
 
         # main cost
+        """
         cost_pred = self.lamda_recons * (
             recons_vae_loss + recons_cc_loss + recons_gen_loss)
+        """
+        cost_pred = self.lamda_recons * (
+            recons_vae_loss + recons_gen_loss)
 
         # variational cost
         cost_code_encode = cost_code_encode
         cost_code_discrim = cost_code_discrim
 
-        # discriminative cost
-        cost_gen = gen_loss
-        cost_discrim = discrim_loss
-
         tf.summary.scalar("recons_vae_loss", tf.reduce_mean(recons_vae_loss))
-        tf.summary.scalar("recons_cc_loss", tf.reduce_mean(recons_cc_loss))
+        # tf.summary.scalar("recons_cc_loss", tf.reduce_mean(recons_cc_loss))
         tf.summary.scalar("gen_loss", tf.reduce_mean(gen_loss))
         tf.summary.scalar("discrim_loss", tf.reduce_mean(discrim_loss))
         tf.summary.scalar("cost_code_encode", tf.reduce_mean(cost_code_encode))
@@ -855,10 +897,10 @@ class depvox_gan():
 
         summary_op = tf.summary.merge_all()
 
-        return Z, Z_encode_part, Z_encode_full, full_gt_, full_gen, full_gen_dec, full_vae_dec, full_cc_dec,\
-        recons_vae_loss, recons_cc_loss, recons_gen_loss, gen_loss, discrim_loss,\
-        cost_pred, cost_code_encode, cost_code_discrim, cost_gen, cost_discrim, summary_op,\
-        part_gt_, part_gen, part_gen_dec, part_vae_dec, part_cc_dec
+        return Z, Z_encode_part, full_gt_, full_gen, full_gen_dec,\
+        recons_vae_loss, recons_gen_loss, gen_loss, discrim_loss,\
+        cost_pred, cost_code_encode, cost_code_discrim, summary_op,\
+        part_gt_, part_gen, part_vae_dec
 
     def encoder_part(self, vox):
 
@@ -1355,8 +1397,8 @@ class depvox_gan():
             output_shape=output_shape_l5,
             strides=self.stride)
 
-        x = softmax(h5, self.batch_size, self.part_shape)
-        return x, h2, h3, h4
+        # x = softmax(h5, self.batch_size, self.part_shape)
+        return h5, h2, h3, h4
 
     def surface_net(self, vox):
         base = tf.nn.relu(
@@ -1440,6 +1482,12 @@ class depvox_gan():
         ])
 
         Z_ = tf.reshape(Z, [visual_size, -1])
+        part, h2_t, h3_t, h4_t = self.generate_part(Z_)
+        # h2_t = tf.zeros_like(h2_t)
+        # h3_t = tf.zeros_like(h3_t)
+        # h4_t = tf.zeros_like(h4_t)
+        full = self.generate_full(Z_, h2_t, h3_t, h4_t)
+        """
         h1 = tf.nn.relu(
             batchnormalize(
                 tf.matmul(Z_, self.gen_y_W1),
@@ -1549,4 +1597,5 @@ class depvox_gan():
             strides=self.stride)
 
         x = softmax(h5, visual_size, self.vox_shape)
-        return Z, x
+        """
+        return Z, full, part

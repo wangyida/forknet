@@ -1,5 +1,4 @@
 from easydict import EasyDict as edict
-
 __C = edict()
 cfg = __C
 
@@ -10,7 +9,7 @@ __C.SUB_CONFIG_FILE = []
 
 __C.CONST = edict()
 __C.CONST.BATCH_SIZE = 8
-__C.CONST.BATCH_SIZE_TEST = 4
+__C.CONST.BATCH_SIZE_TEST = 8
 __C.SAVER_MAX = 1000
 __C.CHECK_FREQ = 1000
 __C.RECORD_VOX_NUM = 10
@@ -23,13 +22,13 @@ __C.NET.DIM_Z = 16
 __C.NET.KERNEL = [[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
-__C.NET.DISCRIMINATIVE = True
+__C.NET.DISCRIMINATIVE = False
 __C.NET.GENERATIVE = True
 __C.NET.VARIATIONAL = True
 
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'train'
+__C.TYPE_DATA = 'test'
 if __C.TYPE_TASK is 'scene':
     __C.CONST.N_VOX = [80, 48, 80]
     __C.NET.START_VOX = [5, 3, 5]
@@ -92,7 +91,7 @@ elif __C.TYPE_TASK is 'object':
         __C.DIR.VOXEL_PATH = './data/object_registration/voxel_semantic_npy/%s'
         __C.DIR.TSDF_PATH = './data/object_registration/depth_tsdf_npy/%s'
 
-if __C.NET.DISCRIMINATIVE is True:
+if __C.NET.VARIATIONAL is True:
     __C.DIR.CHECK_POINT_PATH = __C.DIR.CHECK_POINT_PATH + '-d'
 
 __C.DIR.CHECK_PT_PATH = __C.DIR.CHECK_POINT_PATH + '/checkpoint'
@@ -111,10 +110,10 @@ __C.TRAIN.NUM_EPOCH = 50000  # maximum number of training epochs
 # Learning
 __C.LEARNING_RATE_G = 0.0001
 __C.LEARNING_RATE_D = 0.0001
-__C.LEARNING_RATE_V = [0.0001, 1000, 0.00001]
+__C.LEARNING_RATE_V = [0.001, 1000, 0.0001]
 __C.TRAIN.ADAM_BETA_G = 0.5
 __C.TRAIN.ADAM_BETA_D = 0.5
-__C.LAMDA_RECONS = 100
+__C.LAMDA_RECONS = 1
 __C.LAMDA_GAMMA = 0.6
 
 
