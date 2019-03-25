@@ -22,13 +22,13 @@ __C.NET.DIM_Z = 16
 __C.NET.KERNEL = [[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
-__C.NET.DISCRIMINATIVE = False
+__C.NET.DISCRIMINATIVE = True
 __C.NET.GENERATIVE = True
 __C.NET.VARIATIONAL = True
 
-__C.TYPE_TASK = 'scene'
+__C.TYPE_TASK = 'object'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'test'
+__C.TYPE_DATA = 'train'
 if __C.TYPE_TASK is 'scene':
     __C.CONST.N_VOX = [80, 48, 80]
     __C.NET.START_VOX = [5, 3, 5]

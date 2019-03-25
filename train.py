@@ -168,16 +168,21 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             )
 
             if discriminative:
-                _, gen_loss_val, gen_vae_loss_val, gen_gen_loss_val, discrim_loss_val = sess.run(
+                _, gen_loss_val = sess.run(
                     [
-                        train_op_gen, gen_loss_tf,
-                        recon_vae_loss_tf, recon_gen_loss_tf, discrim_loss_tf
+                        train_op_gen, gen_loss_tf
                     ],
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        lr_VAE: lr
+                    },
+                )
+                discrim_loss_val = sess.run(
+                    discrim_loss_tf,
                     feed_dict={
                         Z_tf: batch_z_var,
                         full_tf: batch_voxel,
                         part_tf: batch_tsdf,
-                        lr_VAE: lr
                     },
                 )
                 if train_discrim is True:
@@ -186,10 +191,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         feed_dict={
                             Z_tf: batch_z_var,
                             full_tf: batch_voxel,
-                            part_tf: batch_tsdf
+                            part_tf: batch_tsdf,
                         },
                     )
-                    train_discrim = (discrim_loss_val > 0.5)
+                    # train_discrim = (discrim_loss_val > 0.1)
 
             if variational:
                 _, cost_code_encode_val, cost_code_discrim_val, z_part_enc_val = sess.run(
@@ -213,7 +218,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             lr_VAE: lr
                         },
                     )
-                    train_vae = (cost_code_discrim_val > 0.5)
+                    # train_vae = (cost_code_discrim_val > 0.5)
             else:
                 z_part_enc_val = sess.run(
                     [z_part_enc_tf],
@@ -236,9 +241,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             print(colored('gan', 'red'))
             print 'reconstruct vae loss:', gen_vae_loss_val if (
                 'gen_vae_loss_val' in locals()) else 'None'
-
-            print ' reconstruct cc loss:', gen_cc_loss_val if (
-                'gen_cc_loss_val' in locals()) else 'None'
 
             print(
                 colored(

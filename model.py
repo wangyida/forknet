@@ -571,6 +571,9 @@ class depvox_gan():
         full_gt = tf.one_hot(full_gt_, self.n_class)
         full_gt = tf.cast(full_gt, tf.float32)
 
+        complete_gt = tf.one_hot(tf.clip_by_value(full_gt_, clip_value_min=0, clip_value_max=1), 2)
+        complete_gt = tf.cast(complete_gt, tf.float32)
+
         # tsdf--start
         part_gt_ = tf.placeholder(tf.float32, [
             self.batch_size, self.vox_shape[0], self.vox_shape[1],
@@ -589,6 +592,12 @@ class depvox_gan():
         ones = tf.ones_like(batch_mean_full_gt)
         inverse = tf.div(ones, tf.add(batch_mean_full_gt, ones))
         weight_full = inverse * tf.div(1., tf.reduce_sum(inverse))
+
+        # weights for balancing training
+        batch_mean_complete_gt = tf.reduce_mean(complete_gt, [0, 1, 2, 3])
+        ones = tf.ones_like(batch_mean_complete_gt)
+        inverse = tf.div(ones, tf.add(batch_mean_complete_gt, ones))
+        weight_complete = inverse * tf.div(1., tf.reduce_sum(inverse))
 
         # encode from tsdf and vox
         Z_encode_part = self.encoder_part(part_gt)
@@ -624,6 +633,7 @@ class depvox_gan():
         full_gen_dec_1 = self.generate_full(Z_encode_part * feature_mask_1, h2_t, h3_t, h4_t)
         full_gen_dec_2 = self.generate_full(Z_encode_part * feature_mask_2, h2_t, h3_t, h4_t)
 
+        # complete = self.complete(full_gen_dec)
         # encode again from loops
         """
         full_gen_dec_o = tf.one_hot(
@@ -801,6 +811,16 @@ class depvox_gan():
                     (1 - full_gt * scene_mask_2) * tf.log(1e-6 + 1 - full_gen_dec_2), [1, 2, 3])
                 * weight_full, 1))
         """
+        # complete 
+        """
+        recons_gen_loss += tf.reduce_mean(
+            tf.reduce_sum(
+                -tf.reduce_sum(
+                    self.lamda_gamma * complete_gt * tf.log(1e-6 + complete) +
+                    (1 - self.lamda_gamma) *
+                    (1 - complete_gt) * tf.log(1e-6 + 1 - complete), [1, 2, 3])
+                * weight_complete, 1))
+        """
         """
         recons_gen_loss += tf.reduce_mean(
             tf.reduce_sum(
@@ -833,41 +853,26 @@ class depvox_gan():
             h_part_gen_dec = self.discriminate_part(part_gen_dec)
             """
             # Standard_GAN_Loss
-            """
             discrim_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_full_gt,
                     labels=tf.ones_like(h_full_gt))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_full_gen_dec,
-                            labels=tf.zeros_like(h_full_gen_dec)))
+                            logits=h_full_gen,
+                            labels=tf.zeros_like(h_full_gen)))
 
             discrim_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_part_gt,
                     labels=tf.ones_like(h_part_gt))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_part_gen_dec,
-                            labels=tf.zeros_like(h_part_gen_dec)))
+                            logits=h_part_gen,
+                            labels=tf.zeros_like(h_part_gen)))
 
-            gen_loss = tf.reduce_mean(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_full_gen_dec, labels=tf.ones_like(h_full_gen_dec)))
-
-            gen_loss += tf.reduce_mean(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_part_gen_dec, labels=tf.ones_like(h_part_gen_dec)))
-            """
-
-            discrim_loss = tf.reduce_mean(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_full_gen, labels=tf.zeros_like(h_full_gen)))
-            discrim_loss += tf.reduce_mean(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_part_gen, labels=tf.zeros_like(h_part_gen)))
             gen_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_full_gen, labels=tf.ones_like(h_full_gen)))
+
             gen_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_part_gen, labels=tf.ones_like(h_part_gen)))
@@ -1400,79 +1405,101 @@ class depvox_gan():
         # x = softmax(h5, self.batch_size, self.part_shape)
         return h5, h2, h3, h4
 
-    def surface_net(self, vox):
+    def complete(self, vox):
         base = tf.nn.relu(
-            tf.nn.conv3d(
+            tf.layers.conv3d(
                 vox,
-                self.gen_surface_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                dilation_rate=(1, 1, 1),
+                name='gen_com_1',
+                reuse=tf.AUTO_REUSE))
 
         #res1
         res1_1 = tf.nn.relu(
-            tf.nn.conv3d(
+            tf.layers.conv3d(
                 base,
-                self.gen_surface_res1_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        res1_2 = tf.nn.conv3d(
-            res1_1,
-            self.gen_surface_res1_W2,
-            strides=[1, 1, 1, 1, 1],
-            padding='SAME')
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                dilation_rate=(1, 1, 1),
+                name='gen_com_res1_1',
+                reuse=tf.AUTO_REUSE))
+        res1_2 = tf.layers.conv3d(
+                res1_1,
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                dilation_rate=(1, 1, 1),
+                name='gen_com_res1_2',
+                reuse=tf.AUTO_REUSE)
 
         res1 = tf.nn.relu(tf.add(base, res1_2))
 
         #res2
         res2_1 = tf.nn.relu(
-            tf.nn.conv3d(
+            tf.layers.conv3d(
                 res1,
-                self.gen_surface_res2_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        res2_2 = tf.nn.conv3d(
-            res2_1,
-            self.gen_surface_res2_W2,
-            strides=[1, 1, 1, 1, 1],
-            padding='SAME')
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                dilation_rate=(1, 1, 1),
+                name='gen_com_res2_1',
+                reuse=tf.AUTO_REUSE))
+        res2_2 = tf.layers.conv3d(
+                res2_1,
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                dilation_rate=(1, 1, 1),
+                name='gen_com_res2_2',
+                reuse=tf.AUTO_REUSE)
 
         res2 = tf.nn.relu(tf.add(res1, res2_2))
 
+        """ 
         #res3
         res3_1 = tf.nn.relu(
-            tf.nn.conv3d(
+            tf.layers.conv3d(
                 res2,
-                self.gen_surface_res3_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        res3_2 = tf.nn.conv3d(
-            res3_1,
-            self.gen_surface_res3_W2,
-            strides=[1, 1, 1, 1, 1],
-            padding='SAME')
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                dilation_rate=(1, 1, 1),
+                name='gen_com_res3_1',
+                reuse=tf.AUTO_REUSE))
+        res3_2 = tf.layers.conv3d(
+                res3_1,
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                dilation_rate=(1, 1, 1),
+                name='gen_com_res3_2',
+                reuse=tf.AUTO_REUSE)
 
         res3 = tf.nn.relu(tf.add(res2, res3_2))
+        """
+        out = tf.layers.conv3d(
+                res2,
+                filters=2,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                dilation_rate=(1, 1, 1),
+                name='gen_com_final',
+                reuse=tf.AUTO_REUSE)
 
-        #res4
-        res4_1 = tf.nn.relu(
-            tf.nn.conv3d(
-                res3,
-                self.gen_surface_res4_W1,
-                strides=[1, 1, 1, 1, 1],
-                padding='SAME'))
-        res4_2 = tf.nn.conv3d(
-            res4_1,
-            self.gen_surface_res4_W2,
-            strides=[1, 1, 1, 1, 1],
-            padding='SAME')
+        complete = softmax(out, self.batch_size, [self.vox_shape[0], self.vox_shape[1], self.vox_shape[2], 2])
 
-        res4 = tf.nn.relu(tf.add(res3, res4_2))
-
-        out = tf.nn.conv3d(
-            res4, self.gen_surface_W2, strides=[1, 1, 1, 1, 1], padding='SAME')
-        x_gen_surface = softmax(out, self.batch_size, self.part_shape)
-
-        return x_gen_surface
+        return complete 
 
     def samples_generator(self, visual_size):
 
@@ -1487,6 +1514,7 @@ class depvox_gan():
         # h3_t = tf.zeros_like(h3_t)
         # h4_t = tf.zeros_like(h4_t)
         full = self.generate_full(Z_, h2_t, h3_t, h4_t)
+        # complete = self.complete(full)
         """
         h1 = tf.nn.relu(
             batchnormalize(
