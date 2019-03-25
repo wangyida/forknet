@@ -112,15 +112,9 @@ def evaluate(batch_size, checknum, mode):
         is_train=False)
 
 
-    """
-    Z_tf, z_part_enc_tf, z_full_enc_tf, full_tf, full_gen_tf, full_gen_decode_tf, full_vae_decode_tf, full_cc_decode_tf,\
-    recon_vae_loss_tf, recon_cc_loss_tf, recon_gen_loss_tf, gen_loss_tf, discrim_loss_tf,\
-    cost_pred_tf, cost_code_encode_tf, cost_code_discrim_tf, summary_tf,\
-    part_tf, part_gen_tf, part_gen_decode_tf, part_vae_decode_tf, part_cc_decode_tf = depvox_gan_model.build_model()
-    """
     Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_gen_decode_tf,\
     recon_vae_loss_tf, recon_gen_loss_tf, gen_loss_tf, discrim_loss_tf,\
-    cost_pred_tf, cost_code_encode_tf, cost_code_discrim_tf, summary_tf,\
+    cost_pred_tf, cost_code_encode_tf, cost_code_discrim_tf, cost_encode_tf, cost_gen_tf,  summary_tf,\
     part_tf, part_gen_tf, part_vae_decode_tf = depvox_gan_model.build_model()
     Z_tf_sample, full_tf_sample, part_tf_sample = depvox_gan_model.samples_generator(
         visual_size=batch_size)
@@ -163,9 +157,9 @@ def evaluate(batch_size, checknum, mode):
                     part_tf: batch_tsdf,
                     full_tf: batch_voxel
                 })
-            noising = False
+            noising = True
             if noising:
-                batch_part_enc_Z += np.random.normal(loc=0.0, scale=50.0, 
+                batch_part_enc_Z += np.random.normal(loc=0.0, scale=100.0, 
                         size=(batch_size, start_vox_size[0], start_vox_size[1],
                               start_vox_size[2], dim_z)).astype(np.float32)
                 batch_pred_voxs, batch_vae_tsdf = sess.run(

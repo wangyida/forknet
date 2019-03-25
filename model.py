@@ -881,30 +881,24 @@ class depvox_gan():
             discrim_loss = tf.zeros([1])
 
         # main cost
-        """
-        cost_pred = self.lamda_recons * (
-            recons_vae_loss + recons_cc_loss + recons_gen_loss)
-        """
-        cost_pred = self.lamda_recons * (
-            recons_vae_loss + recons_gen_loss)
+        cost_pred = self.lamda_recons * (recons_vae_loss + recons_gen_loss)
 
         # variational cost
-        cost_code_encode = cost_code_encode
+        cost_encode = cost_code_encode + cost_pred
+        cost_gen = gen_loss + cost_pred
         cost_code_discrim = cost_code_discrim
 
         tf.summary.scalar("recons_vae_loss", tf.reduce_mean(recons_vae_loss))
-        # tf.summary.scalar("recons_cc_loss", tf.reduce_mean(recons_cc_loss))
         tf.summary.scalar("gen_loss", tf.reduce_mean(gen_loss))
         tf.summary.scalar("discrim_loss", tf.reduce_mean(discrim_loss))
         tf.summary.scalar("cost_code_encode", tf.reduce_mean(cost_code_encode))
-        tf.summary.scalar("cost_code_discrim",
-                          tf.reduce_mean(cost_code_discrim))
+        tf.summary.scalar("cost_code_discrim", tf.reduce_mean(cost_code_discrim))
 
         summary_op = tf.summary.merge_all()
 
         return Z, Z_encode_part, full_gt_, full_gen, full_gen_dec,\
         recons_vae_loss, recons_gen_loss, gen_loss, discrim_loss,\
-        cost_pred, cost_code_encode, cost_code_discrim, summary_op,\
+        cost_pred, cost_code_encode, cost_code_discrim, cost_encode, cost_gen, summary_op,\
         part_gt_, part_gen, part_vae_dec
 
     def encoder_part(self, vox):

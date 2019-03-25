@@ -8,7 +8,7 @@ cfg = __C
 __C.SUB_CONFIG_FILE = []
 
 __C.CONST = edict()
-__C.CONST.BATCH_SIZE = 8
+__C.CONST.BATCH_SIZE = 16
 __C.CONST.BATCH_SIZE_TEST = 8
 __C.SAVER_MAX = 1000
 __C.CHECK_FREQ = 1000
@@ -26,7 +26,7 @@ __C.NET.DISCRIMINATIVE = True
 __C.NET.GENERATIVE = True
 __C.NET.VARIATIONAL = True
 
-__C.TYPE_TASK = 'object'
+__C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
 __C.TYPE_DATA = 'train'
 if __C.TYPE_TASK is 'scene':
@@ -110,11 +110,11 @@ __C.TRAIN.NUM_EPOCH = 50000  # maximum number of training epochs
 # Learning
 __C.LEARNING_RATE_G = 0.0001
 __C.LEARNING_RATE_D = 0.0001
-__C.LEARNING_RATE_V = [0.001, 1000, 0.0001]
+__C.LEARNING_RATE_V = [0.0001, 1000, 0.0001]
 __C.TRAIN.ADAM_BETA_G = 0.5
 __C.TRAIN.ADAM_BETA_D = 0.5
 __C.LAMDA_RECONS = 1
-__C.LAMDA_GAMMA = 0.6
+__C.LAMDA_GAMMA = 0.97
 
 
 def cfg_from_file(filename):
