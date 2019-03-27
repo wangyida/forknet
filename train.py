@@ -147,7 +147,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
-            """
             _, gen_vae_loss_val, gen_gen_loss_val = sess.run(
                 [
                     train_op_pred, recon_vae_loss_tf, recon_gen_loss_tf
@@ -159,7 +158,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     lr_VAE: lr
                 },
             )
-            """
             gen_vae_loss_val, gen_gen_loss_val = sess.run(
                 [
                     recon_vae_loss_tf, recon_gen_loss_tf
@@ -172,47 +170,16 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 },
             )
 
-            if discriminative:
-                for s in range(2):
-                    _, gen_loss_val = sess.run(
-                        [
-                            train_op_gen, gen_loss_tf
-                        ],
-                        feed_dict={
-                            Z_tf: batch_z_var,
-                            full_tf: batch_voxel,
-                            part_tf: batch_tsdf,
-                            lr_VAE: lr
-                        },
-                    )
-                discrim_loss_val = sess.run(
-                    discrim_loss_tf,
+            if variational:
+                # for s in range(2):
+                _ = sess.run(
+                    train_op_encode,
                     feed_dict={
-                        Z_tf: batch_z_var,
-                        full_tf: batch_voxel,
                         part_tf: batch_tsdf,
+                        full_tf: batch_voxel,
+                        lr_VAE: lr
                     },
                 )
-                if discrim_loss_val > 0.1:
-                    _ = sess.run(
-                        [train_op_discrim],
-                        feed_dict={
-                            Z_tf: batch_z_var,
-                            full_tf: batch_voxel,
-                            part_tf: batch_tsdf,
-                        },
-                    )
-
-            if variational:
-                for s in range(2):
-                    _ = sess.run(
-                        train_op_encode,
-                        feed_dict={
-                            part_tf: batch_tsdf,
-                            full_tf: batch_voxel,
-                            lr_VAE: lr
-                        },
-                    )
                 cost_code_encode_val, cost_code_discrim_val, z_part_enc_val = sess.run(
                     [cost_code_encode_tf, cost_code_discrim_tf, z_part_enc_tf],
                     feed_dict={
@@ -222,23 +189,56 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         lr_VAE: lr
                     },
                 )
-                if cost_code_discrim_val > 0.2:
-                    _ = sess.run(
-                        [
-                            train_op_code
-                        ],
-                        feed_dict={
-                            Z_tf: batch_z_var,
-                            part_tf: batch_tsdf,
-                            lr_VAE: lr
-                        },
-                    )
             else:
                 z_part_enc_val = sess.run(
                     [z_part_enc_tf],
                     feed_dict={
                         full_tf: batch_voxel,
                         part_tf: batch_tsdf,
+                    },
+                )
+
+            if discriminative:
+                # for s in range(2):
+                _, gen_loss_val = sess.run(
+                    [
+                        train_op_gen, gen_loss_tf
+                    ],
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf,
+                        lr_VAE: lr
+                    },
+                )
+                discrim_loss_val = sess.run(
+                    discrim_loss_tf,
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf,
+                    },
+                )
+                # if discrim_loss_val > 0.01:
+                _ = sess.run(
+                    train_op_discrim,
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf,
+                    },
+                )
+
+            if variational:
+                # if cost_code_discrim_val > 0.02:
+                _ = sess.run(
+                    [
+                        train_op_code
+                    ],
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        part_tf: batch_tsdf,
+                        lr_VAE: lr
                     },
                 )
 

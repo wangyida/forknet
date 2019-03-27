@@ -744,6 +744,12 @@ class depvox_gan():
         recons_vae_loss = tf.reduce_mean(
             tf.reduce_sum(
                 tf.squared_difference(part_gt, part_vae_dec), [1, 2, 3, 4]))
+        """
+        recons_vae_loss = tf.reduce_mean(
+            -tf.reduce_sum(
+                self.lamda_gamma * part_gt * tf.log(1e-6 + part_vae_dec) +
+                (1 - self.lamda_gamma) * (1 - part_gt) * tf.log(1e-6 + 1 - part_vae_dec), [1, 2, 3, 4]))
+        """
         # latent consistency
         """
         recons_vae_loss += tf.reduce_mean(
@@ -841,17 +847,13 @@ class depvox_gan():
         full_gen = self.generate_full(Z, h2_z, h3_z, h4_z)
 
         if self.discriminative is True:
-            h_full_gt = self.discriminate_full(tf.concat([full_gt, part_gt], -1))
-            h_full_gen = self.discriminate_full(tf.concat([full_gen, part_gen], -1))
-            """
-            h_full_gen_dec = self.discriminate_full(full_gen_dec)
-            """
+            h_full_gt = self.discriminate_full(tf.concat([full_gt, tf.zeros_like(part_gt)], -1))
+            h_full_gen = self.discriminate_full(tf.concat([full_gen, tf.zeros_like(part_gen)], -1))
+            h_full_gen_dec = self.discriminate_full(tf.concat([full_gen_dec, tf.zeros_like(part_vae_dec)], -1))
 
             h_part_gt = self.discriminate_part(part_gt)
             h_part_gen = self.discriminate_part(part_gen)
-            """
-            h_part_gen_dec = self.discriminate_part(part_gen_dec)
-            """
+            h_part_gen_dec = self.discriminate_part(part_vae_dec)
             # Standard_GAN_Loss
             discrim_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
@@ -859,7 +861,10 @@ class depvox_gan():
                     labels=tf.ones_like(h_full_gt))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_full_gen,
-                            labels=tf.zeros_like(h_full_gen)))
+                            labels=tf.zeros_like(h_full_gen))) + tf.reduce_mean(
+                        tf.nn.sigmoid_cross_entropy_with_logits(
+                            logits=h_full_gen_dec,
+                            labels=tf.zeros_like(h_full_gen_dec)))
 
             discrim_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
@@ -867,15 +872,25 @@ class depvox_gan():
                     labels=tf.ones_like(h_part_gt))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_part_gen,
-                            labels=tf.zeros_like(h_part_gen)))
+                            labels=tf.zeros_like(h_part_gen))) + tf.reduce_mean(
+                        tf.nn.sigmoid_cross_entropy_with_logits(
+                            logits=h_part_gen_dec,
+                            labels=tf.zeros_like(h_part_gen_dec)))
+
 
             gen_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_full_gen, labels=tf.ones_like(h_full_gen)))
+                    logits=h_full_gen, labels=tf.ones_like(h_full_gen))) + tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_full_gen_dec, labels=tf.ones_like(h_full_gen_dec)))
+
 
             gen_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_part_gen, labels=tf.ones_like(h_part_gen)))
+                    logits=h_part_gen, labels=tf.ones_like(h_part_gen))) + tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_part_gen_dec, labels=tf.ones_like(h_part_gen_dec)))
+
         else:
             gen_loss = tf.zeros([1])
             discrim_loss = tf.zeros([1])
@@ -1009,7 +1024,22 @@ class depvox_gan():
             name='encode_x_5',
             reuse=tf.AUTO_REUSE)
 
-        return h5
+        # start to add hidden layers
+        dims = h5.get_shape().as_list()
+        n_code = dims[1] * dims[2] * dims[3] * dims[4]
+        flattened = tf.contrib.layers.flatten(h5)
+        z1 = tf.layers.dense(
+            flattened, n_code, name='encode_hidden_1', reuse=tf.AUTO_REUSE)
+        z2 = tf.layers.dense(
+            z1, n_code, name='encode_hidden_2', reuse=tf.AUTO_REUSE)
+        z3 = tf.layers.dense(
+            z2, n_code, name='encode_hidden_3', reuse=tf.AUTO_REUSE)
+        z3 = tf.reshape(z3,
+                       tf.stack([dims[0], dims[1], dims[2], dims[3], dims[4]]))
+	# end of hidden layers
+
+        return z3
+        # return h5
 
     def discriminate_full(self, vox):
 

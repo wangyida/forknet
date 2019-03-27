@@ -157,9 +157,9 @@ def evaluate(batch_size, checknum, mode):
                     part_tf: batch_tsdf,
                     full_tf: batch_voxel
                 })
-            noising = True
+            noising = False
             if noising:
-                batch_part_enc_Z += np.random.normal(loc=0.0, scale=100.0, 
+                batch_part_enc_Z += np.random.normal(loc=0.0, scale=1.0, 
                         size=(batch_size, start_vox_size[0], start_vox_size[1],
                               start_vox_size[2], dim_z)).astype(np.float32)
                 batch_pred_voxs, batch_vae_tsdf = sess.run(
@@ -172,17 +172,14 @@ def evaluate(batch_size, checknum, mode):
             # Masked
             if cfg.TYPE_TASK == 'scene':
                 batch_pred_voxs *= np.expand_dims(batch_effective, -1)
-                # batch_complete *= np.expand_dims(batch_effective, -1)
 
             if i == 0:
                 pred_voxs = batch_pred_voxs
-                # pred_complete = batch_complete
                 part_enc_Z = batch_part_enc_Z
                 vae_tsdf = batch_vae_tsdf
             else:
                 pred_voxs = np.concatenate((pred_voxs, batch_pred_voxs),
                                            axis=0)
-                # pred_complete = np.concatenate((pred_complete, batch_complete), axis=0)
                 part_enc_Z = np.concatenate((part_enc_Z, batch_part_enc_Z),
                                             axis=0)
                 vae_tsdf = np.concatenate((vae_tsdf, batch_vae_tsdf), axis=0)
@@ -268,6 +265,7 @@ def evaluate(batch_size, checknum, mode):
                 Z_np_sample = np.random.normal(
                     size=(1, start_vox_size[0], start_vox_size[1],
                           start_vox_size[2], dim_z)).astype(np.float32)
+                # Z_np_sample += (part_enc_Z[j*batch_size + i] + part_enc_Z[j*batch_size + i+2])/2
                 if i == 0:
                     Z_var_np_sample = Z_np_sample
                 else:
