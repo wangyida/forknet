@@ -49,6 +49,7 @@ void Integrate(float * cam_K, float * cam2base, float * depth_im,
     }
 
     float depth_val = depth_im[pt_pix_y * im_width + pt_pix_x];
+    // printf("%f\n", voxel_grid_TSDF[volume_idx]);
 
     if (depth_val > 8) {
       voxel_grid_TSDF[volume_idx] = -2.0f;

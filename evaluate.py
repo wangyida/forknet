@@ -93,7 +93,6 @@ def evaluate(batch_size, checknum, mode):
     dilations = cfg.NET.DILATIONS
     freq = cfg.CHECK_FREQ
     discriminative = cfg.NET.DISCRIMINATIVE
-    generative = cfg.NET.GENERATIVE
 
     save_path = cfg.DIR.EVAL_PATH
     chckpt_path = cfg.DIR.CHECK_PT_PATH + str(checknum)
@@ -108,7 +107,6 @@ def evaluate(batch_size, checknum, mode):
         kernel=kernel,
         stride=stride,
         dilations=dilations,
-        generative=generative,
         is_train=False)
 
 
@@ -147,27 +145,25 @@ def evaluate(batch_size, checknum, mode):
                                      batch_size]
             batch_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
             if cfg.TYPE_TASK == 'scene':
-                batch_effective = space_effective[i * batch_size:i * batch_size + batch_size]
+                batch_effective = space_effective[i * batch_size:i *
+                                                  batch_size + batch_size]
 
             batch_pred_voxs, batch_part_enc_Z, batch_vae_tsdf = sess.run(
-                [
-                    full_gen_decode_tf, z_part_enc_tf, part_vae_decode_tf
-                ],
+                [full_gen_decode_tf, z_part_enc_tf, part_vae_decode_tf],
                 feed_dict={
                     part_tf: batch_tsdf,
                     full_tf: batch_voxel
                 })
             noising = False
             if noising:
-                batch_part_enc_Z += np.random.normal(loc=0.0, scale=1.0, 
-                        size=(batch_size, start_vox_size[0], start_vox_size[1],
-                              start_vox_size[2], dim_z)).astype(np.float32)
+                batch_part_enc_Z += np.random.normal(
+                    loc=0.0,
+                    scale=1.0,
+                    size=(batch_size, start_vox_size[0], start_vox_size[1],
+                          start_vox_size[2], dim_z)).astype(np.float32)
                 batch_pred_voxs, batch_vae_tsdf = sess.run(
-                    [
-                        full_tf_sample, part_tf_sample
-                    ],
-                    feed_dict={Z_tf_sample: batch_part_enc_Z}
-                    )
+                    [full_tf_sample, part_tf_sample],
+                    feed_dict={Z_tf_sample: batch_part_enc_Z})
 
             # Masked
             if cfg.TYPE_TASK == 'scene':
@@ -210,8 +206,7 @@ def evaluate(batch_size, checknum, mode):
         if cfg.TYPE_TASK == 'scene':
             depth_seg_gt[depth_seg_gt < 0] = 0
         # np.save(save_path + '/depth_seg_scene.npy', depth_seg_gt)
-        depth_seg_gt.astype('uint8').tofile(save_path +
-                                              '/depth_seg_scene.bin')
+        depth_seg_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
 
         complete_gt = np.clip(voxel_test, 0, 1)
         # np.save(save_path + '/complete_scene.npy', complete_gt)
@@ -221,19 +216,23 @@ def evaluate(batch_size, checknum, mode):
         # np.save(save_path + '/gen_vox.npy', np.argmax(pred_voxs, axis=4))
         # check for some slick categories
         if cfg.TYPE_TASK == 'scene':
+            """
             pred_voxs[:,:,:,:,4] -= 0.7
             pred_voxs[[0,6,45,71,139,143,193],:,:,:,4] = 0
             addtioanl_vox = np.array(surface)
             addtioanl_vox *= pred_voxs[:,:,:,:,0]
             addtioanl_vox *= onehot(voxel_test, vox_shape[3])[:,:,:,:,0]
-            pred_voxs[[3,35,46],:,:,:,10] += addtioanl_vox[[3,35,46],:,:,:]
+            """
+            # pred_voxs[[3,35,46],:,:,:,10] += addtioanl_vox[[3,35,46],:,:,:]
             # pred_complete[:,:,:,:,1][np.where(addtioanl_vox)] = 1
             """
             correct_vis = np.array(pred_voxs)
             correct_vis -= onehot(np.argmax(correct_vis, axis=4), vox_shape[3])*correct_vis 
             pred_voxs[np.argmax(correct_vis, axis=4) == 3] = 1
             """
-        np.argmax(pred_voxs, axis=4).astype('uint8').tofile(save_path + '/gen_vox.bin')
+        np.argmax(
+            pred_voxs,
+            axis=4).astype('uint8').tofile(save_path + '/gen_vox.bin')
         """
         np.argmax(
             pred_voxs,
@@ -243,15 +242,16 @@ def evaluate(batch_size, checknum, mode):
             np.clip(np.argmax(pred_voxs, axis=4), 0, 1) + complete_gt)
         # error[error == 2] = 0
         error.astype('uint8').tofile(save_path + '/gen_vox_error.bin')
-        np.clip(np.argmax(pred_voxs, axis=4), 0, 1).astype('uint8').tofile(save_path + '/gen_complete.bin')
+        np.clip(np.argmax(pred_voxs, axis=4), 0,
+                1).astype('uint8').tofile(save_path + '/gen_complete.bin')
         # np.save(save_path + '/gen_tsdf.npy', np.argmax(pred_tsdf, axis=4))
         if cfg.TYPE_TASK == 'scene':
             vae_tsdf = np.abs(vae_tsdf)
             vae_tsdf[vae_tsdf < 0.4] = 0
             vae_tsdf[vae_tsdf >= 0.4] = 1
         elif cfg.TYPE_TASK == 'object':
-            vae_tsdf[vae_tsdf <= 0.2] = 0
-            vae_tsdf[vae_tsdf > 0.2] = 1
+            vae_tsdf[vae_tsdf <= 0.4] = 0
+            vae_tsdf[vae_tsdf > 0.4] = 1
             vae_tsdf = np.squeeze(vae_tsdf)
         vae_tsdf.astype('uint8').tofile(save_path + '/vae_tsdf.bin')
 
@@ -265,23 +265,34 @@ def evaluate(batch_size, checknum, mode):
                 Z_np_sample = np.random.normal(
                     size=(1, start_vox_size[0], start_vox_size[1],
                           start_vox_size[2], dim_z)).astype(np.float32)
-                # Z_np_sample += (part_enc_Z[j*batch_size + i] + part_enc_Z[j*batch_size + i+2])/2
+                Z_np_sample += (part_enc_Z[j * batch_size + i] +
+                                part_enc_Z[j * batch_size + i + 2]) / 2
                 if i == 0:
                     Z_var_np_sample = Z_np_sample
                 else:
                     Z_var_np_sample = np.concatenate(
                         (Z_var_np_sample, Z_np_sample), axis=0)
             generated_voxs_fromrand, generated_part_fromrand = sess.run(
-                [full_tf_sample, part_tf_sample], feed_dict={Z_tf_sample: Z_var_np_sample})
+                [full_tf_sample, part_tf_sample],
+                feed_dict={Z_tf_sample: Z_var_np_sample})
             # np.save(save_path + '/generate.npy', np.argmax(generated_voxs_fromrand, axis=4))
             regenerated_voxs_fromrand = sess.run(
-                [full_gen_decode_tf], feed_dict={part_tf: np.squeeze(generated_part_fromrand)})
+                [full_gen_decode_tf],
+                feed_dict={part_tf: np.squeeze(generated_part_fromrand)})
             if j == 0:
                 generated_voxs_fromrand_all = generated_voxs_fromrand
                 generated_part_fromrand_all = generated_part_fromrand
+                regenerated_voxs_fromrand_all = regenerated_voxs_fromrand
             else:
-                generated_voxs_fromrand_all = np.concatenate([generated_voxs_fromrand_all, generated_voxs_fromrand], axis=0)
-                generated_part_fromrand_all = np.concatenate([generated_part_fromrand_all, generated_part_fromrand], axis=0)
+                generated_voxs_fromrand_all = np.concatenate(
+                    [generated_voxs_fromrand_all, generated_voxs_fromrand],
+                    axis=0)
+                generated_part_fromrand_all = np.concatenate(
+                    [generated_part_fromrand_all, generated_part_fromrand],
+                    axis=0)
+                regenerated_voxs_fromrand_all = np.concatenate(
+                    [regenerated_voxs_fromrand_all, regenerated_voxs_fromrand],
+                    axis=0)
         # np.save(save_path + '/sample_z.npy', Z_var_np_sample)
         Z_var_np_sample.astype('float32').tofile(save_path + '/sample_z.bin')
         np.argmax(
@@ -293,22 +304,33 @@ def evaluate(batch_size, checknum, mode):
             generated_part_fromrand_all[generated_part_fromrand_all >= 0.4] = 1
         elif cfg.TYPE_TASK == 'object':
             # generated_part_fromrand = np.clip(generated_part_fromrand, 0, 1)
-            generated_part_fromrand_all[generated_part_fromrand_all <= 0.2] = 0
-            generated_part_fromrand_all[generated_part_fromrand_all > 0.2] = 1
+            generated_part_fromrand_all[generated_part_fromrand_all <= 0.4] = 0
+            generated_part_fromrand_all[generated_part_fromrand_all > 0.4] = 1
             generated_part_fromrand = np.squeeze(generated_part_fromrand)
-        generated_part_fromrand_all.astype('uint8').tofile(save_path + '/generate_sdf.bin')
+        generated_part_fromrand_all.astype('uint8').tofile(save_path +
+                                                           '/generate_sdf.bin')
         np.argmax(
-            regenerated_voxs_fromrand,
+            regenerated_voxs_fromrand_all,
             axis=4).astype('uint8').tofile(save_path + '/regenerate.bin')
 
         eigen_shape = False
         if eigen_shape:
-            U, V = pca(np.reshape(part_enc_Z, [200, start_vox_size[0]*start_vox_size[1]*start_vox_size[2]*dim_z]), dim_remain=16)
-            V = np.reshape(np.transpose(V[:, 0:8]), [8,start_vox_size[0],start_vox_size[1],start_vox_size[2],dim_z])
+            z_U, z_V = pca(
+                np.reshape(part_enc_Z, [
+                    200, start_vox_size[0] * start_vox_size[1] *
+                    start_vox_size[2] * dim_z
+                ]),
+                dim_remain=200)
+            z_V = np.reshape(
+                np.transpose(z_V[:, 0:8]), [
+                    8, start_vox_size[0], start_vox_size[1], start_vox_size[2],
+                    dim_z
+                ])
             generated_voxs_fromrand, generated_part_fromrand = sess.run(
-                [full_tf_sample, part_tf_sample], feed_dict={Z_tf_sample: V})
+                [full_tf_sample, part_tf_sample], feed_dict={Z_tf_sample: z_V})
             regenerated_voxs_fromrand = sess.run(
-                [full_gen_decode_tf], feed_dict={part_tf: np.squeeze(generated_part_fromrand)})
+                [full_gen_decode_tf],
+                feed_dict={part_tf: np.squeeze(generated_part_fromrand)})
             # np.save(save_path + '/generate.npy', np.argmax(generated_voxs_fromrand, axis=4))
             np.argmax(
                 generated_voxs_fromrand,
@@ -322,17 +344,20 @@ def evaluate(batch_size, checknum, mode):
                 generated_part_fromrand[generated_part_fromrand >= 0.4] = 1
             elif cfg.TYPE_TASK == 'object':
                 # generated_part_fromrand = np.clip(generated_part_fromrand, 0, 1)
-                generated_part_fromrand[generated_part_fromrand <= 0.2] = 0
-                generated_part_fromrand[generated_part_fromrand > 0.2] = 1
+                generated_part_fromrand[generated_part_fromrand <= 0.4] = 0
+                generated_part_fromrand[generated_part_fromrand > 0.4] = 1
                 generated_part_fromrand = np.squeeze(generated_part_fromrand)
-            generated_part_fromrand.astype('uint8').tofile(save_path + '/generate_sdf.bin')
+            generated_part_fromrand.astype('uint8').tofile(save_path +
+                                                           '/generate_sdf.bin')
 
         print("voxels saved")
 
         # numerical evalutation
         on_gt = onehot(voxel_test, vox_shape[3])
         on_depth_seg_gt = onehot(depth_seg_gt, vox_shape[3])
-        on_depth_seg_pred = np.multiply(onehot(np.argmax(pred_voxs, axis=4), vox_shape[3]), np.expand_dims(surface, -1))
+        on_depth_seg_pred = np.multiply(
+            onehot(np.argmax(pred_voxs, axis=4), vox_shape[3]),
+            np.expand_dims(surface, -1))
         on_complete_gt = onehot(complete_gt, 2)
         complete_gen = np.clip(np.argmax(pred_voxs, axis=4), 0, 1)
         # complete_gen2 = np.argmax(pred_complete, axis=4)
@@ -362,13 +387,12 @@ def evaluate(batch_size, checknum, mode):
         # volume segmentation
         print(colored("Decoded segmentation", 'cyan'))
         on_pred = onehot(np.argmax(pred_voxs, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_gt, on_pred, pred_voxs,
-                                          IoU_class, AP_class, vox_shape)
+        IoU_class, AP_class = IoU_AP_calc(on_gt, on_pred, pred_voxs, IoU_class,
+                                          AP_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
         AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
                                 axis=1)
-
         """
         print(colored("VAE segmentation", 'cyan'))
         on_pred = onehot(np.argmax(vae_voxs, axis=4), vox_shape[3])
@@ -406,7 +430,7 @@ def evaluate(batch_size, checknum, mode):
         #interpolatioin latent vectores
         decode_z = np.load(save_path + '/decode_z.npy')
         print(save_path)
-        decode_z = decode_z[20:20+batch_size]
+        decode_z = decode_z[20:20 + batch_size]
         for l in np.arange(batch_size):
             for r in np.arange(batch_size):
                 if l != r:
@@ -457,8 +481,14 @@ def evaluate(batch_size, checknum, mode):
                         pred_voxs_fromrand, pred_part_fromrand = sess.run(
                             [full_tf_sample, part_tf_sample],
                             feed_dict={Z_tf_sample: Z_var_np_sample})
-                        interpolate_vox = np.reshape(pred_voxs_fromrand[0], [1,vox_shape[0],vox_shape[1],vox_shape[2],vox_shape[3]])
-                        interpolate_part = np.reshape(pred_part_fromrand[0], [1,vox_shape[0],vox_shape[1],vox_shape[2],part_shape[3]])
+                        interpolate_vox = np.reshape(pred_voxs_fromrand[0], [
+                            1, vox_shape[0], vox_shape[1], vox_shape[2],
+                            vox_shape[3]
+                        ])
+                        interpolate_part = np.reshape(pred_part_fromrand[0], [
+                            1, vox_shape[0], vox_shape[1], vox_shape[2],
+                            part_shape[3]
+                        ])
 
                         if i == 0:
                             pred_voxs = interpolate_vox

@@ -35,8 +35,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     freq = cfg.CHECK_FREQ
     record_vox_num = cfg.RECORD_VOX_NUM
     discriminative = cfg.NET.DISCRIMINATIVE
-    generative = cfg.NET.GENERATIVE
-    variational = cfg.NET.VARIATIONAL
+    feature_discrim = cfg.NET.FEATUREDISC
 
     depvox_gan_model = depvox_gan(
         batch_size=batch_size,
@@ -48,7 +47,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         kernel=kernel,
         stride=stride,
         dilations=dilations,
-        generative=generative,
         discriminative=discriminative,
         is_train=True)
 
@@ -78,14 +76,16 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     lr_VAE = tf.placeholder(tf.float32, shape=[])
     train_op_pred = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-            cost_pred_tf, var_list=gen_vars)
+            cost_pred_tf, var_list=encode_vars + gen_vars)
     train_op_encode = tf.train.AdamOptimizer(
         lr_VAE, beta1=beta_D, beta2=0.9).minimize(
             cost_encode_tf, var_list=encode_vars)
     if discriminative:
         train_op_discrim = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
-                discrim_loss_tf, var_list=discrim_vars, global_step=global_step)
+                discrim_loss_tf,
+                var_list=discrim_vars,
+                global_step=global_step)
         train_op_gen = tf.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
                 cost_gen_tf, var_list=gen_vars)
@@ -147,10 +147,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
-            _, gen_vae_loss_val, gen_gen_loss_val = sess.run(
-                [
-                    train_op_pred, recon_vae_loss_tf, recon_gen_loss_tf
-                ],
+            _ = sess.run(
+                [train_op_pred],
                 feed_dict={
                     Z_tf: batch_z_var,
                     full_tf: batch_voxel,
@@ -159,9 +157,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 },
             )
             gen_vae_loss_val, gen_gen_loss_val = sess.run(
-                [
-                    recon_vae_loss_tf, recon_gen_loss_tf
-                ],
+                [recon_vae_loss_tf, recon_gen_loss_tf],
                 feed_dict={
                     Z_tf: batch_z_var,
                     full_tf: batch_voxel,
@@ -170,7 +166,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 },
             )
 
-            if variational:
+            if feature_discrim:
                 # for s in range(2):
                 _ = sess.run(
                     train_op_encode,
@@ -201,9 +197,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             if discriminative:
                 # for s in range(2):
                 _, gen_loss_val = sess.run(
-                    [
-                        train_op_gen, gen_loss_tf
-                    ],
+                    [train_op_gen, gen_loss_tf],
                     feed_dict={
                         Z_tf: batch_z_var,
                         full_tf: batch_voxel,
@@ -229,12 +223,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     },
                 )
 
-            if variational:
+            if feature_discrim:
                 # if cost_code_discrim_val > 0.02:
                 _ = sess.run(
-                    [
-                        train_op_code
-                    ],
+                    [train_op_code],
                     feed_dict={
                         Z_tf: batch_z_var,
                         part_tf: batch_tsdf,
@@ -280,7 +272,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             print '         std of code:', np.mean(
                 np.std(z_part_enc_val,
                        4)) if ('z_part_enc_val' in locals()) else 'None'
-
 
             if np.mod(ite, freq) == 0:
                 full_models = sess.run(
