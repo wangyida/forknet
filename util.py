@@ -106,7 +106,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
     data_paths = data_paths_test[:amount_of_test_sample]
 
     num_models = len(data_paths)
-    print '---amount of test data:' + str(num_models)
+    print('---amount of test data:', str(num_models))
 
     n_vox = cfg.CONST.N_VOX
 
