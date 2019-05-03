@@ -25,8 +25,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     beta_D = cfg.TRAIN.ADAM_BETA_D
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
-    vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
-    part_shape = [n_vox[0], n_vox[1], n_vox[2], 1]
+    vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[-1]]
+    part_shape = [n_vox[0], n_vox[1], n_vox[2], 2]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -52,8 +52,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
     Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_gen_decode_tf,\
     recon_vae_loss_tf, recon_gen_loss_tf, gen_loss_tf, discrim_loss_tf,\
-    cost_pred_tf, cost_code_encode_tf, cost_code_discrim_tf, cost_encode_tf, cost_gen_tf, summary_tf,\
-    part_tf, part_gen_tf, part_vae_decode_tf = depvox_gan_model.build_model()
+    cost_pred_tf, cost_encode_tf, cost_gen_tf, summary_tf,\
+    part_tf, complete_gen_tf, complete_gen_decode_tf, nebula3d_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -89,12 +89,15 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         train_op_gen = tf.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
                 cost_gen_tf, var_list=gen_vars)
+    """
     train_op_code = tf.train.AdamOptimizer(
         lr_VAE, beta1=beta_G, beta2=0.9).minimize(
             cost_code_discrim_tf, var_list=code_vars)
+    """
 
-    Z_tf_sample, full_tf_sample, part_tf_sample = depvox_gan_model.samples_generator(
-        visual_size=batch_size)
+    if discriminative is True:
+        Z_tf_sample, full_tf_sample, part_tf_sample = depvox_gan_model.samples_generator(
+            visual_size=batch_size)
 
     writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
     tf.initialize_all_variables().run(session=sess)
@@ -176,8 +179,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         lr_VAE: lr
                     },
                 )
-                cost_code_encode_val, cost_code_discrim_val, z_part_enc_val = sess.run(
-                    [cost_code_encode_tf, cost_code_discrim_tf, z_part_enc_tf],
+                z_part_enc_val = sess.run(
+                    [z_part_enc_tf],
                     feed_dict={
                         part_tf: batch_tsdf,
                         full_tf: batch_voxel,
@@ -223,6 +226,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     },
                 )
 
+            """
             if feature_discrim:
                 # if cost_code_discrim_val > 0.02:
                 _ = sess.run(
@@ -233,6 +237,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         lr_VAE: lr
                     },
                 )
+            """
 
             summary = sess.run(
                 summary_tf,
@@ -274,15 +279,16 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                        4)) if ('z_part_enc_val' in locals()) else 'None'
 
             if np.mod(ite, freq) == 0:
-                full_models = sess.run(
-                    full_tf_sample,
-                    feed_dict={Z_tf_sample: Z_var_np_sample},
-                )
-                full_models_cat = np.argmax(full_models, axis=4)
-                record_vox = full_models_cat[:record_vox_num]
-                np.save(
-                    cfg.DIR.TRAIN_OBJ_PATH + '/' + str(ite / freq) + '.npy',
-                    record_vox)
+                if discriminative is True:
+                    full_models = sess.run(
+                        full_tf_sample,
+                        feed_dict={Z_tf_sample: Z_var_np_sample},
+                    )
+                    full_models_cat = np.argmax(full_models, axis=4)
+                    record_vox = full_models_cat[:record_vox_num]
+                    np.save(
+                        cfg.DIR.TRAIN_OBJ_PATH + '/' + str(ite / freq) + '.npy',
+                        record_vox)
                 save_path = saver.save(
                     sess,
                     cfg.DIR.CHECK_PT_PATH + str(ite / freq),

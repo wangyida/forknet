@@ -94,6 +94,7 @@ def _main():
         saver = tf.train.Saver()
         saver.restore(sess, args.checkpoint)
         save_path = saver.save(sess, "./shitnet.ckpt")
+        import ipdb; ipdb.set_trace()
         print("Model saved in file: %s" % save_path)
 
         if args.image:
