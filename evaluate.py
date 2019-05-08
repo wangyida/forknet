@@ -265,7 +265,6 @@ def evaluate(batch_size, checknum, mode):
 
         # reconstruction and generation from normal distribution evaluation
         # generator from random distribution
-        """
         if discriminative is True:
             sample_times = 10
             for j in np.arange(sample_times):
@@ -285,22 +284,15 @@ def evaluate(batch_size, checknum, mode):
                     [full_tf_sample, part_tf_sample],
                     feed_dict={Z_tf_sample: Z_var_np_sample})
                 # np.save(save_path + '/generate.npy', np.argmax(generated_voxs_fromrand, axis=4))
-                regenerated_voxs_fromrand = sess.run(
-                    [full_gen_decode_tf],
-                    feed_dict={part_tf: np.squeeze(generated_part_fromrand)})
                 if j == 0:
                     generated_voxs_fromrand_all = generated_voxs_fromrand
                     generated_part_fromrand_all = generated_part_fromrand
-                    regenerated_voxs_fromrand_all = regenerated_voxs_fromrand
                 else:
                     generated_voxs_fromrand_all = np.concatenate(
                         [generated_voxs_fromrand_all, generated_voxs_fromrand],
                         axis=0)
                     generated_part_fromrand_all = np.concatenate(
                         [generated_part_fromrand_all, generated_part_fromrand],
-                        axis=0)
-                    regenerated_voxs_fromrand_all = np.concatenate(
-                        [regenerated_voxs_fromrand_all, regenerated_voxs_fromrand],
                         axis=0)
             # np.save(save_path + '/sample_z.npy', Z_var_np_sample)
             Z_var_np_sample.astype('float32').tofile(save_path + '/sample_z.bin')
@@ -318,9 +310,6 @@ def evaluate(batch_size, checknum, mode):
                 generated_part_fromrand = np.squeeze(generated_part_fromrand)
             generated_part_fromrand_all.astype('uint8').tofile(save_path +
                                                                '/generate_sdf.bin')
-            np.argmax(
-                regenerated_voxs_fromrand_all,
-                axis=4).astype('uint8').tofile(save_path + '/regenerate.bin')
 
             eigen_shape = False
             if eigen_shape:
@@ -358,7 +347,6 @@ def evaluate(batch_size, checknum, mode):
                     generated_part_fromrand = np.squeeze(generated_part_fromrand)
                 generated_part_fromrand.astype('uint8').tofile(save_path +
                                                                '/generate_sdf.bin')
-        """
 
         print("voxels saved")
 

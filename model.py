@@ -570,7 +570,7 @@ class depvox_gan():
     def build_model(self):
 
         full_gt_ = tf.placeholder(tf.int32, [
-            self.batch_size, self.vox_shape[0], self.vox_shape[1],
+            None, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2]
         ])
         full_gt = tf.one_hot(full_gt_, self.n_class)
@@ -582,14 +582,14 @@ class depvox_gan():
 
         # tsdf--start
         part_gt_ = tf.placeholder(tf.float32, [
-            self.batch_size, self.vox_shape[0], self.vox_shape[1],
+            None, self.vox_shape[0], self.vox_shape[1],
             self.vox_shape[2]
         ])
         part_gt = tf.abs(tf.expand_dims(part_gt_, -1))
         # tsdf--end
 
         Z = tf.placeholder(tf.float32, [
-            self.batch_size, self.start_vox_size[0], self.start_vox_size[1],
+            None, self.start_vox_size[0], self.start_vox_size[1],
             self.start_vox_size[2], self.dim_z
         ])
 
@@ -611,8 +611,10 @@ class depvox_gan():
             1.0 + 2.0 * Z_log_sigma - tf.square(Z_mu) - tf.exp(
                 2.0 * Z_log_sigma), 1)
         dim_code = Z_mu.get_shape().as_list()
+        """
         nebula3d = tf.Variable(tf.truncated_normal([4, dim_code[1]]), 'nebula3d')
         loss_0d, loss_1d, loss_2d, loss_3d, _, _, nebula3d, nebula_index = sparse_ml(4, dim_code[1], nebula3d, Z_mu, info_type='unsupervised')
+        """
 
         scene_mask_1 = tf.random_uniform(
             [self.batch_size, 1, 1, 1, self.n_class - 1],
@@ -926,7 +928,6 @@ class depvox_gan():
         cost_pred = self.lamda_recons * recons_gen_loss
         if self.discriminative is True:
             cost_pred += tf.reduce_mean(loss_vae)
-            cost_pred += loss_0d
 
         # variational cost
         cost_encode = cost_pred
@@ -1104,7 +1105,7 @@ class depvox_gan():
             elif self.is_train is False:
                 z = z_mu
             z = tf.reshape(z,
-                           tf.stack([dims[0], dims[1], dims[2], dims[3], dims[4]]))
+                           tf.stack([-1, dims[1], dims[2], dims[3], dims[4]]))
         elif self.discriminative is False:
             z = h3
             z_mu = tf.contrib.layers.flatten(z)

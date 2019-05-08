@@ -53,7 +53,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_gen_decode_tf,\
     recon_vae_loss_tf, recon_gen_loss_tf, gen_loss_tf, discrim_loss_tf,\
     cost_pred_tf, cost_encode_tf, cost_gen_tf, summary_tf,\
-    part_tf, complete_gen_tf, complete_gen_decode_tf, nebula3d_tf = depvox_gan_model.build_model()
+    part_tf, complete_gen_tf, complete_gen_decode_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
