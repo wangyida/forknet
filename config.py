@@ -17,13 +17,12 @@ __C.SWITCHING_ITE = 100001
 
 # Network
 __C.NET = edict()
-__C.NET.DIM_Z = 32
+__C.NET.DIM_Z = 16
 # The last dimension of NET.DIM matters much for GPU consumption for loss function
-__C.NET.KERNEL = [[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]]
+__C.NET.KERNEL = [[4, 4, 4, 4, 4], [4, 4, 4, 4, 4], [4, 4, 4, 4, 4]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
 __C.NET.DISCRIMINATIVE = False
-__C.NET.FEATUREDISC = False
 
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
@@ -110,7 +109,7 @@ __C.DIR.LOG_PATH = './log'
 #
 __C.TRAIN = edict()
 
-__C.TRAIN.DATASET_PORTION = [0, 0.9]
+__C.TRAIN.DATASET_PORTION = [0, 1.0]
 __C.TRAIN.NUM_EPOCH = 50000  # maximum number of training epochs
 
 # Learning

@@ -35,7 +35,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     freq = cfg.CHECK_FREQ
     record_vox_num = cfg.RECORD_VOX_NUM
     discriminative = cfg.NET.DISCRIMINATIVE
-    feature_discrim = cfg.NET.FEATUREDISC
 
     depvox_gan_model = depvox_gan(
         batch_size=batch_size,
@@ -50,9 +49,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         discriminative=discriminative,
         is_train=True)
 
-    Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_gen_decode_tf,\
-    recon_vae_loss_tf, recon_gen_loss_tf, gen_loss_tf, discrim_loss_tf,\
-    cost_pred_tf, cost_encode_tf, cost_gen_tf, summary_tf,\
+    Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_gen_dec_tf, full_gen_dec_ref_tf,\
+    gen_loss_tf, discrim_loss_tf, recons_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
     part_tf, complete_gen_tf, complete_gen_decode_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.ConfigProto()
@@ -70,30 +68,33 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                           tf.trainable_variables())
     gen_vars = filter(lambda x: x.name.startswith('gen'),
                       tf.trainable_variables())
-    code_vars = filter(lambda x: x.name.startswith('cod'),
+    refine_vars = filter(lambda x: x.name.startswith('gen_y_ref'),
                        tf.trainable_variables())
 
     lr_VAE = tf.placeholder(tf.float32, shape=[])
+
+    # main optimiser
     train_op_pred = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-            cost_pred_tf, var_list=encode_vars + gen_vars)
+            recons_loss_tf, var_list=encode_vars + gen_vars)
+
+    # variational optimiser
     train_op_encode = tf.train.AdamOptimizer(
         lr_VAE, beta1=beta_D, beta2=0.9).minimize(
-            cost_encode_tf, var_list=encode_vars)
-    if discriminative:
-        train_op_discrim = tf.train.AdamOptimizer(
-            learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
-                discrim_loss_tf,
-                var_list=discrim_vars,
-                global_step=global_step)
+            encode_loss_tf, var_list=encode_vars + gen_vars)
+
+    # refine optimiser
+    train_op_refine = tf.train.AdamOptimizer(
+        learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
+            refine_loss_tf, var_list=refine_vars)
+
+    if discriminative is True:
         train_op_gen = tf.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-                cost_gen_tf, var_list=gen_vars)
-    """
-    train_op_code = tf.train.AdamOptimizer(
-        lr_VAE, beta1=beta_G, beta2=0.9).minimize(
-            cost_code_discrim_tf, var_list=code_vars)
-    """
+                gen_loss_tf, var_list=gen_vars)
+        train_op_discrim = tf.train.AdamOptimizer(
+            learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
+                discrim_loss_tf, var_list=discrim_vars, global_step=global_step)
 
     if discriminative is True:
         Z_tf_sample, full_tf_sample, part_tf_sample = depvox_gan_model.samples_generator(
@@ -150,8 +151,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
-            _ = sess.run(
-                [train_op_pred],
+            _, _, _ = sess.run(
+                [train_op_encode, train_op_pred, train_op_refine],
                 feed_dict={
                     Z_tf: batch_z_var,
                     full_tf: batch_voxel,
@@ -159,8 +160,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     lr_VAE: lr
                 },
             )
-            gen_vae_loss_val, gen_gen_loss_val = sess.run(
-                [recon_vae_loss_tf, recon_gen_loss_tf],
+            gen_vae_loss_val, z_part_enc_val = sess.run(
+                [recons_loss_tf, z_part_enc_tf],
                 feed_dict={
                     Z_tf: batch_z_var,
                     full_tf: batch_voxel,
@@ -168,34 +169,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     lr_VAE: lr
                 },
             )
-
-            if feature_discrim:
-                # for s in range(2):
-                _ = sess.run(
-                    train_op_encode,
-                    feed_dict={
-                        part_tf: batch_tsdf,
-                        full_tf: batch_voxel,
-                        lr_VAE: lr
-                    },
-                )
-                z_part_enc_val = sess.run(
-                    [z_part_enc_tf],
-                    feed_dict={
-                        part_tf: batch_tsdf,
-                        full_tf: batch_voxel,
-                        Z_tf: batch_z_var,
-                        lr_VAE: lr
-                    },
-                )
-            else:
-                z_part_enc_val = sess.run(
-                    [z_part_enc_tf],
-                    feed_dict={
-                        full_tf: batch_voxel,
-                        part_tf: batch_tsdf,
-                    },
-                )
 
             if discriminative:
                 # for s in range(2):
@@ -226,49 +199,16 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     },
                 )
 
-            """
-            if feature_discrim:
-                # if cost_code_discrim_val > 0.02:
-                _ = sess.run(
-                    [train_op_code],
-                    feed_dict={
-                        Z_tf: batch_z_var,
-                        part_tf: batch_tsdf,
-                        lr_VAE: lr
-                    },
-                )
-            """
-
-            summary = sess.run(
-                summary_tf,
-                feed_dict={
-                    Z_tf: batch_z_var,
-                    full_tf: batch_voxel,
-                    part_tf: batch_tsdf,
-                    lr_VAE: lr
-                },
-            )
 
             print(colored('gan', 'red'))
-            print 'reconstruct vae loss:', gen_vae_loss_val if (
+            print '    reconstruct loss:', gen_vae_loss_val if (
                 'gen_vae_loss_val' in locals()) else 'None'
-
-            print(
-                colored(
-                    'reconstruct gen loss: ' + str(gen_gen_loss_val),
-                    'green')) if ('gen_gen_loss_val' in locals()) else 'None'
 
             print '            gen loss:', gen_loss_val if (
                 'gen_loss_val' in locals()) else 'None'
 
-            print '  variational encode:', cost_code_encode_val if (
-                'cost_code_encode_val' in locals()) else 'None'
-
             print '      output discrim:', discrim_loss_val if (
                 'discrim_loss_val' in locals()) else 'None'
-
-            print '        code discrim:', cost_code_discrim_val if (
-                'cost_code_discrim_val' in locals()) else 'None'
 
             print '     avarage of code:', np.mean(
                 np.mean(z_part_enc_val,
@@ -294,8 +234,5 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     cfg.DIR.CHECK_PT_PATH + str(ite / freq),
                     global_step=None)
 
-            # updating for the refining network
-
-            writer.add_summary(summary, global_step=ite)
 
             ite += 1
