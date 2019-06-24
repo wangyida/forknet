@@ -22,7 +22,7 @@ __C.NET.DIM_Z = 16
 __C.NET.KERNEL = [[4, 4, 4, 4, 4], [4, 4, 4, 4, 4], [4, 4, 4, 4, 4]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
-__C.NET.DISCRIMINATIVE = False
+__C.NET.DISCRIMINATIVE = True
 
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
@@ -119,7 +119,7 @@ __C.LEARNING_RATE_V = [0.0001, 1000, 0.0001]
 __C.TRAIN.ADAM_BETA_G = 0.5
 __C.TRAIN.ADAM_BETA_D = 0.5
 __C.LAMDA_RECONS = 1
-__C.LAMDA_GAMMA = 0.6
+__C.LAMDA_GAMMA = 0.97
 
 
 def cfg_from_file(filename):

@@ -69,7 +69,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     gen_vars = filter(lambda x: x.name.startswith('gen'),
                       tf.trainable_variables())
     refine_vars = filter(lambda x: x.name.startswith('gen_y_ref'),
-                       tf.trainable_variables())
+                         tf.trainable_variables())
 
     lr_VAE = tf.placeholder(tf.float32, shape=[])
 
@@ -94,10 +94,12 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 gen_loss_tf, var_list=gen_vars)
         train_op_discrim = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
-                discrim_loss_tf, var_list=discrim_vars, global_step=global_step)
+                discrim_loss_tf,
+                var_list=discrim_vars,
+                global_step=global_step)
 
     if discriminative is True:
-        Z_tf_sample, full_tf_sample, part_tf_sample = depvox_gan_model.samples_generator(
+        Z_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample = depvox_gan_model.samples_generator(
             visual_size=batch_size)
 
     writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
@@ -106,13 +108,13 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     if mid_flag:
         chckpt_path = cfg.DIR.CHECK_PT_PATH + str(check_num)
         saver.restore(sess, chckpt_path)
-        """
         Z_var_np_sample = np.load(cfg.DIR.TRAIN_OBJ_PATH +
                                   '/sample_z.npy').astype(np.float32)
         """
         Z_var_np_sample = np.random.normal(
             size=(batch_size, start_vox_size[0], start_vox_size[1],
                   start_vox_size[2], dim_z)).astype(np.float32)
+        """
         Z_var_np_sample = Z_var_np_sample[:batch_size]
         print '---weights restored'
     else:
@@ -135,12 +137,11 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             if cfg.TYPE_TASK == 'scene':
                 # Evaluation masks
-                volume_effective = np.clip(
+                space_effective = np.clip(
                     np.where(batch_voxel > 0, 1, 0) + np.where(
                         batch_tsdf > -1.01, 1, 0), 0, 1)
-                batch_voxel *= volume_effective
-                batch_tsdf *= volume_effective
-
+                batch_voxel *= space_effective
+                batch_tsdf *= space_effective
                 # occluded region
                 batch_tsdf[batch_tsdf < -1] = 0
 
@@ -151,8 +152,19 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
+            """
             _, _, _ = sess.run(
                 [train_op_encode, train_op_pred, train_op_refine],
+                feed_dict={
+                    Z_tf: batch_z_var,
+                    full_tf: batch_voxel,
+                    part_tf: batch_tsdf,
+                    lr_VAE: lr
+                },
+            )
+            """
+            _, _ = sess.run(
+                [train_op_pred, train_op_refine],
                 feed_dict={
                     Z_tf: batch_z_var,
                     full_tf: batch_voxel,
@@ -199,7 +211,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     },
                 )
 
-
             print(colored('gan', 'red'))
             print '    reconstruct loss:', gen_vae_loss_val if (
                 'gen_vae_loss_val' in locals()) else 'None'
@@ -227,12 +238,11 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     full_models_cat = np.argmax(full_models, axis=4)
                     record_vox = full_models_cat[:record_vox_num]
                     np.save(
-                        cfg.DIR.TRAIN_OBJ_PATH + '/' + str(ite / freq) + '.npy',
-                        record_vox)
+                        cfg.DIR.TRAIN_OBJ_PATH + '/' + str(ite / freq) +
+                        '.npy', record_vox)
                 save_path = saver.save(
                     sess,
                     cfg.DIR.CHECK_PT_PATH + str(ite / freq),
                     global_step=None)
-
 
             ite += 1
