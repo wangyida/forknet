@@ -761,15 +761,11 @@ class depvox_gan():
                 vox_size_l2[2], self.dim_W2
             ]
             h2 = tf.nn.relu(
-                tf.layers.batch_normalization(
-                    tf.nn.conv3d_transpose(
-                        h1,
-                        self.gen_y_W2,
-                        output_shape=output_shape_l2,
-                        strides=self.stride),
-                    name='gen_y_bn_2',
-                    reuse=tf.AUTO_REUSE,
-                    training=self.is_train))
+                tf.nn.conv3d_transpose(
+                    h1,
+                    self.gen_y_W2,
+                    output_shape=output_shape_l2,
+                    strides=self.stride))
         elif self.discriminative is False:
             h2 = Z
 
@@ -778,34 +774,6 @@ class depvox_gan():
             self.batch_size, vox_size_l3[0], vox_size_l3[1], vox_size_l3[2],
             self.dim_W3
         ]
-        """
-        h3 = tf.nn.relu(
-                tf.layers.batch_normalization(
-                    tf.nn.conv3d_transpose(
-                        h2,
-                        self.gen_y_W3,
-                        output_shape=output_shape_l3,
-                        strides=self.stride),
-                    name='gen_y_bn_3',
-                    reuse=tf.AUTO_REUSE,
-                    training=self.is_train))
-
-        vox_size_l4 = self.start_vox_size * 8
-        output_shape_l4 = [
-            self.batch_size, vox_size_l4[0], vox_size_l4[1], vox_size_l4[2],
-            self.dim_W4
-        ]
-        h4 = tf.nn.relu(
-                tf.layers.batch_normalization(
-                    tf.nn.conv3d_transpose(
-                        tf.concat([h3, h3_], -1),
-                            self.gen_y_W4,
-                            output_shape=output_shape_l4,
-                            strides=self.stride),
-                    name='gen_y_bn_4',
-                    reuse=tf.AUTO_REUSE,
-                    training=self.is_train))
-        """
 
         h3 = tf.nn.relu(
             tf.nn.conv3d_transpose(
@@ -982,15 +950,11 @@ class depvox_gan():
                 vox_size_l2[2], self.dim_W2
             ]
             h2 = tf.nn.relu(
-                tf.layers.batch_normalization(
-                    tf.nn.conv3d_transpose(
-                        h1,
-                        self.gen_x_W2,
-                        output_shape=output_shape_l2,
-                        strides=self.stride),
-                    name='gen_x_bn_2',
-                    reuse=tf.AUTO_REUSE,
-                    training=self.is_train))
+                tf.nn.conv3d_transpose(
+                    h1,
+                    self.gen_x_W2,
+                    output_shape=output_shape_l2,
+                    strides=self.stride))
         elif self.discriminative is False:
             h2 = Z
 
@@ -999,34 +963,6 @@ class depvox_gan():
             self.batch_size, vox_size_l3[0], vox_size_l3[1], vox_size_l3[2],
             self.dim_W3
         ]
-        """
-        h3 = tf.nn.relu(
-                tf.layers.batch_normalization(
-                    tf.nn.conv3d_transpose(
-                        h2,
-                        self.gen_x_W3,
-                        output_shape=output_shape_l3,
-                        strides=self.stride),
-                    name='gen_x_bn_3',
-                    reuse=tf.AUTO_REUSE,
-                    training=self.is_train))
-
-        vox_size_l4 = self.start_vox_size * 8
-        output_shape_l4 = [
-            self.batch_size, vox_size_l4[0], vox_size_l4[1], vox_size_l4[2],
-            self.dim_W4
-        ]
-        h4 = tf.nn.relu(
-                tf.layers.batch_normalization(
-                    tf.nn.conv3d_transpose(
-                        h3,
-                        self.gen_x_W4,
-                        output_shape=output_shape_l4,
-                        strides=self.stride),
-                    name='gen_x_bn_4',
-                    reuse=tf.AUTO_REUSE,
-                    training=self.is_train))
-        """
         h3 = tf.nn.relu(
             tf.nn.conv3d_transpose(
                 h2,

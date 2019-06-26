@@ -160,17 +160,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
-            """
-            _, _, _, _ = sess.run(
-                [train_op_encode, train_op_pred_com, train_op_pred_sem, train_op_refine],
-                feed_dict={
-                    Z_tf: batch_z_var,
-                    full_tf: batch_voxel,
-                    part_tf: batch_tsdf,
-                    lr_VAE: lr
-                },
-            )
-            """
             _, _, _ = sess.run(
                 [train_op_pred_com, train_op_pred_sem, train_op_refine],
                 feed_dict={
@@ -192,8 +181,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             if discriminative:
                 # for s in range(2):
-                _, gen_loss_val = sess.run(
-                    [train_op_gen, gen_loss_tf],
+                _, _, gen_loss_val = sess.run(
+                    [train_op_encode, train_op_gen, gen_loss_tf],
                     feed_dict={
                         Z_tf: batch_z_var,
                         full_tf: batch_voxel,
