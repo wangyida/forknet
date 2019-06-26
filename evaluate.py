@@ -132,7 +132,8 @@ def evaluate(batch_size, checknum, mode):
 
         # Evaluation masks
         if cfg.TYPE_TASK == 'scene':
-            space_effective = np.where(voxel_test > -1, 1, 0) * np.where(part_test > -1, 1, 0)
+            space_effective = np.where(voxel_test > -1, 1, 0) * np.where(
+                part_test > -1, 1, 0)
             voxel_test *= space_effective
             part_test *= space_effective
             # occluded region
@@ -179,7 +180,8 @@ def evaluate(batch_size, checknum, mode):
                     (pred_ref_voxs, batch_pred_ref_voxs), axis=0)
                 part_enc_Z = np.concatenate((part_enc_Z, batch_part_enc_Z),
                                             axis=0)
-                complete_gt = np.concatenate((complete_gt, batch_complete_gt), axis=0)
+                complete_gt = np.concatenate((complete_gt, batch_complete_gt),
+                                             axis=0)
                 pred_complete = np.concatenate(
                     (pred_complete, batch_pred_complete), axis=0)
 
@@ -196,7 +198,7 @@ def evaluate(batch_size, checknum, mode):
         if cfg.TYPE_TASK == 'scene':
             surface = np.abs(surface)
             surface *= 10
-            surface -= 4 
+            surface -= 4
             surface[surface < 0] = 0
             """
             surface[surface < -1] = 0
@@ -208,11 +210,10 @@ def evaluate(batch_size, checknum, mode):
             surface = np.clip(surface, 0, 1)
         surface.astype('uint8').tofile(save_path + '/surface.bin')
 
-        depth_seg_gt = np.multiply(voxel_test, np.clip(surface-4, 0, 1))
+        depth_seg_gt = np.multiply(voxel_test, np.clip(surface - 4, 0, 1))
         if cfg.TYPE_TASK == 'scene':
             depth_seg_gt[depth_seg_gt < 0] = 0
         depth_seg_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
-
         """
         complete_gt = np.clip(voxel_test, 0, 1)
         complete_gt.astype('uint8').tofile(save_path + '/complete_gt.bin')
@@ -239,13 +240,15 @@ def evaluate(batch_size, checknum, mode):
             pred_voxs,
             axis=4).astype('uint8').tofile(save_path + '/gen_vox.bin')
         error = np.array(
-            np.clip(np.argmax(pred_voxs, axis=4), 0, 1) + np.argmax(complete_gt, axis=4)*2)
+            np.clip(np.argmax(pred_voxs, axis=4), 0, 1) +
+            np.argmax(complete_gt, axis=4) * 2)
         error.astype('uint8').tofile(save_path + '/gen_vox_error.bin')
         np.argmax(
             pred_ref_voxs,
             axis=4).astype('uint8').tofile(save_path + '/gen_ref_vox.bin')
         error = np.array(
-            np.clip(np.argmax(pred_ref_voxs, axis=4), 0, 1) + np.argmax(complete_gt, axis=4)*2)
+            np.clip(np.argmax(pred_ref_voxs, axis=4), 0, 1) +
+            np.argmax(complete_gt, axis=4) * 2)
         error.astype('uint8').tofile(save_path + '/gen_ref_vox_error.bin')
         np.argmax(
             pred_complete,
@@ -378,8 +381,8 @@ def evaluate(batch_size, checknum, mode):
         AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(
             on_depth_seg_gt, on_depth_seg_pred,
-            np.multiply(pred_voxs, np.expand_dims(np.clip(surface, 0, 1), -1)), IoU_class,
-            AP_class, vox_shape)
+            np.multiply(pred_voxs, np.expand_dims(np.clip(surface, 0, 1), -1)),
+            IoU_class, AP_class, vox_shape)
         IoU_all = np.expand_dims(IoU_class, axis=1)
         AP_all = np.expand_dims(AP_class, axis=1)
 

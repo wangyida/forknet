@@ -92,8 +92,8 @@ class depvox_gan():
         # parameters of generator y
         self.gen_y_W1 = tf.Variable(
             tf.random_normal([
-                1024, self.dim_W1 * self.start_vox_size[0] * self.start_vox_size[1] *
-                self.start_vox_size[2]
+                1024, self.dim_W1 * self.start_vox_size[0] *
+                self.start_vox_size[1] * self.start_vox_size[2]
             ],
                              stddev=0.02),
             name='gen_y_W1')
@@ -200,8 +200,8 @@ class depvox_gan():
         # parameters of generator x
         self.gen_x_W1 = tf.Variable(
             tf.random_normal([
-                1024, self.dim_W1 * self.start_vox_size[0] * self.start_vox_size[1] *
-                self.start_vox_size[2]
+                1024, self.dim_W1 * self.start_vox_size[0] *
+                self.start_vox_size[1] * self.start_vox_size[2]
             ],
                              stddev=0.02),
             name='gen_x_W1')
@@ -508,7 +508,8 @@ class depvox_gan():
             discrim_loss = tf.zeros([1])
 
         # variational cost
-        variation_loss = tf.reduce_mean(variation_loss + recons_com_loss + recons_sem_loss)
+        variation_loss = tf.reduce_mean(variation_loss + recons_com_loss +
+                                        recons_sem_loss)
 
         # main cost
         recons_com_loss = self.lamda_recons * tf.reduce_mean(recons_com_loss)
@@ -669,16 +670,15 @@ class depvox_gan():
                     training=self.is_train))
             """
             h4 = lrelu(
-                    tf.layers.conv3d(
-                        h3,
-                        filters=self.dim_W1,
-                        kernel_size=(self.kernel2[0], self.kernel2[1],
-                                     self.kernel2[2]),
-                        strides=(self.stride[1], self.stride[2],
-                                 self.stride[3]),
-                        padding='same',
-                        name='encode_x_4',
-                        reuse=tf.AUTO_REUSE))
+                tf.layers.conv3d(
+                    h3,
+                    filters=self.dim_W1,
+                    kernel_size=(self.kernel2[0], self.kernel2[1],
+                                 self.kernel2[2]),
+                    strides=(self.stride[1], self.stride[2], self.stride[3]),
+                    padding='same',
+                    name='encode_x_4',
+                    reuse=tf.AUTO_REUSE))
 
             h5 = tf.layers.conv3d(
                 h4,
@@ -734,15 +734,17 @@ class depvox_gan():
             n_code = dims[1] * dims[2] * dims[3] * dims[4]
             z_in = tf.reshape(Z, [self.batch_size, n_code])
             z_hidden = tf.reshape(
-                    tf.layers.dense(
-                z_in,
-                self.dim_z * self.start_vox_size[0] * self.start_vox_size[1] * self.start_vox_size[2],
-                use_bias=True,
-                name='gen_y_hidden_in',
-                reuse=tf.AUTO_REUSE), [
-                self.batch_size, self.start_vox_size[0],
-                self.start_vox_size[1], self.start_vox_size[2], self.dim_z
-            ])
+                tf.layers.dense(
+                    z_in,
+                    self.dim_z * self.start_vox_size[0] *
+                    self.start_vox_size[1] * self.start_vox_size[2],
+                    use_bias=True,
+                    name='gen_y_hidden_in',
+                    reuse=tf.AUTO_REUSE),
+                [
+                    self.batch_size, self.start_vox_size[0],
+                    self.start_vox_size[1], self.start_vox_size[2], self.dim_z
+                ])
 
             h1 = tf.layers.conv3d(
                 z_hidden,
@@ -806,11 +808,11 @@ class depvox_gan():
         """
 
         h3 = tf.nn.relu(
-                    tf.nn.conv3d_transpose(
-                        h2,
-                        self.gen_y_W3,
-                        output_shape=output_shape_l3,
-                        strides=self.stride))
+            tf.nn.conv3d_transpose(
+                h2,
+                self.gen_y_W3,
+                output_shape=output_shape_l3,
+                strides=self.stride))
 
         vox_size_l4 = self.start_vox_size * 8
         output_shape_l4 = [
@@ -818,11 +820,11 @@ class depvox_gan():
             self.dim_W4
         ]
         h4 = tf.nn.relu(
-                    tf.nn.conv3d_transpose(
-                        tf.concat([h3, h3_], -1),
-                            self.gen_y_W4,
-                            output_shape=output_shape_l4,
-                            strides=self.stride))
+            tf.nn.conv3d_transpose(
+                tf.concat([h3, h3_], -1),
+                self.gen_y_W4,
+                output_shape=output_shape_l4,
+                strides=self.stride))
 
         vox_size_l5 = self.start_vox_size * 16
         output_shape_l5 = [
@@ -953,15 +955,17 @@ class depvox_gan():
             n_code = dims[1] * dims[2] * dims[3] * dims[4]
             z_in = tf.reshape(Z, [self.batch_size, n_code])
             z_hidden = tf.reshape(
-                    tf.layers.dense(
-                z_in,
-                self.dim_z * self.start_vox_size[0] * self.start_vox_size[1] * self.start_vox_size[2],
-                use_bias=True,
-                name='gen_x_hidden_in',
-                reuse=tf.AUTO_REUSE), [
-                self.batch_size, self.start_vox_size[0],
-                self.start_vox_size[1], self.start_vox_size[2], self.dim_z
-            ])
+                tf.layers.dense(
+                    z_in,
+                    self.dim_z * self.start_vox_size[0] *
+                    self.start_vox_size[1] * self.start_vox_size[2],
+                    use_bias=True,
+                    name='gen_x_hidden_in',
+                    reuse=tf.AUTO_REUSE),
+                [
+                    self.batch_size, self.start_vox_size[0],
+                    self.start_vox_size[1], self.start_vox_size[2], self.dim_z
+                ])
 
             h1 = tf.layers.conv3d(
                 z_hidden,
@@ -1024,11 +1028,11 @@ class depvox_gan():
                     training=self.is_train))
         """
         h3 = tf.nn.relu(
-                    tf.nn.conv3d_transpose(
-                        h2,
-                        self.gen_x_W3,
-                        output_shape=output_shape_l3,
-                        strides=self.stride))
+            tf.nn.conv3d_transpose(
+                h2,
+                self.gen_x_W3,
+                output_shape=output_shape_l3,
+                strides=self.stride))
 
         vox_size_l4 = self.start_vox_size * 8
         output_shape_l4 = [
@@ -1036,11 +1040,11 @@ class depvox_gan():
             self.dim_W4
         ]
         h4 = tf.nn.relu(
-                    tf.nn.conv3d_transpose(
-                        h3,
-                        self.gen_x_W4,
-                        output_shape=output_shape_l4,
-                        strides=self.stride))
+            tf.nn.conv3d_transpose(
+                h3,
+                self.gen_x_W4,
+                output_shape=output_shape_l4,
+                strides=self.stride))
 
         vox_size_l5 = self.start_vox_size * 16
         output_shape_l5 = [

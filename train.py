@@ -67,9 +67,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     discrim_vars = filter(lambda x: x.name.startswith('discrim'),
                           tf.trainable_variables())
     gen_sem_vars = filter(lambda x: x.name.startswith('gen_y'),
-                      tf.trainable_variables())
+                          tf.trainable_variables())
     gen_com_vars = filter(lambda x: x.name.startswith('gen_x'),
-                      tf.trainable_variables())
+                          tf.trainable_variables())
     refine_vars = filter(lambda x: x.name.startswith('gen_y_ref'),
                          tf.trainable_variables())
 
