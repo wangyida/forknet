@@ -50,8 +50,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         is_train=True)
 
     Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_gen_dec_tf, full_gen_dec_ref_tf,\
-    gen_loss_tf, discrim_loss_tf, recons_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, complete_gen_tf, complete_gen_decode_tf = depvox_gan_model.build_model()
+    gen_loss_tf, discrim_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
+    part_tf, complete_gt_tf, complete_gen_tf, complete_gen_decode_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -66,7 +66,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                          tf.trainable_variables())
     discrim_vars = filter(lambda x: x.name.startswith('discrim'),
                           tf.trainable_variables())
-    gen_vars = filter(lambda x: x.name.startswith('gen'),
+    gen_sem_vars = filter(lambda x: x.name.startswith('gen_y'),
+                      tf.trainable_variables())
+    gen_com_vars = filter(lambda x: x.name.startswith('gen_x'),
                       tf.trainable_variables())
     refine_vars = filter(lambda x: x.name.startswith('gen_y_ref'),
                          tf.trainable_variables())
@@ -74,14 +76,17 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     lr_VAE = tf.placeholder(tf.float32, shape=[])
 
     # main optimiser
-    train_op_pred = tf.train.AdamOptimizer(
+    train_op_pred_com = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-            recons_loss_tf, var_list=encode_vars + gen_vars)
+            recons_com_loss_tf, var_list=encode_vars + gen_com_vars)
+    train_op_pred_sem = tf.train.AdamOptimizer(
+        learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
+            recons_sem_loss_tf, var_list=encode_vars + gen_sem_vars)
 
     # variational optimiser
     train_op_encode = tf.train.AdamOptimizer(
         lr_VAE, beta1=beta_D, beta2=0.9).minimize(
-            encode_loss_tf, var_list=encode_vars + gen_vars)
+            encode_loss_tf, var_list=encode_vars + gen_com_vars + gen_sem_vars)
 
     # refine optimiser
     train_op_refine = tf.train.AdamOptimizer(
@@ -91,7 +96,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     if discriminative is True:
         train_op_gen = tf.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-                gen_loss_tf, var_list=gen_vars)
+                gen_loss_tf, var_list=gen_com_vars + gen_sem_vars)
         train_op_discrim = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf,
@@ -135,15 +140,18 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             batch_voxel = data_process.get_voxel(db_inds)
             batch_tsdf = data_process.get_tsdf(db_inds)
 
+            # Evaluation masks
+            # NOTICE that the target should never have negative values,
+            # otherwise the one-hot coding never works for that region
             if cfg.TYPE_TASK == 'scene':
-                # Evaluation masks
-                space_effective = np.clip(
-                    np.where(batch_voxel > 0, 1, 0) + np.where(
-                        batch_tsdf > -1.01, 1, 0), 0, 1)
+                """
+                space_effective = np.where(batch_voxel > -1, 1, 0) * np.where(batch_tsdf > -1, 1, 0)
                 batch_voxel *= space_effective
                 batch_tsdf *= space_effective
                 # occluded region
                 batch_tsdf[batch_tsdf < -1] = 0
+                """
+                batch_voxel[batch_voxel < 0] = 0
 
             lr = learning_rate(cfg.LEARNING_RATE_V, ite)
 
@@ -153,8 +161,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             # updating for the main network
             """
-            _, _, _ = sess.run(
-                [train_op_encode, train_op_pred, train_op_refine],
+            _, _, _, _ = sess.run(
+                [train_op_encode, train_op_pred_com, train_op_pred_sem, train_op_refine],
                 feed_dict={
                     Z_tf: batch_z_var,
                     full_tf: batch_voxel,
@@ -163,8 +171,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 },
             )
             """
-            _, _ = sess.run(
-                [train_op_pred, train_op_refine],
+            _, _, _ = sess.run(
+                [train_op_pred_com, train_op_pred_sem, train_op_refine],
                 feed_dict={
                     Z_tf: batch_z_var,
                     full_tf: batch_voxel,
@@ -172,8 +180,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     lr_VAE: lr
                 },
             )
-            gen_vae_loss_val, z_part_enc_val = sess.run(
-                [recons_loss_tf, z_part_enc_tf],
+            gen_com_loss_val, gen_sem_loss_val, z_part_enc_val = sess.run(
+                [recons_com_loss_tf, recons_sem_loss_tf, z_part_enc_tf],
                 feed_dict={
                     Z_tf: batch_z_var,
                     full_tf: batch_voxel,
@@ -212,8 +220,11 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 )
 
             print(colored('gan', 'red'))
-            print '    reconstruct loss:', gen_vae_loss_val if (
-                'gen_vae_loss_val' in locals()) else 'None'
+            print 'reconstruct-com loss:', gen_com_loss_val if (
+                'gen_com_loss_val' in locals()) else 'None'
+
+            print 'reconstruct-sem loss:', gen_sem_loss_val if (
+                'gen_sem_loss_val' in locals()) else 'None'
 
             print '            gen loss:', gen_loss_val if (
                 'gen_loss_val' in locals()) else 'None'

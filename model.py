@@ -323,7 +323,7 @@ class depvox_gan():
         part_gt_ = tf.placeholder(
             tf.float32,
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
-        part_gt = tf.abs(tf.expand_dims(part_gt_, -1))
+        part_gt = tf.expand_dims(tf.abs(part_gt_), -1)
         # tsdf--end
 
         Z = tf.placeholder(tf.float32, [
@@ -430,20 +430,21 @@ class depvox_gan():
         """
         # latent consistency
         # SUPERVISED (paired data)
-        recons_loss = tf.reduce_sum(
-            -tf.reduce_sum(
-                self.lamda_gamma * full_gt * tf.log(1e-6 + full_gen_dec) +
-                (1 - self.lamda_gamma) *
-                (1 - full_gt) * tf.log(1e-6 + 1 - full_gen_dec), [1, 2, 3]) *
-            weight_full, 1)
         # complete
-        recons_loss += tf.reduce_sum(
+        recons_com_loss = tf.reduce_sum(
             -tf.reduce_sum(
                 self.lamda_gamma * complete_gt *
                 tf.log(1e-6 + complete_gen_dec) + (1 - self.lamda_gamma) *
                 (1 - complete_gt) * tf.log(1e-6 + 1 - complete_gen_dec),
                 [1, 2, 3]) * weight_complete, 1)
-        # refine
+        # segmentation
+        recons_sem_loss = tf.reduce_sum(
+            -tf.reduce_sum(
+                self.lamda_gamma * full_gt * tf.log(1e-6 + full_gen_dec) +
+                (1 - self.lamda_gamma) *
+                (1 - full_gt) * tf.log(1e-6 + 1 - full_gen_dec), [1, 2, 3]) *
+            weight_full, 1)
+        # refine for segmentation
         refine_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
@@ -507,16 +508,17 @@ class depvox_gan():
             discrim_loss = tf.zeros([1])
 
         # variational cost
-        variation_loss = tf.reduce_mean(variation_loss + recons_loss)
+        variation_loss = tf.reduce_mean(variation_loss + recons_com_loss + recons_sem_loss)
 
         # main cost
-        recons_loss = self.lamda_recons * tf.reduce_mean(recons_loss)
+        recons_com_loss = self.lamda_recons * tf.reduce_mean(recons_com_loss)
+        recons_sem_loss = self.lamda_recons * tf.reduce_mean(recons_sem_loss)
 
         summary_op = tf.summary.merge_all()
 
         return Z, Z_encode, full_gt_, full_gen, full_gen_dec, full_gen_dec_ref,\
-        gen_loss, discrim_loss, recons_loss, variation_loss, refine_loss, summary_op,\
-        part_gt_, complete_gen, complete_gen_dec
+        gen_loss, discrim_loss, recons_com_loss, recons_sem_loss, variation_loss, refine_loss, summary_op,\
+        part_gt_, complete_gt, complete_gen, complete_gen_dec
 
     def encoder(self, vox):
 
@@ -774,6 +776,7 @@ class depvox_gan():
             self.batch_size, vox_size_l3[0], vox_size_l3[1], vox_size_l3[2],
             self.dim_W3
         ]
+        """
         h3 = tf.nn.relu(
                 tf.layers.batch_normalization(
                     tf.nn.conv3d_transpose(
@@ -800,6 +803,26 @@ class depvox_gan():
                     name='gen_y_bn_4',
                     reuse=tf.AUTO_REUSE,
                     training=self.is_train))
+        """
+
+        h3 = tf.nn.relu(
+                    tf.nn.conv3d_transpose(
+                        h2,
+                        self.gen_y_W3,
+                        output_shape=output_shape_l3,
+                        strides=self.stride))
+
+        vox_size_l4 = self.start_vox_size * 8
+        output_shape_l4 = [
+            self.batch_size, vox_size_l4[0], vox_size_l4[1], vox_size_l4[2],
+            self.dim_W4
+        ]
+        h4 = tf.nn.relu(
+                    tf.nn.conv3d_transpose(
+                        tf.concat([h3, h3_], -1),
+                            self.gen_y_W4,
+                            output_shape=output_shape_l4,
+                            strides=self.stride))
 
         vox_size_l5 = self.start_vox_size * 16
         output_shape_l5 = [
@@ -972,6 +995,7 @@ class depvox_gan():
             self.batch_size, vox_size_l3[0], vox_size_l3[1], vox_size_l3[2],
             self.dim_W3
         ]
+        """
         h3 = tf.nn.relu(
                 tf.layers.batch_normalization(
                     tf.nn.conv3d_transpose(
@@ -998,6 +1022,25 @@ class depvox_gan():
                     name='gen_x_bn_4',
                     reuse=tf.AUTO_REUSE,
                     training=self.is_train))
+        """
+        h3 = tf.nn.relu(
+                    tf.nn.conv3d_transpose(
+                        h2,
+                        self.gen_x_W3,
+                        output_shape=output_shape_l3,
+                        strides=self.stride))
+
+        vox_size_l4 = self.start_vox_size * 8
+        output_shape_l4 = [
+            self.batch_size, vox_size_l4[0], vox_size_l4[1], vox_size_l4[2],
+            self.dim_W4
+        ]
+        h4 = tf.nn.relu(
+                    tf.nn.conv3d_transpose(
+                        h3,
+                        self.gen_x_W4,
+                        output_shape=output_shape_l4,
+                        strides=self.stride))
 
         vox_size_l5 = self.start_vox_size * 16
         output_shape_l5 = [

@@ -112,8 +112,8 @@ def evaluate(batch_size, checknum, mode):
 
 
     Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_gen_dec_tf, full_gen_dec_ref_tf,\
-    gen_loss_tf, discrim_loss_tf, recons_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, complete_gen_tf, complete_gen_decode_tf = depvox_gan_model.build_model()
+    gen_loss_tf, discrim_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
+    part_tf, complete_gt_tf, complete_gen_tf, complete_gen_decode_tf = depvox_gan_model.build_model()
     if discriminative is True:
         Z_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample = depvox_gan_model.samples_generator(
             visual_size=batch_size)
@@ -132,13 +132,12 @@ def evaluate(batch_size, checknum, mode):
 
         # Evaluation masks
         if cfg.TYPE_TASK == 'scene':
-            space_effective = np.clip(
-                np.where(voxel_test > 0, 1, 0) + np.where(
-                    part_test > -1.01, 1, 0), 0, 1)
+            space_effective = np.where(voxel_test > -1, 1, 0) * np.where(part_test > -1, 1, 0)
             voxel_test *= space_effective
             part_test *= space_effective
             # occluded region
             part_test[part_test < -1] = 0
+            voxel_test[voxel_test < 0] = 0
 
         num = voxel_test.shape[0]
         print("test voxels loaded")
@@ -146,14 +145,11 @@ def evaluate(batch_size, checknum, mode):
             batch_voxel = voxel_test[i * batch_size:i * batch_size +
                                      batch_size]
             batch_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
-            if cfg.TYPE_TASK == 'scene':
-                batch_effective = space_effective[i * batch_size:i *
-                                                  batch_size + batch_size]
 
-            batch_pred_voxs, batch_pred_ref_voxs, batch_part_enc_Z, batch_pred_complete = sess.run(
+            batch_pred_voxs, batch_pred_ref_voxs, batch_part_enc_Z, batch_complete_gt, batch_pred_complete = sess.run(
                 [
                     full_gen_dec_tf, full_gen_dec_ref_tf, z_part_enc_tf,
-                    complete_gen_decode_tf
+                    complete_gt_tf, complete_gen_decode_tf
                 ],
                 feed_dict={
                     part_tf: batch_tsdf,
@@ -170,16 +166,11 @@ def evaluate(batch_size, checknum, mode):
                     [full_tf_sample, part_tf_sample],
                     feed_dict={Z_tf_sample: batch_part_enc_Z})
 
-            # Masked
-            if cfg.TYPE_TASK == 'scene':
-                batch_pred_voxs *= np.expand_dims(batch_effective, -1)
-                batch_pred_ref_voxs *= np.expand_dims(batch_effective, -1)
-                batch_pred_complete *= np.expand_dims(batch_effective, -1)
-
             if i == 0:
                 pred_voxs = batch_pred_voxs
                 pred_ref_voxs = batch_pred_ref_voxs
                 part_enc_Z = batch_part_enc_Z
+                complete_gt = batch_complete_gt
                 pred_complete = batch_pred_complete
             else:
                 pred_voxs = np.concatenate((pred_voxs, batch_pred_voxs),
@@ -188,6 +179,7 @@ def evaluate(batch_size, checknum, mode):
                     (pred_ref_voxs, batch_pred_ref_voxs), axis=0)
                 part_enc_Z = np.concatenate((part_enc_Z, batch_part_enc_Z),
                                             axis=0)
+                complete_gt = np.concatenate((complete_gt, batch_complete_gt), axis=0)
                 pred_complete = np.concatenate(
                     (pred_complete, batch_pred_complete), axis=0)
 
@@ -216,13 +208,15 @@ def evaluate(batch_size, checknum, mode):
             surface = np.clip(surface, 0, 1)
         surface.astype('uint8').tofile(save_path + '/surface.bin')
 
-        depth_seg_gt = np.multiply(voxel_test, np.clip(surface, 0, 1))
+        depth_seg_gt = np.multiply(voxel_test, np.clip(surface-4, 0, 1))
         if cfg.TYPE_TASK == 'scene':
             depth_seg_gt[depth_seg_gt < 0] = 0
         depth_seg_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
 
+        """
         complete_gt = np.clip(voxel_test, 0, 1)
         complete_gt.astype('uint8').tofile(save_path + '/complete_gt.bin')
+        """
 
         # decoded
         # check for some bad categories
@@ -245,17 +239,20 @@ def evaluate(batch_size, checknum, mode):
             pred_voxs,
             axis=4).astype('uint8').tofile(save_path + '/gen_vox.bin')
         error = np.array(
-            np.clip(np.argmax(pred_voxs, axis=4), 0, 1) + complete_gt*2)
+            np.clip(np.argmax(pred_voxs, axis=4), 0, 1) + np.argmax(complete_gt, axis=4)*2)
         error.astype('uint8').tofile(save_path + '/gen_vox_error.bin')
         np.argmax(
             pred_ref_voxs,
             axis=4).astype('uint8').tofile(save_path + '/gen_ref_vox.bin')
         error = np.array(
-            np.clip(np.argmax(pred_ref_voxs, axis=4), 0, 1) + complete_gt*2)
+            np.clip(np.argmax(pred_ref_voxs, axis=4), 0, 1) + np.argmax(complete_gt, axis=4)*2)
         error.astype('uint8').tofile(save_path + '/gen_ref_vox_error.bin')
         np.argmax(
             pred_complete,
             axis=4).astype('uint8').tofile(save_path + '/gen_complete.bin')
+        np.argmax(
+            complete_gt,
+            axis=4).astype('uint8').tofile(save_path + '/complete_gt.bin')
         """
         if cfg.TYPE_TASK == 'scene':
             vae_tsdf = np.abs(vae_tsdf)
@@ -362,7 +359,7 @@ def evaluate(batch_size, checknum, mode):
         on_depth_seg_pred = np.multiply(
             onehot(np.argmax(pred_voxs, axis=4), vox_shape[3]),
             np.expand_dims(surface, -1))
-        on_complete_gt = onehot(complete_gt, 2)
+        on_complete_gt = complete_gt
         complete_gen = np.argmax(pred_complete, axis=4)
         on_complete_gen = onehot(complete_gen, 2)
 
