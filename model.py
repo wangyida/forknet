@@ -60,7 +60,6 @@ class depvox_gan():
                  generative=True,
                  discriminative=True,
                  is_train=True):
-
         self.batch_size = batch_size
         self.vox_shape = vox_shape
         self.part_shape = part_shape
@@ -323,7 +322,7 @@ class depvox_gan():
         part_gt_ = tf.placeholder(
             tf.float32,
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
-        part_gt = tf.expand_dims(tf.abs(part_gt_), -1)
+        part_gt = tf.expand_dims(part_gt_, -1)
         # tsdf--end
 
         Z = tf.placeholder(tf.float32, [
@@ -622,53 +621,28 @@ class depvox_gan():
             reuse=tf.AUTO_REUSE)
 
         h2 = lrelu(
-            tf.layers.batch_normalization(
-                tf.layers.conv3d(
-                    h1_2,
-                    filters=self.dim_W3,
-                    kernel_size=(self.kernel4[0], self.kernel4[1],
-                                 self.kernel4[2]),
-                    strides=(self.stride[1], self.stride[2], self.stride[3]),
-                    padding='same',
-                    name='encode_x_2',
-                    reuse=tf.AUTO_REUSE),
-                name='encode_x_bn_2',
-                reuse=tf.AUTO_REUSE,
-                training=self.is_train))
+            tf.layers.conv3d(
+                h1_2,
+                filters=self.dim_W3,
+                kernel_size=(self.kernel4[0], self.kernel4[1],
+                             self.kernel4[2]),
+                strides=(self.stride[1], self.stride[2], self.stride[3]),
+                padding='same',
+                name='encode_x_2',
+                reuse=tf.AUTO_REUSE))
 
         h3 = lrelu(
-            tf.layers.batch_normalization(
-                tf.layers.conv3d(
-                    h2,
-                    filters=self.dim_W2,
-                    kernel_size=(self.kernel3[0], self.kernel3[1],
-                                 self.kernel3[2]),
-                    strides=(self.stride[1], self.stride[2], self.stride[3]),
-                    padding='same',
-                    name='encode_x_3',
-                    reuse=tf.AUTO_REUSE),
-                name='encode_x_bn_3',
-                reuse=tf.AUTO_REUSE,
-                training=self.is_train))
+            tf.layers.conv3d(
+                h2,
+                filters=self.dim_W2,
+                kernel_size=(self.kernel3[0], self.kernel3[1],
+                             self.kernel3[2]),
+                strides=(self.stride[1], self.stride[2], self.stride[3]),
+                padding='same',
+                name='encode_x_3',
+                reuse=tf.AUTO_REUSE))
 
         if self.discriminative is True:
-            """
-            h4 = lrelu(
-                tf.layers.batch_normalization(
-                    tf.layers.conv3d(
-                        h3,
-                        filters=self.dim_W1,
-                        kernel_size=(self.kernel2[0], self.kernel2[1],
-                                     self.kernel2[2]),
-                        strides=(self.stride[1], self.stride[2],
-                                 self.stride[3]),
-                        padding='same',
-                        name='encode_x_4',
-                        reuse=tf.AUTO_REUSE),
-                    name='encode_x_bn_4',
-                    reuse=tf.AUTO_REUSE,
-                    training=self.is_train))
-            """
             h4 = lrelu(
                 tf.layers.conv3d(
                     h3,
@@ -694,20 +668,14 @@ class depvox_gan():
             n_code = dims[1] * dims[2] * dims[3] * dims[4]
             flattened = tf.contrib.layers.flatten(h5)
             epsilon = tf.random_normal(tf.stack([tf.shape(h5)[0], n_code]))
-            z_hidden = tf.layers.dense(
-                flattened,
-                n_code,
-                use_bias=True,
-                name='encode_x_hidden',
-                reuse=tf.AUTO_REUSE)
             z_mu = tf.layers.dense(
-                z_hidden,
+                flattened,
                 n_code,
                 use_bias=False,
                 name='encode_x_mu',
                 reuse=tf.AUTO_REUSE)
             z_log_sigma = 0.5 * tf.layers.dense(
-                z_hidden,
+                flattened,
                 n_code,
                 use_bias=False,
                 name='encode_x_log_sigma',
@@ -719,8 +687,7 @@ class depvox_gan():
                     name='encode_x_z')
             elif self.is_train is False:
                 z = z_mu
-            z = tf.reshape(z,
-                           tf.stack([-1, dims[1], dims[2], dims[3], dims[4]]))
+            z = tf.reshape(z, tf.shape(h5))
         elif self.discriminative is False:
             z = h3
             z_mu = tf.contrib.layers.flatten(z)
@@ -736,8 +703,8 @@ class depvox_gan():
             z_hidden = tf.reshape(
                 tf.layers.dense(
                     z_in,
-                    self.dim_z * self.start_vox_size[0] *
-                    self.start_vox_size[1] * self.start_vox_size[2],
+                    self.start_vox_size[0] * self.start_vox_size[1] *
+                    self.start_vox_size[2] * self.dim_z,
                     use_bias=True,
                     name='gen_y_hidden_in',
                     reuse=tf.AUTO_REUSE),
@@ -925,8 +892,8 @@ class depvox_gan():
             z_hidden = tf.reshape(
                 tf.layers.dense(
                     z_in,
-                    self.dim_z * self.start_vox_size[0] *
-                    self.start_vox_size[1] * self.start_vox_size[2],
+                    self.start_vox_size[0] * self.start_vox_size[1] *
+                    self.start_vox_size[2] * self.dim_z,
                     use_bias=True,
                     name='gen_x_hidden_in',
                     reuse=tf.AUTO_REUSE),

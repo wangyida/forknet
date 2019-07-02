@@ -80,7 +80,7 @@ def IoU_AP_calc(on_gt, on_pred, pred_voxs, IoU_class, AP_class, vox_shape):
     return IoU_class, AP_class
 
 
-def evaluate(batch_size, checknum, mode):
+def evaluate(batch_size, checknum, mode, discriminative):
 
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
@@ -92,10 +92,13 @@ def evaluate(batch_size, checknum, mode):
     stride = cfg.NET.STRIDE
     dilations = cfg.NET.DILATIONS
     freq = cfg.CHECK_FREQ
-    discriminative = cfg.NET.DISCRIMINATIVE
 
     save_path = cfg.DIR.EVAL_PATH
-    chckpt_path = cfg.DIR.CHECK_PT_PATH + str(checknum)
+    if discriminative is True:
+        model_path = cfg.DIR.CHECK_POINT_PATH + '-d'
+    else:
+        model_path = cfg.DIR.CHECK_POINT_PATH
+    chckpt_path = model_path + '/checkpoint' + str(checknum)
 
     depvox_gan_model = depvox_gan(
         batch_size=batch_size,
@@ -132,11 +135,13 @@ def evaluate(batch_size, checknum, mode):
 
         # Evaluation masks
         if cfg.TYPE_TASK == 'scene':
+            """
             space_effective = np.where(voxel_test > -1, 1, 0) * np.where(
                 part_test > -1, 1, 0)
             voxel_test *= space_effective
             part_test *= space_effective
             # occluded region
+            """
             part_test[part_test < -1] = 0
             voxel_test[voxel_test < 0] = 0
 
@@ -190,52 +195,22 @@ def evaluate(batch_size, checknum, mode):
         # For visualization
         voxel_test.astype('uint8').tofile(save_path + '/scene.bin')
 
-        observe = np.array(part_test)
-        observe[observe == -1] = 3
-        observe.astype('uint8').tofile(save_path + '/observe.bin')
-
         surface = np.array(part_test)
         if cfg.TYPE_TASK == 'scene':
             surface = np.abs(surface)
             surface *= 10
-            surface -= 4
+            surface -= 6
             surface[surface < 0] = 0
-            """
-            surface[surface < -1] = 0
-            surface[surface > 1] = 0
-            surface[np.abs(surface) > 0.9] = 1
-            surface[abs(surface) < 1] = 0
-            """
         elif cfg.TYPE_TASK == 'object':
             surface = np.clip(surface, 0, 1)
         surface.astype('uint8').tofile(save_path + '/surface.bin')
 
-        depth_seg_gt = np.multiply(voxel_test, np.clip(surface - 4, 0, 1))
+        depth_seg_gt = np.multiply(voxel_test, np.clip(surface, 0, 1))
         if cfg.TYPE_TASK == 'scene':
             depth_seg_gt[depth_seg_gt < 0] = 0
         depth_seg_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
-        """
-        complete_gt = np.clip(voxel_test, 0, 1)
-        complete_gt.astype('uint8').tofile(save_path + '/complete_gt.bin')
-        """
 
         # decoded
-        # check for some bad categories
-        if cfg.TYPE_TASK == 'scene':
-            """
-            pred_voxs[:,:,:,:,4] -= 0.7
-            pred_voxs[[0,6,45,71,139,143,193],:,:,:,4] = 0
-            addtioanl_vox = np.array(surface)
-            addtioanl_vox *= pred_voxs[:,:,:,:,0]
-            addtioanl_vox *= onehot(voxel_test, vox_shape[3])[:,:,:,:,0]
-            """
-            # pred_voxs[[3,35,46],:,:,:,10] += addtioanl_vox[[3,35,46],:,:,:]
-            # pred_complete[:,:,:,:,1][np.where(addtioanl_vox)] = 1
-            """
-            correct_vis = np.array(pred_voxs)
-            correct_vis -= onehot(np.argmax(correct_vis, axis=4), vox_shape[3])*correct_vis 
-            pred_voxs[np.argmax(correct_vis, axis=4) == 3] = 1
-            """
         np.argmax(
             pred_voxs,
             axis=4).astype('uint8').tofile(save_path + '/gen_vox.bin')
@@ -256,17 +231,6 @@ def evaluate(batch_size, checknum, mode):
         np.argmax(
             complete_gt,
             axis=4).astype('uint8').tofile(save_path + '/complete_gt.bin')
-        """
-        if cfg.TYPE_TASK == 'scene':
-            vae_tsdf = np.abs(vae_tsdf)
-            vae_tsdf[vae_tsdf < 0.2] = 0
-            vae_tsdf[vae_tsdf >= 0.2] = 1
-        elif cfg.TYPE_TASK == 'object':
-            vae_tsdf[vae_tsdf <= 0.2] = 0
-            vae_tsdf[vae_tsdf > 0.2] = 1
-            vae_tsdf = np.squeeze(vae_tsdf)
-        vae_tsdf.astype('uint8').tofile(save_path + '/vae_tsdf.bin')
-        """
 
         np.save(save_path + '/decode_z.npy', part_enc_Z)
 
@@ -279,10 +243,6 @@ def evaluate(batch_size, checknum, mode):
                     Z_np_sample = np.random.normal(
                         size=(1, start_vox_size[0], start_vox_size[1],
                               start_vox_size[2], dim_z)).astype(np.float32)
-                    """
-                    Z_np_sample += (part_enc_Z[j * batch_size + i] +
-                                    part_enc_Z[j * batch_size + i + 2]) / 2
-                    """
                     if i == 0:
                         Z_var_np_sample = Z_np_sample
                     else:
@@ -361,7 +321,7 @@ def evaluate(batch_size, checknum, mode):
         on_depth_seg_gt = onehot(depth_seg_gt, vox_shape[3])
         on_depth_seg_pred = np.multiply(
             onehot(np.argmax(pred_voxs, axis=4), vox_shape[3]),
-            np.expand_dims(surface, -1))
+            np.expand_dims(np.clip(surface, 0, 1), -1))
         on_complete_gt = complete_gt
         complete_gen = np.argmax(pred_complete, axis=4)
         on_complete_gen = onehot(complete_gen, 2)

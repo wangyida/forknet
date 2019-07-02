@@ -17,12 +17,11 @@ __C.SWITCHING_ITE = 100001
 
 # Network
 __C.NET = edict()
-__C.NET.DIM_Z = 16
+__C.NET.DIM_Z = 32
 # The last dimension of NET.DIM matters much for GPU consumption for loss function
 __C.NET.KERNEL = [[4, 4, 4, 4, 4], [4, 4, 4, 4, 4], [4, 4, 4, 4, 4]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
-__C.NET.DISCRIMINATIVE = False
 
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
@@ -47,59 +46,41 @@ if __C.TYPE_TASK is 'scene':
     if __C.TYPE_EVAL == 'real':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-r'
         if __C.TYPE_DATA == 'test':
-            __C.DIR.ROOT_PATH = path_ssd + 'NYU_Yida/test/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/test/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = path_ssd + 'NYU_Yida/test/depth_tsdf_camera_npy/%s'
+            __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/test/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_ssd + 'NYU_Yida/test/depth_tsdf_camera_npy/'
         elif __C.TYPE_DATA == 'train':
-            __C.DIR.ROOT_PATH = path_ssd + 'NYU_Yida/train/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/train/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = path_ssd + 'NYU_Yida/train/depth_tsdf_camera_npy/%s'
+            __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/train/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_ssd + 'NYU_Yida/train/depth_tsdf_camera_npy/'
     elif __C.TYPE_EVAL == 'synthetic':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-s'
         if __C.TYPE_DATA == 'test':
-            __C.DIR.ROOT_PATH = path_ssd + 'SUNCG_Yida/test/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = path_ssd + 'SUNCG_Yida/test/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = path_ssd + 'SUNCG_Yida/test/depth_tsdf_camera_npy/%s'
+            __C.DIR.VOXEL_PATH = path_ssd + 'SUNCG_Yida/test/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_ssd + 'SUNCG_Yida/test/depth_tsdf_camera_npy/'
         elif __C.TYPE_DATA == 'train':
-            __C.DIR.ROOT_PATH = path_ssd + 'SUNCG_Yida/train/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = path_ssd + 'SUNCG_Yida/train/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = path_ssd + 'SUNCG_Yida/train/depth_tsdf_camera_npy/%s'
-            """
-            __C.DIR.ROOT_PATH = './depth-tsdf/data/shuncheng/npy'
-            __C.DIR.VOXEL_PATH = './depth-tsdf/data/shuncheng/npy/%s'
-            __C.DIR.TSDF_PATH = './depth-tsdf/data/shuncheng/npy/%s'
-            """
+            __C.DIR.VOXEL_PATH = path_ssd + 'SUNCG_Yida/train/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_ssd + 'SUNCG_Yida/train/depth_tsdf_camera_npy/'
 elif __C.TYPE_TASK is 'object':
     if __C.TYPE_EVAL == 'real':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-object-r'
         if __C.TYPE_DATA == 'test':
-            __C.DIR.ROOT_PATH = path_hdd + 'RecGAN_Yida/test/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = path_hdd + 'RecGAN_Yida/test/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = path_hdd + 'RecGAN_Yida/test/depth_tsdf_npy/%s'
+            __C.DIR.VOXEL_PATH = path_hdd + 'RecGAN_Yida/test/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_hdd + 'RecGAN_Yida/test/depth_tsdf_npy/'
         elif __C.TYPE_DATA == 'train':
-            __C.DIR.ROOT_PATH = path_hdd + 'RecGAN_Yida/train/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = path_hdd + 'RecGAN_Yida/train/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = path_hdd + 'RecGAN_Yida/train/depth_tsdf_npy/%s'
+            __C.DIR.VOXEL_PATH = path_hdd + 'RecGAN_Yida/train/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_hdd + 'RecGAN_Yida/train/depth_tsdf_npy/'
     elif __C.TYPE_EVAL == 'synthetic':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-object-s'
         if __C.TYPE_DATA == 'test':
-            __C.DIR.ROOT_PATH = path_hdd + 'Shapenet_Yida/test/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = path_hdd + 'Shapenet_Yida/test/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = path_hdd + 'Shapenet_Yida/test/depth_tsdf_npy/%s'
+            __C.DIR.VOXEL_PATH = path_hdd + 'Shapenet_Yida/test/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_hdd + 'Shapenet_Yida/test/depth_tsdf_npy/'
         elif __C.TYPE_DATA == 'train':
-            __C.DIR.ROOT_PATH = path_hdd + 'Shapenet_Yida/train/voxel_semantic_npy'
-            __C.DIR.VOXEL_PATH = path_hdd + 'Shapenet_Yida/train/voxel_semantic_npy/%s'
-            __C.DIR.TSDF_PATH = path_hdd + 'Shapenet_Yida/train/depth_tsdf_npy/%s'
+            __C.DIR.VOXEL_PATH = path_hdd + 'Shapenet_Yida/train/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_hdd + 'Shapenet_Yida/train/depth_tsdf_npy/'
     elif __C.TYPE_EVAL == 'register':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-object-s'
-        __C.DIR.ROOT_PATH = './data/object_registration/voxel_semantic_npy'
-        __C.DIR.VOXEL_PATH = './data/object_registration/voxel_semantic_npy/%s'
-        __C.DIR.TSDF_PATH = './data/object_registration/depth_tsdf_npy/%s'
+        __C.DIR.VOXEL_PATH = './data/object_registration/voxel_semantic_npy/'
+        __C.DIR.TSDF_PATH = './data/object_registration/depth_tsdf_npy/'
 
-if __C.NET.DISCRIMINATIVE is True:
-    __C.DIR.CHECK_POINT_PATH = __C.DIR.CHECK_POINT_PATH + '-d'
-
-__C.DIR.CHECK_PT_PATH = __C.DIR.CHECK_POINT_PATH + '/checkpoint'
 __C.DIR.TRAIN_OBJ_PATH = './train_vox'
 __C.DIR.EVAL_PATH = './eval'
 __C.DIR.LOG_PATH = './log'
