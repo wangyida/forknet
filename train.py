@@ -180,6 +180,21 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             """
             if discriminative:
+<<<<<<< HEAD
+=======
+                # for s in range(2):
+                """
+                _, gen_loss_val = sess.run(
+                    [train_op_gen, gen_loss_tf],
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf,
+                        lr_VAE: lr
+                    },
+                )
+                """
+>>>>>>> eaaa94647c5ae4c5cd6ad7da6e6b6f24618d8ca1
                 _, _, gen_loss_val = sess.run(
                     [train_op_encode, train_op_gen, gen_loss_tf],
                     feed_dict={
