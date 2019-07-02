@@ -205,11 +205,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
             surface = np.clip(surface, 0, 1)
         surface.astype('uint8').tofile(save_path + '/surface.bin')
 
-<<<<<<< HEAD
         depth_seg_gt = np.multiply(voxel_test, np.clip(surface, 0, 1))
-=======
-        depth_seg_gt = np.multiply(voxel_test, np.clip(surface - 5, 0, 1))
->>>>>>> eaaa94647c5ae4c5cd6ad7da6e6b6f24618d8ca1
         if cfg.TYPE_TASK == 'scene':
             depth_seg_gt[depth_seg_gt < 0] = 0
         depth_seg_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
@@ -325,11 +321,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
         on_depth_seg_gt = onehot(depth_seg_gt, vox_shape[3])
         on_depth_seg_pred = np.multiply(
             onehot(np.argmax(pred_voxs, axis=4), vox_shape[3]),
-<<<<<<< HEAD
             np.expand_dims(np.clip(surface, 0, 1), -1))
-=======
-            np.expand_dims(np.clip(surface - 5, 0, 1), -1))
->>>>>>> eaaa94647c5ae4c5cd6ad7da6e6b6f24618d8ca1
         on_complete_gt = complete_gt
         complete_gen = np.argmax(pred_complete, axis=4)
         on_complete_gen = onehot(complete_gen, 2)
