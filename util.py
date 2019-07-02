@@ -45,7 +45,7 @@ class DataProcess():
         for batch_id, db_ind in enumerate(db_inds):
             sceneId, model_id = self.data_paths[db_ind]
 
-            tsdf_fn = cfg.DIR.TSDF_PATH % (model_id)
+            tsdf_fn = cfg.DIR.TSDF_PATH + model_id
             tsdf_data = np.load(tsdf_fn)
 
             batch_tsdf[batch_id, :, :, :] = tsdf_data
@@ -59,7 +59,7 @@ class DataProcess():
         for batch_id, db_ind in enumerate(db_inds):
             sceneId, model_id = self.data_paths[db_ind]
 
-            voxel_fn = cfg.DIR.VOXEL_PATH % (model_id)
+            voxel_fn = cfg.DIR.VOXEL_PATH + model_id
             voxel_data = np.load(voxel_fn)
 
             batch_voxel[batch_id, :, :, :] = voxel_data
@@ -73,7 +73,7 @@ def scene_model_id_pair(dataset_portion=[]):
 
     scene_name_pair = []  # full path of the objs files
 
-    model_path = cfg.DIR.ROOT_PATH
+    model_path = cfg.DIR.TSDF_PATH
     models = os.listdir(model_path)
 
     scene_name_pair.extend([(model_path, model_id) for model_id in models])
@@ -91,7 +91,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
     scene_name_pair = []  # full path of the objs files
 
-    model_path = cfg.DIR.ROOT_PATH
+    model_path = cfg.DIR.TSDF_PATH
     models = os.listdir(model_path)
 
     scene_name_pair.extend([(model_path, model_id) for model_id in models])
@@ -126,12 +126,12 @@ def scene_model_id_pair_test(dataset_portion=[]):
             img = mpimg.imread(depth_fn)
             imsave('vis_suncg/vis_depth/' + str(i) + '.png', img)
 
-        voxel_fn = cfg.DIR.VOXEL_PATH % (model_id)
+        voxel_fn = cfg.DIR.VOXEL_PATH + model_id
         voxel_data = np.load(voxel_fn)
 
         batch_voxel[i, :, :, :] = voxel_data
 
-        tsdf_fn = cfg.DIR.TSDF_PATH % (model_id)
+        tsdf_fn = cfg.DIR.TSDF_PATH + model_id
         tsdf_data = np.load(tsdf_fn)
 
         batch_tsdf[i, :, :, :] = tsdf_data

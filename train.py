@@ -20,7 +20,7 @@ def learning_rate(rate, step):
 
 
 def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
-          check_num):
+          check_num, discriminative):
     beta_G = cfg.TRAIN.ADAM_BETA_G
     beta_D = cfg.TRAIN.ADAM_BETA_D
     n_vox = cfg.CONST.N_VOX
@@ -34,7 +34,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     dilations = cfg.NET.DILATIONS
     freq = cfg.CHECK_FREQ
     record_vox_num = cfg.RECORD_VOX_NUM
-    discriminative = cfg.NET.DISCRIMINATIVE
 
     depvox_gan_model = depvox_gan(
         batch_size=batch_size,
@@ -86,7 +85,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     # variational optimiser
     train_op_encode = tf.train.AdamOptimizer(
         lr_VAE, beta1=beta_D, beta2=0.9).minimize(
-            encode_loss_tf, var_list=encode_vars + gen_com_vars + gen_sem_vars)
+            encode_loss_tf, var_list=encode_vars)
 
     # refine optimiser
     train_op_refine = tf.train.AdamOptimizer(
@@ -110,8 +109,13 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
     tf.initialize_all_variables().run(session=sess)
 
+    if discriminative is True:
+        model_path = cfg.DIR.CHECK_POINT_PATH + '-d'
+    else:
+        model_path = cfg.DIR.CHECK_POINT_PATH
+
     if mid_flag:
-        chckpt_path = cfg.DIR.CHECK_PT_PATH + str(check_num)
+        chckpt_path = model_path + '/checkpoint' + str(check_num)
         saver.restore(sess, chckpt_path)
         Z_var_np_sample = np.load(cfg.DIR.TRAIN_OBJ_PATH +
                                   '/sample_z.npy').astype(np.float32)
@@ -149,8 +153,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 batch_voxel *= space_effective
                 batch_tsdf *= space_effective
                 # occluded region
-                batch_tsdf[batch_tsdf < -1] = 0
                 """
+                batch_tsdf[batch_tsdf < -1] = 0
                 batch_voxel[batch_voxel < 0] = 0
 
             lr = learning_rate(cfg.LEARNING_RATE_V, ite)
@@ -181,6 +185,17 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             if discriminative:
                 # for s in range(2):
+                """
+                _, gen_loss_val = sess.run(
+                    [train_op_gen, gen_loss_tf],
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf,
+                        lr_VAE: lr
+                    },
+                )
+                """
                 _, _, gen_loss_val = sess.run(
                     [train_op_encode, train_op_gen, gen_loss_tf],
                     feed_dict={
@@ -242,7 +257,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         '.npy', record_vox)
                 save_path = saver.save(
                     sess,
-                    cfg.DIR.CHECK_PT_PATH + str(ite / freq),
+                    model_path + '/checkpoint' + str(ite / freq),
                     global_step=None)
 
             ite += 1

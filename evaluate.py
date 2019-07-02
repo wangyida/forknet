@@ -80,7 +80,7 @@ def IoU_AP_calc(on_gt, on_pred, pred_voxs, IoU_class, AP_class, vox_shape):
     return IoU_class, AP_class
 
 
-def evaluate(batch_size, checknum, mode):
+def evaluate(batch_size, checknum, mode, discriminative):
 
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
@@ -92,10 +92,13 @@ def evaluate(batch_size, checknum, mode):
     stride = cfg.NET.STRIDE
     dilations = cfg.NET.DILATIONS
     freq = cfg.CHECK_FREQ
-    discriminative = cfg.NET.DISCRIMINATIVE
 
     save_path = cfg.DIR.EVAL_PATH
-    chckpt_path = cfg.DIR.CHECK_PT_PATH + str(checknum)
+    if discriminative is True:
+        model_path = cfg.DIR.CHECK_POINT_PATH + '-d'
+    else:
+        model_path = cfg.DIR.CHECK_POINT_PATH
+    chckpt_path = model_path + '/checkpoint' + str(checknum)
 
     depvox_gan_model = depvox_gan(
         batch_size=batch_size,
@@ -132,11 +135,13 @@ def evaluate(batch_size, checknum, mode):
 
         # Evaluation masks
         if cfg.TYPE_TASK == 'scene':
+            """
             space_effective = np.where(voxel_test > -1, 1, 0) * np.where(
                 part_test > -1, 1, 0)
             voxel_test *= space_effective
             part_test *= space_effective
             # occluded region
+            """
             part_test[part_test < -1] = 0
             voxel_test[voxel_test < 0] = 0
 
@@ -200,24 +205,14 @@ def evaluate(batch_size, checknum, mode):
             surface *= 10
             surface -= 4
             surface[surface < 0] = 0
-            """
-            surface[surface < -1] = 0
-            surface[surface > 1] = 0
-            surface[np.abs(surface) > 0.9] = 1
-            surface[abs(surface) < 1] = 0
-            """
         elif cfg.TYPE_TASK == 'object':
             surface = np.clip(surface, 0, 1)
         surface.astype('uint8').tofile(save_path + '/surface.bin')
 
-        depth_seg_gt = np.multiply(voxel_test, np.clip(surface - 4, 0, 1))
+        depth_seg_gt = np.multiply(voxel_test, np.clip(surface - 5, 0, 1))
         if cfg.TYPE_TASK == 'scene':
             depth_seg_gt[depth_seg_gt < 0] = 0
         depth_seg_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
-        """
-        complete_gt = np.clip(voxel_test, 0, 1)
-        complete_gt.astype('uint8').tofile(save_path + '/complete_gt.bin')
-        """
 
         # decoded
         # check for some bad categories
@@ -361,7 +356,7 @@ def evaluate(batch_size, checknum, mode):
         on_depth_seg_gt = onehot(depth_seg_gt, vox_shape[3])
         on_depth_seg_pred = np.multiply(
             onehot(np.argmax(pred_voxs, axis=4), vox_shape[3]),
-            np.expand_dims(surface, -1))
+            np.expand_dims(np.clip(surface - 5, 0, 1), -1))
         on_complete_gt = complete_gt
         complete_gen = np.argmax(pred_complete, axis=4)
         on_complete_gen = onehot(complete_gen, 2)
@@ -381,7 +376,8 @@ def evaluate(batch_size, checknum, mode):
         AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(
             on_depth_seg_gt, on_depth_seg_pred,
-            np.multiply(pred_voxs, np.expand_dims(np.clip(surface, 0, 1), -1)),
+            np.multiply(pred_voxs,
+                        np.expand_dims(np.clip(surface - 5, 0, 1), -1)),
             IoU_class, AP_class, vox_shape)
         IoU_all = np.expand_dims(IoU_class, axis=1)
         AP_all = np.expand_dims(AP_class, axis=1)

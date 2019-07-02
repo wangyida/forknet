@@ -30,6 +30,8 @@ flags.DEFINE_integer(
 flags.DEFINE_string(
     "mode", 'train',
     "Execute mode: train/evaluate_recons/evaluate_interpolate/evaluate_noise")
+flags.DEFINE_boolean("discriminative", False,
+                     "Discriminative or not (True or False)")
 flags.DEFINE_integer(
     "conf_epoch", 10000,
     "The number of confirmation epoch to evaluate interpolate, reconstruction etc [100]"
@@ -50,7 +52,8 @@ def main():
 
     if FLAGS.mode == 'train':
         train(FLAGS.epoch, FLAGS.learning_rate_G, FLAGS.learning_rate_D,
-              FLAGS.batch_size, FLAGS.middle_start, FLAGS.ini_epoch)
+              FLAGS.batch_size, FLAGS.middle_start, FLAGS.ini_epoch,
+              FLAGS.discriminative)
     elif FLAGS.mode == 'evaluate_recons' or 'evaluate_interpolate' or 'evaluate_noise':
         from evaluate import evaluate
         if FLAGS.mode == 'evaluate_recons':
@@ -59,7 +62,8 @@ def main():
             mode = 'interpolate'
         else:
             mode = 'noise'
-        evaluate(FLAGS.batch_size_test, FLAGS.conf_epoch, mode)
+        evaluate(FLAGS.batch_size_test, FLAGS.conf_epoch, mode,
+                 FLAGS.discriminative)
 
 
 if __name__ == '__main__':
