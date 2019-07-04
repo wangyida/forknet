@@ -193,7 +193,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
         print("forwarded")
 
         # For visualization
-        voxel_test.astype('uint8').tofile(save_path + '/scene.bin')
+        bin_file = np.uint8(voxel_test)
+        bin_file.tofile(save_path + '/scene.bin')
 
         surface = np.array(part_test)
         if cfg.TYPE_TASK == 'scene':

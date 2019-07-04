@@ -97,11 +97,11 @@ def bin2array(file_bin, dir_tar_voxel):
 
         vox_max = block_reduce(vox_max, block_size=(3, 3, 3), func=np.max)
 
+        """
         # Down sampling according to common label
         vox_com = np.reshape(checkVox, (240, 144, 240))
 
         # mapping
-        """
         vox_com[vox_com == 255] = -1
         vox_com[vox_com == 0] = 0
         vox_com[vox_com == 1] = 1
@@ -147,16 +147,6 @@ def bin2array(file_bin, dir_tar_voxel):
         # Merge 2 results
         locations = np.where((vox_max > 0) & (vox_com > 0))
         vox_max[locations] = vox_com[locations]
-        """
-
-        # Correct for surface observed from +z axis
-        """
-        vox_temp = vox_max
-        vox_max[:,:,1:] = vox_temp[:,:,0:-1]
-        vox_max[vox_temp == 0] = 0
-        vox_max[vox_temp == -1] = -1 
-        locations = np.where((vox_max == 0) & (vox_temp != 0))
-        vox_max[locations] = vox_temp[locations]
         """
 
         # Save
@@ -234,6 +224,7 @@ if __name__ == "__main__":
 
     # save voxel as npy files
     pbar = ProgressBar()
+    """
     num_cores = multiprocessing.cpu_count()
     Parallel(n_jobs=num_cores)(delayed(bin2array)(file_bin, dir_tar_voxel)
                                for file_bin in pbar(files_bin))
@@ -241,4 +232,3 @@ if __name__ == "__main__":
     """
     for file_bin in pbar(files_bin):
         bin2array(file_bin=file_bin, dir_tar_voxel=dir_tar_voxel)
-    """

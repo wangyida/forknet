@@ -146,7 +146,7 @@ def plot_cube(cube, name='voxel', angle=20, IMG_DIM=80, num_class=12):
         cube[cube == 255] = 0
         facecolors = cm.Paired((np.round(cube) / 13))
         facecolors[:, :, :, -1] = 0.2 * np.tanh(
-            cube * 1000) + 0.8 * (cube > 5) + 0.2 * (cube == 2)
+            cube * 1000) + 0.7 * (cube > 5) + 0.1 * (cube == 2)
     elif num_class == 4:
         facecolors = cm.Dark2((np.round(cube) / 9))
         facecolors[:, :, :, -1] = 0.4 * np.tanh(cube * 1000)
