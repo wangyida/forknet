@@ -17,7 +17,7 @@ __C.SWITCHING_ITE = 100001
 
 # Network
 __C.NET = edict()
-__C.NET.DIM_Z = 32
+__C.NET.DIM_Z = 256
 # The last dimension of NET.DIM matters much for GPU consumption for loss function
 __C.NET.KERNEL = [[4, 4, 4, 4, 4], [4, 4, 4, 4, 4], [4, 4, 4, 4, 4]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
@@ -25,7 +25,7 @@ __C.NET.DILATIONS = [1, 1, 1, 1, 1]
 
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'test'
+__C.TYPE_DATA = 'train'
 if __C.TYPE_TASK is 'scene':
     __C.CONST.N_VOX = [80, 48, 80]
     __C.NET.START_VOX = [5, 3, 5]

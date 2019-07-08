@@ -82,11 +82,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             recons_sem_loss_tf, var_list=encode_vars + gen_sem_vars)
 
-    # variational optimiser
-    train_op_encode = tf.train.AdamOptimizer(
-        lr_VAE, beta1=beta_D, beta2=0.9).minimize(
-            encode_loss_tf, var_list=encode_vars)
-
     # refine optimiser
     train_op_refine = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
@@ -102,7 +97,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 var_list=discrim_vars,
                 global_step=global_step)
 
-    if discriminative is True:
         Z_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample = depvox_gan_model.samples_generator(
             visual_size=batch_size)
 
@@ -159,15 +153,17 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
-            _, _, _ = sess.run(
-                [train_op_pred_com, train_op_pred_sem, train_op_refine],
-                feed_dict={
-                    Z_tf: batch_z_var,
-                    full_tf: batch_voxel,
-                    part_tf: batch_tsdf,
-                    lr_VAE: lr
-                },
-            )
+            is_supervised = True
+            if is_supervised is True:
+                _, _, _ = sess.run(
+                    [train_op_pred_com, train_op_pred_sem, train_op_refine],
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf,
+                        lr_VAE: lr
+                    },
+                )
             gen_com_loss_val, gen_sem_loss_val, z_part_enc_val = sess.run(
                 [recons_com_loss_tf, recons_sem_loss_tf, z_part_enc_tf],
                 feed_dict={
@@ -178,19 +174,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 },
             )
 
-            """
             if discriminative:
                 _, gen_loss_val = sess.run(
                     [train_op_gen, gen_loss_tf],
-                    feed_dict={
-                        Z_tf: batch_z_var,
-                        full_tf: batch_voxel,
-                        part_tf: batch_tsdf,
-                        lr_VAE: lr
-                    },
-                )
-                _, _, gen_loss_val = sess.run(
-                    [train_op_encode, train_op_gen, gen_loss_tf],
                     feed_dict={
                         Z_tf: batch_z_var,
                         full_tf: batch_voxel,
@@ -206,7 +192,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         part_tf: batch_tsdf,
                     },
                 )
-                # if discrim_loss_val > 0.01:
                 _ = sess.run(
                     train_op_discrim,
                     feed_dict={
@@ -215,7 +200,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         part_tf: batch_tsdf,
                     },
                 )
-            """
 
             print(colored('gan', 'red'))
             print 'reconstruct-com loss:', gen_com_loss_val if (
