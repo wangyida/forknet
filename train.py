@@ -26,7 +26,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[-1]]
-    part_shape = [n_vox[0], n_vox[1], n_vox[2], 2]
+    complete_shape = [n_vox[0], n_vox[1], n_vox[2], 2]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -38,7 +38,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     depvox_gan_model = depvox_gan(
         batch_size=batch_size,
         vox_shape=vox_shape,
-        part_shape=part_shape,
+        complete_shape=complete_shape,
         dim_z=dim_z,
         dim=dim,
         start_vox_size=start_vox_size,

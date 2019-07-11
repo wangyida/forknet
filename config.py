@@ -25,7 +25,7 @@ __C.NET.DILATIONS = [1, 1, 1, 1, 1]
 
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'train'
+__C.TYPE_DATA = 'test'
 if __C.TYPE_TASK is 'scene':
     __C.CONST.N_VOX = [80, 48, 80]
     __C.NET.START_VOX = [5, 3, 5]
