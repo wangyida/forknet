@@ -63,7 +63,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
     encode_vars = filter(lambda x: x.name.startswith('enc'),
                          tf.trainable_variables())
-    discrim_vars = filter(lambda x: x.name.startswith('discrim'),
+    dis_sdf_vars = filter(lambda x: x.name.startswith('discrim_x'),
+                          tf.trainable_variables())
+    dis_sem_vars = filter(lambda x: x.name.startswith('discrim_y'),
                           tf.trainable_variables())
     gen_com_vars = filter(lambda x: x.name.startswith('gen_x'),
                           tf.trainable_variables())
@@ -90,13 +92,21 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             refine_loss_tf, var_list=refine_vars)
 
     if discriminative is True:
-        train_op_gen = tf.train.AdamOptimizer(
+        train_op_gen_sdf = tf.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-                gen_loss_tf, var_list=gen_sdf_vars + gen_sem_vars)
-        train_op_discrim = tf.train.AdamOptimizer(
+                gen_loss_tf, var_list=gen_sdf_vars)
+        train_op_gen_sem = tf.train.AdamOptimizer(
+            learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
+                gen_loss_tf, var_list=gen_com_vars + gen_sem_vars)
+        train_op_dis_sdf = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf,
-                var_list=discrim_vars,
+                var_list=dis_sdf_vars,
+                global_step=global_step)
+        train_op_dis_sem = tf.train.AdamOptimizer(
+            learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
+                discrim_loss_tf,
+                var_list=dis_sem_vars,
                 global_step=global_step)
 
         Z_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_part_tf, scores_full_tf = depvox_gan_model.samples_generator(
@@ -177,8 +187,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             )
 
             if discriminative:
-                _ = sess.run(
-                    train_op_gen,
+                _, _ = sess.run(
+                    [train_op_gen_sdf, train_op_gen_sem],
                     feed_dict={
                         Z_tf: batch_z_var,
                         full_tf: batch_voxel,
@@ -194,9 +204,18 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         part_tf: batch_tsdf,
                     },
                 )
-                if np.sum(scores_discrim) > 5.5:
+                if (scores_discrim[4] + scores_discrim[5]) > 1.9 or (scores_discrim[3]) < 0.9:
                     _ = sess.run(
-                        train_op_discrim,
+                        train_op_dis_sdf,
+                        feed_dict={
+                            Z_tf: batch_z_var,
+                            full_tf: batch_voxel,
+                            part_tf: batch_tsdf,
+                        },
+                    )
+                if (scores_discrim[1] + scores_discrim[2]) > 1.9 or (scores_discrim[0]) < 0.9:
+                    _ = sess.run(
+                        train_op_dis_sem,
                         feed_dict={
                             Z_tf: batch_z_var,
                             full_tf: batch_voxel,
