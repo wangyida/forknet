@@ -327,22 +327,23 @@ class depvox_gan():
 
     def build_model(self):
 
+        part_gt_ = tf.placeholder(
+            tf.float32,
+            [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
+        part_gt = tf.expand_dims(part_gt_, -1)
+
         full_gt_ = tf.placeholder(
             tf.int32,
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
         full_gt = tf.one_hot(full_gt_, self.n_class)
         full_gt = tf.cast(full_gt, tf.float32)
 
-        complete_gt = tf.one_hot(
-            tf.clip_by_value(full_gt_, clip_value_min=0, clip_value_max=1), 2)
+        complete_gt_ = tf.clip_by_value(
+            full_gt_ + tf.dtypes.cast(tf.math.round(part_gt_), tf.int32),
+            clip_value_min=0,
+            clip_value_max=1)
+        complete_gt = tf.one_hot(complete_gt_, 2)
         complete_gt = tf.cast(complete_gt, tf.float32)
-
-        # tsdf--start
-        part_gt_ = tf.placeholder(
-            tf.float32,
-            [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
-        part_gt = tf.expand_dims(part_gt_, -1)
-        # tsdf--end
 
         Z = tf.placeholder(tf.float32, [
             None, self.start_vox_size[0], self.start_vox_size[1],
@@ -497,6 +498,15 @@ class depvox_gan():
             h_part_gen = self.discriminate_part(part_gen)
             h_part_dec = self.discriminate_part(part_dec)
 
+            scores = tf.squeeze([
+                tf.reduce_mean(tf.sigmoid(h_full_gt)),
+                tf.reduce_mean(tf.sigmoid(h_full_gen)),
+                tf.reduce_mean(tf.sigmoid(h_full_dec)),
+                tf.reduce_mean(tf.sigmoid(h_part_gt)),
+                tf.reduce_mean(tf.sigmoid(h_part_gen)),
+                tf.reduce_mean(tf.sigmoid(h_part_dec))
+            ])
+
             # Standard_GAN_Loss
             discrim_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
@@ -537,6 +547,7 @@ class depvox_gan():
                             labels=tf.ones_like(h_part_dec)))
 
         else:
+            scores = tf.zeros([6])
             complete_gen = complete_dec
             full_gen = full_dec
             gen_loss = tf.zeros([1])
@@ -561,7 +572,7 @@ class depvox_gan():
 
         return Z, Z_encode, full_gt_, full_gen, full_dec, full_dec_ref,\
         gen_loss, discrim_loss, recons_com_loss, recons_sem_loss, variation_loss, refine_loss, summary_op,\
-        part_gt_, complete_gt, complete_gen, complete_dec
+        part_gt_, complete_gt, complete_gen, complete_dec, scores
 
     def encoder(self, vox):
 
@@ -1169,4 +1180,6 @@ class depvox_gan():
         part = self.generate_part(Z)
         comp, h3_t, h4_t, h5_t = self.generate_comp(Z)
         full, full_ref = self.generate_full(Z, h3_t, h4_t, h5_t)
-        return Z, full, full_ref, part
+        scores_part = tf.squeeze(tf.math.sigmoid(self.discriminate_part(part)))
+        scores_full = tf.squeeze(tf.math.sigmoid(self.discriminate_full(full)))
+        return Z, full, full_ref, part, scores_part, scores_full

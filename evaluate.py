@@ -116,9 +116,9 @@ def evaluate(batch_size, checknum, mode, discriminative):
 
     Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_dec_tf, full_dec_ref_tf,\
     gen_loss_tf, discrim_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf = depvox_gan_model.build_model()
+    part_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, scores_tf = depvox_gan_model.build_model()
     if discriminative is True:
-        Z_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample = depvox_gan_model.samples_generator(
+        Z_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_part_tf, scores_full_tf = depvox_gan_model.samples_generator(
             visual_size=batch_size)
     sess = tf.InteractiveSession()
     saver = tf.train.Saver()
@@ -244,8 +244,11 @@ def evaluate(batch_size, checknum, mode, discriminative):
                     size=(batch_size, start_vox_size[0], start_vox_size[1],
                           start_vox_size[2], dim_z)).astype(np.float32)
 
-                z_voxs_rand, z_voxs_ref_rand, z_part_rand = sess.run(
-                    [full_tf_sample, full_ref_tf_sample, part_tf_sample],
+                z_voxs_rand, z_voxs_ref_rand, z_part_rand, scores_part, scores_full = sess.run(
+                    [
+                        full_tf_sample, full_ref_tf_sample, part_tf_sample,
+                        scores_part_tf, scores_full_tf
+                    ],
                     feed_dict={Z_tf_sample: Z_var_np_sample})
                 if j == 0:
                     z_part_rand_all = z_part_rand
@@ -258,6 +261,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                         [z_voxs_rand_all, z_voxs_rand], axis=0)
                     z_voxs_ref_rand_all = np.concatenate(
                         [z_voxs_ref_rand_all, z_voxs_ref_rand], axis=0)
+                print(scores_part, scores_full)
             Z_var_np_sample.astype('float32').tofile(save_path +
                                                      '/sample_z.bin')
             np.argmax(

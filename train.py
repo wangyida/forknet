@@ -48,9 +48,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         discriminative=discriminative,
         is_train=True)
 
-    Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_gen_dec_tf, full_gen_dec_ref_tf,\
+    Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_dec_tf, full_dec_ref_tf,\
     gen_loss_tf, discrim_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, complete_gt_tf, complete_gen_tf, complete_gen_decode_tf = depvox_gan_model.build_model()
+    part_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, scores_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -65,9 +65,11 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                          tf.trainable_variables())
     discrim_vars = filter(lambda x: x.name.startswith('discrim'),
                           tf.trainable_variables())
+    gen_com_vars = filter(lambda x: x.name.startswith('gen_x'),
+                          tf.trainable_variables())
     gen_sem_vars = filter(lambda x: x.name.startswith('gen_y'),
                           tf.trainable_variables())
-    gen_com_vars = filter(lambda x: x.name.startswith('gen_x'),
+    gen_sdf_vars = filter(lambda x: x.name.startswith('gen_z'),
                           tf.trainable_variables())
     refine_vars = filter(lambda x: x.name.startswith('gen_y_ref'),
                          tf.trainable_variables())
@@ -90,14 +92,14 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     if discriminative is True:
         train_op_gen = tf.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-                gen_loss_tf, var_list=gen_com_vars + gen_sem_vars)
+                gen_loss_tf, var_list=gen_sdf_vars + gen_sem_vars)
         train_op_discrim = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf,
                 var_list=discrim_vars,
                 global_step=global_step)
 
-        Z_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample = depvox_gan_model.samples_generator(
+        Z_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_part_tf, scores_full_tf = depvox_gan_model.samples_generator(
             visual_size=batch_size)
 
     writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
@@ -175,8 +177,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             )
 
             if discriminative:
-                _, gen_loss_val = sess.run(
-                    [train_op_gen, gen_loss_tf],
+                _ = sess.run(
+                    train_op_gen,
                     feed_dict={
                         Z_tf: batch_z_var,
                         full_tf: batch_voxel,
@@ -184,24 +186,26 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         lr_VAE: lr
                     },
                 )
-                discrim_loss_val = sess.run(
-                    discrim_loss_tf,
+                discrim_loss_val, gen_loss_val, scores_discrim = sess.run(
+                    [discrim_loss_tf, gen_loss_tf, scores_tf],
                     feed_dict={
                         Z_tf: batch_z_var,
                         full_tf: batch_voxel,
                         part_tf: batch_tsdf,
                     },
                 )
-                _ = sess.run(
-                    train_op_discrim,
-                    feed_dict={
-                        Z_tf: batch_z_var,
-                        full_tf: batch_voxel,
-                        part_tf: batch_tsdf,
-                    },
-                )
+                if np.sum(scores_discrim) > 5.5:
+                    _ = sess.run(
+                        train_op_discrim,
+                        feed_dict={
+                            Z_tf: batch_z_var,
+                            full_tf: batch_voxel,
+                            part_tf: batch_tsdf,
+                        },
+                    )
 
             print(colored('gan', 'red'))
+            np.set_printoptions(precision=2)
             print 'reconstruct-com loss:', gen_com_loss_val if (
                 'gen_com_loss_val' in locals()) else 'None'
 
@@ -213,6 +217,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             print '      output discrim:', discrim_loss_val if (
                 'discrim_loss_val' in locals()) else 'None'
+
+            print '      scores discrim:', scores_discrim if (
+                'scores_discrim' in locals()) else 'None'
 
             print '     avarage of code:', np.mean(
                 np.mean(z_part_enc_val,
