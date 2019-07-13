@@ -187,15 +187,6 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             )
 
             if discriminative:
-                _, _ = sess.run(
-                    [train_op_gen_sdf, train_op_gen_sem],
-                    feed_dict={
-                        Z_tf: batch_z_var,
-                        full_tf: batch_voxel,
-                        part_tf: batch_tsdf,
-                        lr_VAE: lr
-                    },
-                )
                 discrim_loss_val, gen_loss_val, scores_discrim = sess.run(
                     [discrim_loss_tf, gen_loss_tf, scores_tf],
                     feed_dict={
@@ -204,7 +195,27 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         part_tf: batch_tsdf,
                     },
                 )
-                if (scores_discrim[4] + scores_discrim[5]) > 1.9 or (scores_discrim[3]) < 0.9:
+                if scores_discrim[3] - scores_discrim[5] > 0.2:
+                    _ = sess.run(
+                        train_op_gen_sdf,
+                        feed_dict={
+                            Z_tf: batch_z_var,
+                            full_tf: batch_voxel,
+                            part_tf: batch_tsdf,
+                            lr_VAE: lr
+                        },
+                    )
+                if scores_discrim[0] - scores_discrim[2] > 0.2:
+                    _ = sess.run(
+                        train_op_gen_sem,
+                        feed_dict={
+                            Z_tf: batch_z_var,
+                            full_tf: batch_voxel,
+                            part_tf: batch_tsdf,
+                            lr_VAE: lr
+                        },
+                    )
+                if scores_discrim[5] > 0.45 or scores_discrim[3] < 0.8:
                     _ = sess.run(
                         train_op_dis_sdf,
                         feed_dict={
@@ -213,7 +224,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             part_tf: batch_tsdf,
                         },
                     )
-                if (scores_discrim[1] + scores_discrim[2]) > 1.9 or (scores_discrim[0]) < 0.9:
+                if scores_discrim[2] > 0.45 or scores_discrim[0] < 0.8:
                     _ = sess.run(
                         train_op_dis_sem,
                         feed_dict={

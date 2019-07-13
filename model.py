@@ -510,41 +510,39 @@ class depvox_gan():
             # Standard_GAN_Loss
             discrim_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_full_gt, labels=tf.ones_like(h_full_gt))
-            ) + tf.reduce_mean(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_full_gen,
-                    labels=tf.zeros_like(h_full_gen))) + tf.reduce_mean(
+                    logits=h_full_gt,
+                    labels=tf.ones_like(h_full_gt))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_full_dec,
-                            labels=tf.zeros_like(h_full_dec)))
+                            logits=h_full_gen,
+                            labels=tf.zeros_like(h_full_gen)))
+            discrim_loss += tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_full_dec, labels=tf.zeros_like(h_full_dec)))
 
             discrim_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_part_gt, labels=tf.ones_like(h_part_gt))
-            ) + tf.reduce_mean(
-                tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_part_gen,
-                    labels=tf.zeros_like(h_part_gen))) + tf.reduce_mean(
+                    logits=h_part_gt,
+                    labels=tf.ones_like(h_part_gt))) + tf.reduce_mean(
                         tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_part_dec,
-                            labels=tf.zeros_like(h_part_dec)))
+                            logits=h_part_gen,
+                            labels=tf.zeros_like(h_part_gen)))
+            discrim_loss += tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_part_dec, labels=tf.zeros_like(h_part_dec)))
 
             gen_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_full_gen,
-                    labels=tf.ones_like(h_full_gen))) + tf.reduce_mean(
-                        tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_full_dec,
-                            labels=tf.ones_like(h_full_dec)))
+                    logits=h_full_gen, labels=tf.ones_like(h_full_gen)))
+            gen_loss += tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_full_dec, labels=tf.ones_like(h_full_dec)))
 
             gen_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
-                    logits=h_part_gen,
-                    labels=tf.ones_like(h_part_gen))) + tf.reduce_mean(
-                        tf.nn.sigmoid_cross_entropy_with_logits(
-                            logits=h_part_dec,
-                            labels=tf.ones_like(h_part_dec)))
+                    logits=h_part_gen, labels=tf.ones_like(h_part_gen)))
+            gen_loss += tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_part_dec, labels=tf.ones_like(h_part_dec)))
 
         else:
             scores = tf.zeros([6])
@@ -1109,26 +1107,35 @@ class depvox_gan():
                 dilations=self.dilations,
                 padding='SAME'))
         h2 = lrelu(
-            tf.nn.conv3d(
-                h1,
-                self.discrim_y_W2,
-                strides=self.stride,
-                dilations=self.dilations,
-                padding='SAME'))
+            layernormalize(
+                tf.nn.conv3d(
+                    h1,
+                    self.discrim_y_W2,
+                    strides=self.stride,
+                    dilations=self.dilations,
+                    padding='SAME'),
+                g=self.discrim_y_bn_g2,
+                b=self.discrim_y_bn_b2))
         h3 = lrelu(
-            tf.nn.conv3d(
-                h2,
-                self.discrim_y_W3,
-                strides=self.stride,
-                dilations=self.dilations,
-                padding='SAME'))
+            layernormalize(
+                tf.nn.conv3d(
+                    h2,
+                    self.discrim_y_W3,
+                    strides=self.stride,
+                    dilations=self.dilations,
+                    padding='SAME'),
+                g=self.discrim_y_bn_g3,
+                b=self.discrim_y_bn_b3))
         h4 = lrelu(
-            tf.nn.conv3d(
-                h3,
-                self.discrim_y_W4,
-                strides=self.stride,
-                dilations=self.dilations,
-                padding='SAME'))
+            layernormalize(
+                tf.nn.conv3d(
+                    h3,
+                    self.discrim_y_W4,
+                    strides=self.stride,
+                    dilations=self.dilations,
+                    padding='SAME'),
+                g=self.discrim_y_bn_g4,
+                b=self.discrim_y_bn_b4))
         h4 = tf.reshape(h4, [self.batch_size, -1])
         h5 = tf.matmul(h4, self.discrim_y_W5)
         y = tf.nn.sigmoid(h5)
@@ -1145,26 +1152,35 @@ class depvox_gan():
                 dilations=self.dilations,
                 padding='SAME'))
         h2 = lrelu(
-            tf.nn.conv3d(
-                h1,
-                self.discrim_x_W2,
-                strides=self.stride,
-                dilations=self.dilations,
-                padding='SAME'))
+            layernormalize(
+                tf.nn.conv3d(
+                    h1,
+                    self.discrim_x_W2,
+                    strides=self.stride,
+                    dilations=self.dilations,
+                    padding='SAME'),
+                g=self.discrim_x_bn_g2,
+                b=self.discrim_x_bn_b2))
         h3 = lrelu(
-            tf.nn.conv3d(
-                h2,
-                self.discrim_x_W3,
-                strides=self.stride,
-                dilations=self.dilations,
-                padding='SAME'))
+            layernormalize(
+                tf.nn.conv3d(
+                    h2,
+                    self.discrim_x_W3,
+                    strides=self.stride,
+                    dilations=self.dilations,
+                    padding='SAME'),
+                g=self.discrim_x_bn_g3,
+                b=self.discrim_x_bn_b3))
         h4 = lrelu(
-            tf.nn.conv3d(
-                h3,
-                self.discrim_x_W4,
-                strides=self.stride,
-                dilations=self.dilations,
-                padding='SAME'))
+            layernormalize(
+                tf.nn.conv3d(
+                    h3,
+                    self.discrim_x_W4,
+                    strides=self.stride,
+                    dilations=self.dilations,
+                    padding='SAME'),
+                g=self.discrim_x_bn_g4,
+                b=self.discrim_x_bn_b4))
         h4 = tf.reshape(h4, [self.batch_size, -1])
         h5 = tf.matmul(h4, self.discrim_x_W5)
         y = tf.nn.sigmoid(h5)
