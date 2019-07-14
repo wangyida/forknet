@@ -81,10 +81,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     # main optimiser
     train_op_pred_com = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-            recons_com_loss_tf, var_list=encode_vars + gen_com_vars)
+            recons_com_loss_tf, var_list=encode_vars + gen_com_vars + gen_sdf_vars)
     train_op_pred_sem = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-            recons_sem_loss_tf, var_list=encode_vars + gen_sem_vars)
+            recons_sem_loss_tf, var_list=encode_vars + gen_sem_vars + gen_sdf_vars)
 
     # refine optimiser
     train_op_refine = tf.train.AdamOptimizer(
@@ -109,7 +109,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 var_list=dis_sem_vars,
                 global_step=global_step)
 
-        Z_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_part_tf, scores_full_tf = depvox_gan_model.samples_generator(
+        Z_tf_sample, comp_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_part_tf, scores_full_tf = depvox_gan_model.samples_generator(
             visual_size=batch_size)
 
     writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)

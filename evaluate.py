@@ -118,7 +118,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
     gen_loss_tf, discrim_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
     part_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, scores_tf = depvox_gan_model.build_model()
     if discriminative is True:
-        Z_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_part_tf, scores_full_tf = depvox_gan_model.samples_generator(
+        Z_tf_sample, comp_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_part_tf, scores_full_tf = depvox_gan_model.samples_generator(
             visual_size=batch_size)
     sess = tf.InteractiveSession()
     saver = tf.train.Saver()
@@ -161,16 +161,6 @@ def evaluate(batch_size, checknum, mode, discriminative):
                     part_tf: batch_tsdf,
                     full_tf: batch_voxel
                 })
-            add_noising = False
-            if add_noising:
-                batch_part_enc_Z += np.random.normal(
-                    loc=0.0,
-                    scale=1.0,
-                    size=(batch_size, start_vox_size[0], start_vox_size[1],
-                          start_vox_size[2], dim_z)).astype(np.float32)
-                batch_pred_full, batch_pred_complete = sess.run(
-                    [full_tf_sample, part_tf_sample],
-                    feed_dict={Z_tf_sample: batch_part_enc_Z})
 
             if i == 0:
                 pred_full = batch_pred_full
@@ -244,17 +234,19 @@ def evaluate(batch_size, checknum, mode, discriminative):
                     size=(batch_size, start_vox_size[0], start_vox_size[1],
                           start_vox_size[2], dim_z)).astype(np.float32)
 
-                z_voxs_rand, z_voxs_ref_rand, z_part_rand, scores_part, scores_full = sess.run(
+                z_comp_rand, z_voxs_rand, z_voxs_ref_rand, z_part_rand, scores_part, scores_full = sess.run(
                     [
-                        full_tf_sample, full_ref_tf_sample, part_tf_sample,
+                        comp_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample,
                         scores_part_tf, scores_full_tf
                     ],
                     feed_dict={Z_tf_sample: Z_var_np_sample})
                 if j == 0:
+                    z_comp_rand_all = z_comp_rand
                     z_part_rand_all = z_part_rand
                     z_voxs_rand_all = z_voxs_rand
                     z_voxs_ref_rand_all = z_voxs_ref_rand
                 else:
+                    z_comp_rand_all = np.concatenate([z_comp_rand_all, z_comp_rand], axis=0)
                     z_part_rand_all = np.concatenate(
                         [z_part_rand_all, z_part_rand], axis=0)
                     z_voxs_rand_all = np.concatenate(
@@ -265,8 +257,11 @@ def evaluate(batch_size, checknum, mode, discriminative):
             Z_var_np_sample.astype('float32').tofile(save_path +
                                                      '/sample_z.bin')
             np.argmax(
+                z_comp_rand_all,
+                axis=4).astype('uint8').tofile(save_path + '/generate_comp.bin')
+            np.argmax(
                 z_voxs_rand_all,
-                axis=4).astype('uint8').tofile(save_path + '/generate.bin')
+                axis=4).astype('uint8').tofile(save_path + '/generate_full.bin')
             np.argmax(
                 z_voxs_ref_rand_all,
                 axis=4).astype('uint8').tofile(save_path + '/generate_ref.bin')
@@ -280,7 +275,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                 z_part_rand_all[z_part_rand_all > 0.4] = 1
                 z_part_rand = np.squeeze(z_part_rand)
             z_part_rand_all.astype('uint8').tofile(save_path +
-                                                   '/generate_sdf.bin')
+                                                   '/generate_part.bin')
 
             eigen_shape = False
             if eigen_shape:

@@ -397,9 +397,6 @@ class depvox_gan():
                     (1 - full_gt) * tf.log(1e-6 + 1 - full_vae_dec), [1, 2, 3])
                 * weight_full, 1))
         recons_vae_loss = tf.reduce_mean(
-            tf.reduce_sum(
-                tf.squared_difference(part_gt, part_vae_dec), [1, 2, 3, 4]))
-        recons_vae_loss = tf.reduce_mean(
             -tf.reduce_sum(
                 self.lamda_gamma * part_gt * tf.log(1e-6 + part_vae_dec) +
                 (1 - self.lamda_gamma) * (1 - part_gt) * tf.log(1e-6 + 1 - part_vae_dec), [1, 2, 3, 4]))
@@ -490,6 +487,10 @@ class depvox_gan():
             complete_gen, h3_z, h4_z, h5_t = self.generate_comp(Z)
             full_gen, full_gen_ref = self.generate_full(Z, h3_z, h4_z, h5_t)
 
+            recons_sdf_loss = tf.reduce_mean(
+                tf.reduce_sum(
+                    tf.squared_difference(part_gt, part_dec), [1, 2, 3, 4]))
+
             h_full_gt = self.discriminate_full(full_gt)
             h_full_gen = self.discriminate_full(full_gen)
             h_full_dec = self.discriminate_full(full_dec)
@@ -515,9 +516,11 @@ class depvox_gan():
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_full_gen,
                             labels=tf.zeros_like(h_full_gen)))
+            """
             discrim_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_full_dec, labels=tf.zeros_like(h_full_dec)))
+            """
 
             discrim_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
@@ -526,23 +529,29 @@ class depvox_gan():
                         tf.nn.sigmoid_cross_entropy_with_logits(
                             logits=h_part_gen,
                             labels=tf.zeros_like(h_part_gen)))
+            """
             discrim_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_part_dec, labels=tf.zeros_like(h_part_dec)))
+            """
 
             gen_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_full_gen, labels=tf.ones_like(h_full_gen)))
+            """
             gen_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_full_dec, labels=tf.ones_like(h_full_dec)))
+            """
 
             gen_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_part_gen, labels=tf.ones_like(h_part_gen)))
+            """
             gen_loss += tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_part_dec, labels=tf.ones_like(h_part_dec)))
+            """
 
         else:
             scores = tf.zeros([6])
@@ -557,9 +566,9 @@ class depvox_gan():
         # main cost
         if self.discriminative is True:
             recons_com_loss = self.lamda_recons * tf.reduce_mean(
-                recons_com_loss + variation_loss)
+                recons_com_loss + variation_loss) + self.lamda_recons * recons_sdf_loss
             recons_sem_loss = self.lamda_recons * tf.reduce_mean(
-                recons_sem_loss + variation_loss)
+                recons_sem_loss + variation_loss) + self.lamda_recons * recons_sdf_loss
         elif self.discriminative is False:
             recons_com_loss = self.lamda_recons * tf.reduce_mean(
                 recons_com_loss)
@@ -1198,4 +1207,4 @@ class depvox_gan():
         full, full_ref = self.generate_full(Z, h3_t, h4_t, h5_t)
         scores_part = tf.squeeze(tf.math.sigmoid(self.discriminate_part(part)))
         scores_full = tf.squeeze(tf.math.sigmoid(self.discriminate_full(full)))
-        return Z, full, full_ref, part, scores_part, scores_full
+        return Z, comp, full, full_ref, part, scores_part, scores_full
