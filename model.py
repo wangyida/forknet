@@ -491,13 +491,13 @@ class depvox_gan():
                 tf.reduce_sum(
                     tf.squared_difference(part_gt, part_dec), [1, 2, 3, 4]))
 
-            h_full_gt = self.discriminate_full(full_gt)
-            h_full_gen = self.discriminate_full(full_gen)
-            h_full_dec = self.discriminate_full(full_dec)
+            h_full_gt = self.discriminate_full(full_gt*[0,1,1,1,1,1,1,1,1,1,1,1])
+            h_full_gen = self.discriminate_full(full_gen*[0,1,1,1,1,1,1,1,1,1,1,1])
+            h_full_dec = self.discriminate_full(full_dec*[0,1,1,1,1,1,1,1,1,1,1,1])
 
-            h_part_gt = self.discriminate_part(part_gt)
-            h_part_gen = self.discriminate_part(part_gen)
-            h_part_dec = self.discriminate_part(part_dec)
+            h_part_gt = self.discriminate_part(part_gt*10)
+            h_part_gen = self.discriminate_part(part_gen*10)
+            h_part_dec = self.discriminate_part(part_dec*10)
 
             scores = tf.squeeze([
                 tf.reduce_mean(tf.sigmoid(h_full_gt)),
