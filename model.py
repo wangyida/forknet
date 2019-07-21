@@ -1187,16 +1187,107 @@ class depvox_gan():
     def discriminate_full(self, vox):
 
         h1 = lrelu(
-            tf.nn.conv3d(
+            tf.layers.conv3d(
                 vox,
-                self.discrim_y_W1,
-                strides=self.stride,
-                dilations=self.dilations,
-                padding='SAME'))
+                filters=16,
+                kernel_size=(7, 7, 7),
+                strides=(2, 2, 2),
+                padding='same',
+                name='discrim_y_sscnet_0',
+                reuse=tf.AUTO_REUSE))
+        h1_0 = lrelu(
+            tf.layers.conv3d(
+                h1,
+                filters=32,
+                kernel_size=(1, 1, 1),
+                strides=(1, 1, 1),
+                padding='same',
+                name='discrim_y_sscnet_0_0',
+                reuse=tf.AUTO_REUSE))
+        h1_1 = lrelu(
+            tf.layers.conv3d(
+                h1,
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                name='discrim_y_sscnet_0_1',
+                reuse=tf.AUTO_REUSE))
+        h1_2 = lrelu(
+            tf.layers.conv3d(
+                h1_1,
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                name='discrim_y_sscnet_0_2',
+                reuse=tf.AUTO_REUSE))
+
+        base_4 = h1_0 + h1_2
+        base_5 = tf.layers.conv3d(
+            base_4,
+            filters=64,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='discrim_y_sscnet_1',
+            reuse=tf.AUTO_REUSE)
+
+        base_6 = base_5 + tf.layers.conv3d(
+            base_5,
+            filters=64,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='discrim_y_sscnet_2',
+            reuse=tf.AUTO_REUSE)
+
+        base_7 = tf.layers.conv3d(
+            base_6,
+            filters=64,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='discrim_y_sscnet_3',
+            reuse=tf.AUTO_REUSE)
+
+        base_8 = base_7 + tf.layers.conv3d(
+            base_7,
+            filters=64,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='discrim_y_sscnet_4',
+            reuse=tf.AUTO_REUSE)
+        base_9 = tf.concat([base_4, base_6, base_8], -1)
+
+        h1_1 = tf.layers.conv3d(
+            base_9,
+            filters=128,
+            kernel_size=(1, 1, 1),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(1, 1, 1),
+            name='discrim_y_sscnet_5',
+            reuse=tf.AUTO_REUSE)
+        h1_2 = tf.layers.conv3d(
+            h1_1,
+            filters=32,
+            kernel_size=(1, 1, 1),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(1, 1, 1),
+            name='discrim_y_sscnet_6',
+            reuse=tf.AUTO_REUSE)
+
         h2 = lrelu(
             layernormalize(
                 tf.nn.conv3d(
-                    h1,
+                    h1_2,
                     self.discrim_y_W2,
                     strides=self.stride,
                     dilations=self.dilations,
@@ -1232,16 +1323,107 @@ class depvox_gan():
     def discriminate_comp(self, vox):
 
         h1 = lrelu(
-            tf.nn.conv3d(
+            tf.layers.conv3d(
                 vox,
-                self.discrim_g_W1,
-                strides=self.stride,
-                dilations=self.dilations,
-                padding='SAME'))
+                filters=16,
+                kernel_size=(7, 7, 7),
+                strides=(2, 2, 2),
+                padding='same',
+                name='discrim_g_sscnet_0',
+                reuse=tf.AUTO_REUSE))
+        h1_0 = lrelu(
+            tf.layers.conv3d(
+                h1,
+                filters=32,
+                kernel_size=(1, 1, 1),
+                strides=(1, 1, 1),
+                padding='same',
+                name='discrim_g_sscnet_0_0',
+                reuse=tf.AUTO_REUSE))
+        h1_1 = lrelu(
+            tf.layers.conv3d(
+                h1,
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                name='discrim_g_sscnet_0_1',
+                reuse=tf.AUTO_REUSE))
+        h1_2 = lrelu(
+            tf.layers.conv3d(
+                h1_1,
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                name='discrim_g_sscnet_0_2',
+                reuse=tf.AUTO_REUSE))
+
+        base_4 = h1_0 + h1_2
+        base_5 = tf.layers.conv3d(
+            base_4,
+            filters=64,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='discrim_g_sscnet_1',
+            reuse=tf.AUTO_REUSE)
+
+        base_6 = base_5 + tf.layers.conv3d(
+            base_5,
+            filters=64,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='discrim_g_sscnet_2',
+            reuse=tf.AUTO_REUSE)
+
+        base_7 = tf.layers.conv3d(
+            base_6,
+            filters=64,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='discrim_g_sscnet_3',
+            reuse=tf.AUTO_REUSE)
+
+        base_8 = base_7 + tf.layers.conv3d(
+            base_7,
+            filters=64,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(2, 2, 2),
+            name='discrim_g_sscnet_4',
+            reuse=tf.AUTO_REUSE)
+        base_9 = tf.concat([base_4, base_6, base_8], -1)
+
+        h1_1 = tf.layers.conv3d(
+            base_9,
+            filters=128,
+            kernel_size=(1, 1, 1),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(1, 1, 1),
+            name='discrim_g_sscnet_5',
+            reuse=tf.AUTO_REUSE)
+        h1_2 = tf.layers.conv3d(
+            h1_1,
+            filters=32,
+            kernel_size=(1, 1, 1),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(1, 1, 1),
+            name='discrim_g_sscnet_6',
+            reuse=tf.AUTO_REUSE)
+
         h2 = lrelu(
             layernormalize(
                 tf.nn.conv3d(
-                    h1,
+                    h1_2,
                     self.discrim_g_W2,
                     strides=self.stride,
                     dilations=self.dilations,

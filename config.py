@@ -49,7 +49,7 @@ if __C.TYPE_TASK is 'scene':
             __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/test/voxel_semantic_npy/'
             __C.DIR.TSDF_PATH = path_ssd + 'NYU_Yida/test/depth_tsdf_camera_npy/'
         elif __C.TYPE_DATA == 'train':
-            __C.DIR.VOXEL_PATH = path_hdd + 'NYU_Yida/train/surface_semantic_npy/'
+            __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/train/voxel_semantic_npy/'
             __C.DIR.TSDF_PATH = path_ssd + 'NYU_Yida/train/depth_tsdf_camera_npy/'
     elif __C.TYPE_EVAL == 'synthetic':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-s'
