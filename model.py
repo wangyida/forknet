@@ -187,6 +187,68 @@ class depvox_gan():
                              stddev=0.02),
             name='discrim_y_vox_W5')
 
+        self.discrim_g_W1 = tf.Variable(
+            tf.random_normal([
+                self.kernel5[0], self.kernel5[1], self.kernel5[2],
+                self.complete_shape[3], self.dim_W4
+            ],
+                             stddev=0.02),
+            name='discrim_g_vox_W1')
+        self.discrim_g_bn_g1 = tf.Variable(
+            tf.random_normal([1], mean=1.0, stddev=0.02),
+            name='discrim_g_vox_bn_g1')
+        self.discrim_g_bn_b1 = tf.Variable(
+            tf.zeros([1]), name='discrim_g_vox_bn_b1')
+
+        # parameters of discriminator
+        self.discrim_g_W2 = tf.Variable(
+            tf.random_normal([
+                self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
+                self.dim_W3
+            ],
+                             stddev=0.02),
+            name='discrim_g_vox_W2')
+        self.discrim_g_bn_g2 = tf.Variable(
+            tf.random_normal([1], mean=1.0, stddev=0.02),
+            name='discrim_g_vox_bn_g2')
+        self.discrim_g_bn_b2 = tf.Variable(
+            tf.zeros([1]), name='discrim_g_vox_bn_b2')
+
+        self.discrim_g_W3 = tf.Variable(
+            tf.random_normal([
+                self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
+                self.dim_W2
+            ],
+                             stddev=0.02),
+            name='discrim_g_vox_W3')
+        self.discrim_g_bn_g3 = tf.Variable(
+            tf.random_normal([1], mean=1.0, stddev=0.02),
+            name='discrim_g_vox_bn_g3')
+        self.discrim_g_bn_b3 = tf.Variable(
+            tf.zeros([1]), name='discrim_g_vox_bn_b3')
+
+        self.discrim_g_W4 = tf.Variable(
+            tf.random_normal([
+                self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
+                self.dim_W1
+            ],
+                             stddev=0.02),
+            name='discrim_g_vox_W4')
+        self.discrim_g_bn_g4 = tf.Variable(
+            tf.random_normal([1], mean=1.0, stddev=0.02),
+            name='discrim_g_vox_bn_g4')
+        self.discrim_g_bn_b4 = tf.Variable(
+            tf.zeros([1]), name='discrim_g_vox_bn_b4')
+
+        # patch GAN
+        self.discrim_g_W5 = tf.Variable(
+            tf.random_normal([
+                self.start_vox_size[0] * self.start_vox_size[1] *
+                self.start_vox_size[2] * self.dim_W1, 1
+            ],
+                             stddev=0.02),
+            name='discrim_g_vox_W5')
+
         # parameters of generator x
         self.gen_x_W1 = tf.Variable(
             tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
@@ -338,12 +400,12 @@ class depvox_gan():
         full_gt = tf.one_hot(full_gt_, self.n_class)
         full_gt = tf.cast(full_gt, tf.float32)
 
-        complete_gt_ = tf.clip_by_value(
+        comp_gt_ = tf.clip_by_value(
             full_gt_ + tf.dtypes.cast(tf.math.round(part_gt_), tf.int32),
             clip_value_min=0,
             clip_value_max=1)
-        complete_gt = tf.one_hot(complete_gt_, 2)
-        complete_gt = tf.cast(complete_gt, tf.float32)
+        comp_gt = tf.one_hot(comp_gt_, 2)
+        comp_gt = tf.cast(comp_gt, tf.float32)
 
         Z = tf.placeholder(tf.float32, [
             None, self.start_vox_size[0], self.start_vox_size[1],
@@ -357,9 +419,9 @@ class depvox_gan():
         weight_full = inverse * tf.div(1., tf.reduce_sum(inverse))
 
         # weights for balancing training
-        batch_mean_complete_gt = tf.reduce_mean(complete_gt, [0, 1, 2, 3])
-        ones = tf.ones_like(batch_mean_complete_gt)
-        inverse = tf.div(ones, tf.add(batch_mean_complete_gt, ones))
+        batch_mean_comp_gt = tf.reduce_mean(comp_gt, [0, 1, 2, 3])
+        ones = tf.ones_like(batch_mean_comp_gt)
+        inverse = tf.div(ones, tf.add(batch_mean_comp_gt, ones))
         weight_complete = inverse * tf.div(1., tf.reduce_sum(inverse))
 
         # encode from tsdf and vox
@@ -369,7 +431,7 @@ class depvox_gan():
                 2.0 * Z_log_sigma), [1, 2, 3, 4])
         dim_code = Z_mu.get_shape().as_list()
 
-        complete_dec, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
+        comp_dec, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
         full_dec, full_dec_ref = self.generate_full(Z_encode, h3_t, h4_t, h5_t)
 
         # complete = self.complete(full_dec)
@@ -448,10 +510,10 @@ class depvox_gan():
         # complete
         recons_com_loss = tf.reduce_sum(
             -tf.reduce_sum(
-                self.lamda_gamma * complete_gt * tf.log(1e-6 + complete_dec) +
+                self.lamda_gamma * comp_gt * tf.log(1e-6 + comp_dec) +
                 (1 - self.lamda_gamma) *
-                (1 - complete_gt) * tf.log(1e-6 + 1 - complete_dec), [1, 2, 3])
-            * weight_complete, 1)
+                (1 - comp_gt) * tf.log(1e-6 + 1 - comp_dec), [1, 2, 3]) *
+            weight_complete, 1)
         # segmentation
         recons_sem_loss = tf.reduce_sum(
             -tf.reduce_sum(
@@ -484,28 +546,29 @@ class depvox_gan():
         if self.discriminative is True:
             part_dec = self.generate_part(Z_encode)
             part_gen = self.generate_part(Z)
-            complete_gen, h3_z, h4_z, h5_t = self.generate_comp(Z)
+            comp_gen, h3_z, h4_z, h5_t = self.generate_comp(Z)
             full_gen, full_gen_ref = self.generate_full(Z, h3_z, h4_z, h5_t)
 
             recons_sdf_loss = tf.reduce_mean(
                 tf.reduce_sum(
                     tf.squared_difference(part_gt, part_dec), [1, 2, 3, 4]))
 
-            h_full_gt = self.discriminate_full(full_gt*[0,1,1,1,1,1,1,1,1,1,1,1])
-            h_full_gen = self.discriminate_full(full_gen*[0,1,1,1,1,1,1,1,1,1,1,1])
-            h_full_dec = self.discriminate_full(full_dec*[0,1,1,1,1,1,1,1,1,1,1,1])
+            h_part_gt = self.discriminate_part(part_gt)
+            h_part_gen = self.discriminate_part(part_gen)
 
-            h_part_gt = self.discriminate_part(part_gt*10)
-            h_part_gen = self.discriminate_part(part_gen*10)
-            h_part_dec = self.discriminate_part(part_dec*10)
+            h_comp_gt = self.discriminate_comp(comp_gt)
+            h_comp_gen = self.discriminate_comp(comp_gen)
+
+            h_full_gt = self.discriminate_full(full_gt)
+            h_full_gen = self.discriminate_full(full_gen)
 
             scores = tf.squeeze([
-                tf.reduce_mean(tf.sigmoid(h_full_gt)),
-                tf.reduce_mean(tf.sigmoid(h_full_gen)),
-                tf.reduce_mean(tf.sigmoid(h_full_dec)),
                 tf.reduce_mean(tf.sigmoid(h_part_gt)),
                 tf.reduce_mean(tf.sigmoid(h_part_gen)),
-                tf.reduce_mean(tf.sigmoid(h_part_dec))
+                tf.reduce_mean(tf.sigmoid(h_comp_gt)),
+                tf.reduce_mean(tf.sigmoid(h_comp_gen)),
+                tf.reduce_mean(tf.sigmoid(h_full_gt)),
+                tf.reduce_mean(tf.sigmoid(h_full_gen)),
             ])
 
             # Standard_GAN_Loss
@@ -535,6 +598,14 @@ class depvox_gan():
                     logits=h_part_dec, labels=tf.zeros_like(h_part_dec)))
             """
 
+            discrim_loss += tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_comp_gt,
+                    labels=tf.ones_like(h_comp_gt))) + tf.reduce_mean(
+                        tf.nn.sigmoid_cross_entropy_with_logits(
+                            logits=h_comp_gen,
+                            labels=tf.zeros_like(h_comp_gen)))
+
             gen_loss = tf.reduce_mean(
                 tf.nn.sigmoid_cross_entropy_with_logits(
                     logits=h_full_gen, labels=tf.ones_like(h_full_gen)))
@@ -553,9 +624,14 @@ class depvox_gan():
                     logits=h_part_dec, labels=tf.ones_like(h_part_dec)))
             """
 
+            gen_loss += tf.reduce_mean(
+                tf.nn.sigmoid_cross_entropy_with_logits(
+                    logits=h_comp_gen, labels=tf.ones_like(h_comp_gen)))
+
         else:
+            part_dec = part_gt
             scores = tf.zeros([6])
-            complete_gen = complete_dec
+            comp_gen = comp_dec
             full_gen = full_dec
             gen_loss = tf.zeros([1])
             discrim_loss = tf.zeros([1])
@@ -566,9 +642,11 @@ class depvox_gan():
         # main cost
         if self.discriminative is True:
             recons_com_loss = self.lamda_recons * tf.reduce_mean(
-                recons_com_loss + variation_loss) + self.lamda_recons * recons_sdf_loss
+                recons_com_loss +
+                variation_loss) + self.lamda_recons * recons_sdf_loss
             recons_sem_loss = self.lamda_recons * tf.reduce_mean(
-                recons_sem_loss + variation_loss) + self.lamda_recons * recons_sdf_loss
+                recons_sem_loss +
+                variation_loss) + self.lamda_recons * recons_sdf_loss
         elif self.discriminative is False:
             recons_com_loss = self.lamda_recons * tf.reduce_mean(
                 recons_com_loss)
@@ -579,7 +657,7 @@ class depvox_gan():
 
         return Z, Z_encode, full_gt_, full_gen, full_dec, full_dec_ref,\
         gen_loss, discrim_loss, recons_com_loss, recons_sem_loss, variation_loss, refine_loss, summary_op,\
-        part_gt_, complete_gt, complete_gen, complete_dec, scores
+        part_gt_, part_dec, comp_gt, comp_gen, comp_dec, scores
 
     def encoder(self, vox):
 
@@ -1151,6 +1229,51 @@ class depvox_gan():
 
         return h5
 
+    def discriminate_comp(self, vox):
+
+        h1 = lrelu(
+            tf.nn.conv3d(
+                vox,
+                self.discrim_g_W1,
+                strides=self.stride,
+                dilations=self.dilations,
+                padding='SAME'))
+        h2 = lrelu(
+            layernormalize(
+                tf.nn.conv3d(
+                    h1,
+                    self.discrim_g_W2,
+                    strides=self.stride,
+                    dilations=self.dilations,
+                    padding='SAME'),
+                g=self.discrim_g_bn_g2,
+                b=self.discrim_g_bn_b2))
+        h3 = lrelu(
+            layernormalize(
+                tf.nn.conv3d(
+                    h2,
+                    self.discrim_g_W3,
+                    strides=self.stride,
+                    dilations=self.dilations,
+                    padding='SAME'),
+                g=self.discrim_g_bn_g3,
+                b=self.discrim_g_bn_b3))
+        h4 = lrelu(
+            layernormalize(
+                tf.nn.conv3d(
+                    h3,
+                    self.discrim_g_W4,
+                    strides=self.stride,
+                    dilations=self.dilations,
+                    padding='SAME'),
+                g=self.discrim_g_bn_g4,
+                b=self.discrim_g_bn_b4))
+        h4 = tf.reshape(h4, [self.batch_size, -1])
+        h5 = tf.matmul(h4, self.discrim_g_W5)
+        y = tf.nn.sigmoid(h5)
+
+        return h5
+
     def discriminate_part(self, vox):
 
         h1 = lrelu(
@@ -1205,6 +1328,9 @@ class depvox_gan():
         part = self.generate_part(Z)
         comp, h3_t, h4_t, h5_t = self.generate_comp(Z)
         full, full_ref = self.generate_full(Z, h3_t, h4_t, h5_t)
-        scores_part = tf.squeeze(tf.math.sigmoid(self.discriminate_part(part)))
-        scores_full = tf.squeeze(tf.math.sigmoid(self.discriminate_full(full)))
-        return Z, comp, full, full_ref, part, scores_part, scores_full
+        scores = tf.concat([
+            tf.math.sigmoid(self.discriminate_part(part)),
+            tf.math.sigmoid(self.discriminate_part(part)),
+            tf.math.sigmoid(self.discriminate_full(full))
+        ], 0)
+        return Z, comp, full, full_ref, part, scores

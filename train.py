@@ -50,7 +50,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
     Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_dec_tf, full_dec_ref_tf,\
     gen_loss_tf, discrim_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, scores_tf = depvox_gan_model.build_model()
+    part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, scores_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -64,6 +64,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     encode_vars = filter(lambda x: x.name.startswith('enc'),
                          tf.trainable_variables())
     dis_sdf_vars = filter(lambda x: x.name.startswith('discrim_x'),
+                          tf.trainable_variables())
+    dis_com_vars = filter(lambda x: x.name.startswith('discrim_g'),
                           tf.trainable_variables())
     dis_sem_vars = filter(lambda x: x.name.startswith('discrim_y'),
                           tf.trainable_variables())
@@ -81,10 +83,12 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     # main optimiser
     train_op_pred_com = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-            recons_com_loss_tf, var_list=encode_vars + gen_com_vars + gen_sdf_vars)
+            recons_com_loss_tf,
+            var_list=encode_vars + gen_com_vars + gen_sdf_vars)
     train_op_pred_sem = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-            recons_sem_loss_tf, var_list=encode_vars + gen_sem_vars + gen_sdf_vars)
+            recons_sem_loss_tf,
+            var_list=encode_vars + gen_sem_vars + gen_sdf_vars)
 
     # refine optimiser
     train_op_refine = tf.train.AdamOptimizer(
@@ -95,13 +99,21 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         train_op_gen_sdf = tf.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
                 gen_loss_tf, var_list=gen_sdf_vars)
+        train_op_gen_com = tf.train.AdamOptimizer(
+            learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
+                gen_loss_tf, var_list=gen_com_vars)
         train_op_gen_sem = tf.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-                gen_loss_tf, var_list=gen_com_vars + gen_sem_vars)
+                gen_loss_tf, var_list=gen_sem_vars)
         train_op_dis_sdf = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf,
                 var_list=dis_sdf_vars,
+                global_step=global_step)
+        train_op_dis_com = tf.train.AdamOptimizer(
+            learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
+                discrim_loss_tf,
+                var_list=dis_com_vars,
                 global_step=global_step)
         train_op_dis_sem = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
@@ -109,16 +121,15 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 var_list=dis_sem_vars,
                 global_step=global_step)
 
-        Z_tf_sample, comp_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_part_tf, scores_full_tf = depvox_gan_model.samples_generator(
+        Z_tf_sample, comp_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_tf_sample = depvox_gan_model.samples_generator(
             visual_size=batch_size)
 
-    writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
-    tf.initialize_all_variables().run(session=sess)
-
-    if discriminative is True:
         model_path = cfg.DIR.CHECK_POINT_PATH + '-d'
     else:
         model_path = cfg.DIR.CHECK_POINT_PATH
+
+    writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
+    tf.initialize_all_variables().run(session=sess)
 
     if mid_flag:
         chckpt_path = model_path + '/checkpoint' + str(check_num)
@@ -195,7 +206,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         part_tf: batch_tsdf,
                     },
                 )
-                if scores_discrim[3] - scores_discrim[5] > 0.2:
+                if scores_discrim[0] - scores_discrim[1] > 0.2:
                     _ = sess.run(
                         train_op_gen_sdf,
                         feed_dict={
@@ -205,7 +216,17 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             lr_VAE: lr
                         },
                     )
-                if scores_discrim[0] - scores_discrim[2] > 0.2:
+                if scores_discrim[2] - scores_discrim[3] > 0.2:
+                    _ = sess.run(
+                        train_op_gen_com,
+                        feed_dict={
+                            Z_tf: batch_z_var,
+                            full_tf: batch_voxel,
+                            part_tf: batch_tsdf,
+                            lr_VAE: lr
+                        },
+                    )
+                if scores_discrim[4] - scores_discrim[5] > 0.2:
                     _ = sess.run(
                         train_op_gen_sem,
                         feed_dict={
@@ -215,7 +236,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             lr_VAE: lr
                         },
                     )
-                if scores_discrim[5] > 0.45 or scores_discrim[3] < 0.8:
+                if scores_discrim[1] > 0.45 or scores_discrim[0] < 0.8:
                     _ = sess.run(
                         train_op_dis_sdf,
                         feed_dict={
@@ -224,7 +245,16 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             part_tf: batch_tsdf,
                         },
                     )
-                if scores_discrim[2] > 0.45 or scores_discrim[0] < 0.8:
+                if scores_discrim[3] > 0.45 or scores_discrim[2] < 0.8:
+                    _ = sess.run(
+                        train_op_dis_com,
+                        feed_dict={
+                            Z_tf: batch_z_var,
+                            full_tf: batch_voxel,
+                            part_tf: batch_tsdf,
+                        },
+                    )
+                if scores_discrim[5] > 0.45 or scores_discrim[4] < 0.8:
                     _ = sess.run(
                         train_op_dis_sem,
                         feed_dict={
@@ -234,7 +264,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         },
                     )
 
-            print(colored('gan', 'red'))
+            print('GAN')
             np.set_printoptions(precision=2)
             print 'reconstruct-com loss:', gen_com_loss_val if (
                 'gen_com_loss_val' in locals()) else 'None'
@@ -242,14 +272,27 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             print 'reconstruct-sem loss:', gen_sem_loss_val if (
                 'gen_sem_loss_val' in locals()) else 'None'
 
-            print '            gen loss:', gen_loss_val if (
-                'gen_loss_val' in locals()) else 'None'
+            if discriminative:
+                print '            gen loss:', "{0:.2f}".format(
+                    gen_loss_val) if ('gen_loss_val' in locals()) else 'None'
 
-            print '      output discrim:', discrim_loss_val if (
-                'discrim_loss_val' in locals()) else 'None'
+                print '      output discrim:', "{0:.2f}".format(
+                    discrim_loss_val) if (
+                        'discrim_loss_val' in locals()) else 'None'
 
-            print '      scores discrim:', scores_discrim if (
-                'scores_discrim' in locals()) else 'None'
+                print '      scores discrim:', colored(
+                    "{0:.2f}".format(scores_discrim[0]), 'green'), colored(
+                        "{0:.2f}".format(scores_discrim[1]),
+                        'magenta'), colored(
+                            "{0:.2f}".format(scores_discrim[2]),
+                            'green'), colored(
+                                "{0:.2f}".format(scores_discrim[3]),
+                                'magenta'), colored(
+                                    "{0:.2f}".format(scores_discrim[4]),
+                                    'green'), colored(
+                                        "{0:.2f}".format(scores_discrim[5]),
+                                        'magenta') if ('scores_discrim' in
+                                                       locals()) else 'None'
 
             print '     avarage of code:', np.mean(
                 np.mean(z_part_enc_val,
