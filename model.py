@@ -1314,8 +1314,18 @@ class depvox_gan():
                     padding='SAME'),
                 g=self.discrim_y_bn_g4,
                 b=self.discrim_y_bn_b4))
-        h4 = tf.reshape(h4, [self.batch_size, -1])
-        h5 = tf.matmul(h4, self.discrim_y_W5)
+
+        h5 = tf.layers.conv3d(
+            h4,
+            filters=1,
+            kernel_size=(1, 1, 1),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(1, 1, 1),
+            name='discrim_y_final',
+            reuse=tf.AUTO_REUSE)
+        # h4 = tf.reshape(h4, [self.batch_size, -1])
+        # h5 = tf.matmul(h4, self.discrim_y_W5)
         y = tf.nn.sigmoid(h5)
 
         return h5
@@ -1450,8 +1460,18 @@ class depvox_gan():
                     padding='SAME'),
                 g=self.discrim_g_bn_g4,
                 b=self.discrim_g_bn_b4))
-        h4 = tf.reshape(h4, [self.batch_size, -1])
-        h5 = tf.matmul(h4, self.discrim_g_W5)
+
+        h5 = tf.layers.conv3d(
+            h4,
+            filters=1,
+            kernel_size=(1, 1, 1),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(1, 1, 1),
+            name='discrim_g_final',
+            reuse=tf.AUTO_REUSE)
+        # h4 = tf.reshape(h4, [self.batch_size, -1])
+        # h5 = tf.matmul(h4, self.discrim_g_W5)
         y = tf.nn.sigmoid(h5)
 
         return h5
@@ -1512,7 +1532,7 @@ class depvox_gan():
         full, full_ref = self.generate_full(Z, h3_t, h4_t, h5_t)
         scores = tf.concat([
             tf.math.sigmoid(self.discriminate_part(part)),
-            tf.math.sigmoid(self.discriminate_part(part)),
-            tf.math.sigmoid(self.discriminate_full(full))
+            tf.math.sigmoid(tf.reduce_mean(self.discriminate_comp(comp), [1,2,3])),
+            tf.math.sigmoid(tf.reduce_mean(self.discriminate_full(full), [1,2,3]))
         ], 0)
         return Z, comp, full, full_ref, part, scores
