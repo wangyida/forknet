@@ -115,8 +115,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
 
 
     Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_dec_tf, full_dec_ref_tf,\
-    gen_loss_tf, discrim_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, scores_tf = depvox_gan_model.build_model()
+    gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
+    part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
     if discriminative is True:
         Z_tf_sample, comp_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_tf_sample = depvox_gan_model.samples_generator(
             visual_size=batch_size)
@@ -152,10 +152,10 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                      batch_size]
             batch_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
 
-            batch_pred_full, batch_pred_ref_voxs, batch_pred_part, batch_part_enc_Z, batch_complete_gt, batch_pred_complete = sess.run(
+            batch_pred_full, batch_pred_ref_voxs, batch_pred_part, batch_part_enc_Z, batch_complete_gt, batch_pred_complete, batch_sscnet = sess.run(
                 [
                     full_dec_tf, full_dec_ref_tf, part_dec_tf, z_part_enc_tf,
-                    complete_gt_tf, complete_dec_tf
+                    complete_gt_tf, complete_dec_tf, sscnet_tf
                 ],
                 feed_dict={
                     part_tf: batch_tsdf,
@@ -166,6 +166,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                 pred_part = batch_pred_part
                 pred_full = batch_pred_full
                 pred_ref_voxs = batch_pred_ref_voxs
+                pred_sscnet = batch_sscnet
                 part_enc_Z = batch_part_enc_Z
                 complete_gt = batch_complete_gt
                 pred_complete = batch_pred_complete
@@ -176,6 +177,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                            axis=0)
                 pred_ref_voxs = np.concatenate(
                     (pred_ref_voxs, batch_pred_ref_voxs), axis=0)
+                pred_sscnet = np.concatenate((pred_sscnet, batch_sscnet),
+                                             axis=0)
                 part_enc_Z = np.concatenate((part_enc_Z, batch_part_enc_Z),
                                             axis=0)
                 complete_gt = np.concatenate((complete_gt, batch_complete_gt),
@@ -212,6 +215,13 @@ def evaluate(batch_size, checknum, mode, discriminative):
 
         # decoded
         np.argmax(
+            pred_sscnet,
+            axis=4).astype('uint8').tofile(save_path + '/dec_sscnet.bin')
+        error = np.array(
+            np.clip(np.argmax(pred_sscnet, axis=4), 0, 1) +
+            np.argmax(complete_gt, axis=4) * 2)
+        error.astype('uint8').tofile(save_path + '/dec_sscnet_error.bin')
+        np.argmax(
             pred_full,
             axis=4).astype('uint8').tofile(save_path + '/dec_vox.bin')
         error = np.array(
@@ -232,11 +242,10 @@ def evaluate(batch_size, checknum, mode, discriminative):
             complete_gt,
             axis=4).astype('uint8').tofile(save_path + '/complete_gt.bin')
 
-        np.save(save_path + '/decode_z.npy', part_enc_Z)
-
         # reconstruction and generation from normal distribution evaluation
         # generator from random distribution
         if discriminative is True:
+            np.save(save_path + '/decode_z.npy', part_enc_Z)
             sample_times = 10
             for j in np.arange(sample_times):
                 Z_var_np_sample = np.random.normal(
@@ -350,6 +359,14 @@ def evaluate(batch_size, checknum, mode, discriminative):
         AP_all = np.expand_dims(AP_class, axis=1)
 
         # volume segmentation
+        print(colored("SSCNet segmentation", 'cyan'))
+        on_pred = onehot(np.argmax(pred_sscnet, axis=4), vox_shape[3])
+        IoU_class, AP_class = IoU_AP_calc(on_gt, on_pred, pred_sscnet,
+                                          IoU_class, AP_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+                                 axis=1)
+        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
+                                axis=1)
         print(colored("Decoded segmentation", 'cyan'))
         on_pred = onehot(np.argmax(pred_full, axis=4), vox_shape[3])
         IoU_class, AP_class = IoU_AP_calc(on_gt, on_pred, pred_full, IoU_class,

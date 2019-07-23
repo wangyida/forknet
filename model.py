@@ -425,7 +425,7 @@ class depvox_gan():
         weight_complete = inverse * tf.div(1., tf.reduce_sum(inverse))
 
         # encode from tsdf and vox
-        Z_encode, Z_mu, Z_log_sigma = self.encoder(part_gt)
+        Z_encode, Z_mu, Z_log_sigma, sscnet = self.encoder(part_gt)
         variation_loss = -0.5 * tf.reduce_sum(
             1.0 + 2.0 * Z_log_sigma - tf.square(Z_mu) - tf.exp(
                 2.0 * Z_log_sigma), [1, 2, 3, 4])
@@ -520,6 +520,13 @@ class depvox_gan():
                 self.lamda_gamma * full_gt * tf.log(1e-6 + full_dec) +
                 (1 - self.lamda_gamma) *
                 (1 - full_gt) * tf.log(1e-6 + 1 - full_dec), [1, 2, 3]) *
+            weight_full, 1)
+        # sscnet
+        recons_ssc_loss = tf.reduce_sum(
+            -tf.reduce_sum(
+                self.lamda_gamma * full_gt * tf.log(1e-6 + sscnet) +
+                (1 - self.lamda_gamma) *
+                (1 - full_gt) * tf.log(1e-6 + 1 - sscnet), [1, 2, 3]) *
             weight_full, 1)
         # refine for segmentation
         refine_loss = tf.reduce_mean(
@@ -640,6 +647,7 @@ class depvox_gan():
         # variation_loss = tf.reduce_mean(variation_loss)
 
         # main cost
+        recons_ssc_loss = self.lamda_recons * tf.reduce_mean(recons_ssc_loss)
         if self.discriminative is True:
             recons_com_loss = self.lamda_recons * tf.reduce_mean(
                 recons_com_loss +
@@ -656,8 +664,8 @@ class depvox_gan():
         summary_op = tf.summary.merge_all()
 
         return Z, Z_encode, full_gt_, full_gen, full_dec, full_dec_ref,\
-        gen_loss, discrim_loss, recons_com_loss, recons_sem_loss, variation_loss, refine_loss, summary_op,\
-        part_gt_, part_dec, comp_gt, comp_gen, comp_dec, scores
+        gen_loss, discrim_loss, recons_ssc_loss, recons_com_loss, recons_sem_loss, variation_loss, refine_loss, summary_op,\
+        part_gt_, part_dec, comp_gt, comp_gen, comp_dec, sscnet, scores
 
     def encoder(self, vox):
 
@@ -668,7 +676,7 @@ class depvox_gan():
                 kernel_size=(7, 7, 7),
                 strides=(2, 2, 2),
                 padding='same',
-                name='encode_x_sscnet_0',
+                name='encode_sscnet_0',
                 reuse=tf.AUTO_REUSE))
         h1_0 = lrelu(
             tf.layers.conv3d(
@@ -677,7 +685,7 @@ class depvox_gan():
                 kernel_size=(1, 1, 1),
                 strides=(1, 1, 1),
                 padding='same',
-                name='encode_x_sscnet_0_0',
+                name='encode_sscnet_0_0',
                 reuse=tf.AUTO_REUSE))
         h1_1 = lrelu(
             tf.layers.conv3d(
@@ -686,7 +694,7 @@ class depvox_gan():
                 kernel_size=(3, 3, 3),
                 strides=(1, 1, 1),
                 padding='same',
-                name='encode_x_sscnet_0_1',
+                name='encode_sscnet_0_1',
                 reuse=tf.AUTO_REUSE))
         h1_2 = lrelu(
             tf.layers.conv3d(
@@ -695,7 +703,7 @@ class depvox_gan():
                 kernel_size=(3, 3, 3),
                 strides=(1, 1, 1),
                 padding='same',
-                name='encode_x_sscnet_0_2',
+                name='encode_sscnet_0_2',
                 reuse=tf.AUTO_REUSE))
 
         base_4 = h1_0 + h1_2
@@ -706,7 +714,7 @@ class depvox_gan():
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(2, 2, 2),
-            name='encode_x_sscnet_1',
+            name='encode_sscnet_1',
             reuse=tf.AUTO_REUSE)
 
         base_6 = base_5 + tf.layers.conv3d(
@@ -716,7 +724,7 @@ class depvox_gan():
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(2, 2, 2),
-            name='encode_x_sscnet_2',
+            name='encode_sscnet_2',
             reuse=tf.AUTO_REUSE)
 
         base_7 = tf.layers.conv3d(
@@ -726,7 +734,7 @@ class depvox_gan():
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(2, 2, 2),
-            name='encode_x_sscnet_3',
+            name='encode_sscnet_3',
             reuse=tf.AUTO_REUSE)
 
         base_8 = base_7 + tf.layers.conv3d(
@@ -736,7 +744,7 @@ class depvox_gan():
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(2, 2, 2),
-            name='encode_x_sscnet_4',
+            name='encode_sscnet_4',
             reuse=tf.AUTO_REUSE)
         base_9 = tf.concat([base_4, base_6, base_8], -1)
 
@@ -747,7 +755,7 @@ class depvox_gan():
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(1, 1, 1),
-            name='encode_x_sscnet_5',
+            name='encode_sscnet_5',
             reuse=tf.AUTO_REUSE)
         h1_2 = tf.layers.conv3d(
             h1_1,
@@ -756,12 +764,31 @@ class depvox_gan():
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(1, 1, 1),
-            name='encode_x_sscnet_6',
+            name='encode_sscnet_6',
+            reuse=tf.AUTO_REUSE)
+
+        sscnet = tf.layers.conv3d_transpose(
+            h1_2,
+            filters=self.vox_shape[-1],
+            kernel_size=(4, 4, 4),
+            strides=(2, 2, 2),
+            padding='same',
+            name='encode_sscnet_7',
+            reuse=tf.AUTO_REUSE)
+        sscnet = softmax(sscnet, self.batch_size, self.vox_shape)
+
+        h1 = tf.layers.conv3d(
+            sscnet,
+            filters=self.dim_W4,
+            kernel_size=(self.kernel5[0], self.kernel5[1], self.kernel5[2]),
+            strides=(self.stride[1], self.stride[2], self.stride[3]),
+            padding='same',
+            name='encode_x_1',
             reuse=tf.AUTO_REUSE)
 
         h2 = lrelu(
             tf.layers.conv3d(
-                h1_2,
+                h1,
                 filters=self.dim_W3,
                 kernel_size=(self.kernel4[0], self.kernel4[1],
                              self.kernel4[2]),
@@ -836,7 +863,7 @@ class depvox_gan():
             z = h3
             z_mu = z
             z_log_sigma = z
-        return z, z_mu, z_log_sigma
+        return z, z_mu, z_log_sigma, sscnet
 
     def generate_full(self, Z, h3_, h4_, h5_):
 
@@ -1314,8 +1341,18 @@ class depvox_gan():
                     padding='SAME'),
                 g=self.discrim_y_bn_g4,
                 b=self.discrim_y_bn_b4))
-        h4 = tf.reshape(h4, [self.batch_size, -1])
-        h5 = tf.matmul(h4, self.discrim_y_W5)
+
+        h5 = tf.layers.conv3d(
+            h4,
+            filters=1,
+            kernel_size=(1, 1, 1),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(1, 1, 1),
+            name='discrim_y_final',
+            reuse=tf.AUTO_REUSE)
+        # h4 = tf.reshape(h4, [self.batch_size, -1])
+        # h5 = tf.matmul(h4, self.discrim_y_W5)
         y = tf.nn.sigmoid(h5)
 
         return h5
@@ -1450,8 +1487,18 @@ class depvox_gan():
                     padding='SAME'),
                 g=self.discrim_g_bn_g4,
                 b=self.discrim_g_bn_b4))
-        h4 = tf.reshape(h4, [self.batch_size, -1])
-        h5 = tf.matmul(h4, self.discrim_g_W5)
+
+        h5 = tf.layers.conv3d(
+            h4,
+            filters=1,
+            kernel_size=(1, 1, 1),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(1, 1, 1),
+            name='discrim_g_final',
+            reuse=tf.AUTO_REUSE)
+        # h4 = tf.reshape(h4, [self.batch_size, -1])
+        # h5 = tf.matmul(h4, self.discrim_g_W5)
         y = tf.nn.sigmoid(h5)
 
         return h5
@@ -1512,7 +1559,9 @@ class depvox_gan():
         full, full_ref = self.generate_full(Z, h3_t, h4_t, h5_t)
         scores = tf.concat([
             tf.math.sigmoid(self.discriminate_part(part)),
-            tf.math.sigmoid(self.discriminate_part(part)),
-            tf.math.sigmoid(self.discriminate_full(full))
+            tf.math.sigmoid(
+                tf.reduce_mean(self.discriminate_comp(comp), [1, 2, 3])),
+            tf.math.sigmoid(
+                tf.reduce_mean(self.discriminate_full(full), [1, 2, 3]))
         ], 0)
         return Z, comp, full, full_ref, part, scores

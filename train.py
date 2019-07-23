@@ -49,8 +49,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         is_train=True)
 
     Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_dec_tf, full_dec_ref_tf,\
-    gen_loss_tf, discrim_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, scores_tf = depvox_gan_model.build_model()
+    gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
+    part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -61,8 +61,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     print '---amount of data:' + str(len(data_paths))
     data_process = DataProcess(data_paths, batch_size, repeat=True)
 
-    encode_vars = filter(lambda x: x.name.startswith('enc'),
-                         tf.trainable_variables())
+    enc_sscnet_vars = filter(lambda x: x.name.startswith('encode_sscnet'),
+                             tf.trainable_variables())
+    enc_sdf_vars = filter(lambda x: x.name.startswith('encode_x'),
+                          tf.trainable_variables())
     dis_sdf_vars = filter(lambda x: x.name.startswith('discrim_x'),
                           tf.trainable_variables())
     dis_com_vars = filter(lambda x: x.name.startswith('discrim_g'),
@@ -81,14 +83,17 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     lr_VAE = tf.placeholder(tf.float32, shape=[])
 
     # main optimiser
+    train_op_pred_sscnet = tf.train.AdamOptimizer(
+        learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
+            recons_ssc_loss_tf, var_list=enc_sscnet_vars)
     train_op_pred_com = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             recons_com_loss_tf,
-            var_list=encode_vars + gen_com_vars + gen_sdf_vars)
+            var_list=enc_sdf_vars + gen_com_vars + gen_sdf_vars)
     train_op_pred_sem = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             recons_sem_loss_tf,
-            var_list=encode_vars + gen_sem_vars + gen_sdf_vars)
+            var_list=enc_sdf_vars + gen_sem_vars + gen_sdf_vars)
 
     # refine optimiser
     train_op_refine = tf.train.AdamOptimizer(
@@ -178,6 +183,15 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             # updating for the main network
             is_supervised = True
             if is_supervised is True:
+                _ = sess.run(
+                    train_op_pred_sscnet,
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        full_tf: batch_voxel,
+                        part_tf: batch_tsdf,
+                        lr_VAE: lr
+                    },
+                )
                 _, _, _ = sess.run(
                     [train_op_pred_com, train_op_pred_sem, train_op_refine],
                     feed_dict={
