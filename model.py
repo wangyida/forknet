@@ -553,8 +553,8 @@ class depvox_gan():
         if self.discriminative is True:
             part_dec = self.generate_part(Z_encode)
             part_gen = self.generate_part(Z)
-            comp_gen, h3_z, h4_z, h5_t = self.generate_comp(Z)
-            full_gen, full_gen_ref = self.generate_full(Z, h3_z, h4_z, h5_t)
+            comp_gen, h3_z, h4_z, h5_t = self.generate_comp(Z_encode)
+            full_gen, full_gen_ref = self.generate_full(Z_encode, h3_z, h4_z, h5_t)
 
             recons_sdf_loss = tf.reduce_mean(
                 tf.reduce_sum(
