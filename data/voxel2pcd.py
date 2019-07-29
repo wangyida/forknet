@@ -20,9 +20,9 @@ def voxel2pcd(file_npy, dir_tar_pcd, type='partial'):
     voxels = np.load(file_npy)
     pcd = PointCloud()
     if type == 'partial':
-        coordinate = np.transpose(np.where(voxels == 1))
+        coordinate = np.transpose(np.where(voxels > 0.5))
         pcd.points = Vector3dVector(coordinate)
-        colors_cat = np.transpose(np.tile(voxels[voxels == 1], ( 3, 1)))
+        colors_cat = np.transpose(np.tile(voxels[voxels > 0.5], ( 3, 1)))
         pcd.colors = Vector3dVector(colors_cat)
     else:
         coordinate = np.transpose(np.where(voxels > 0))

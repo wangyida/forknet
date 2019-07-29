@@ -48,7 +48,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         discriminative=discriminative,
         is_train=True)
 
-    Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_dec_tf, full_dec_ref_tf,\
+    Z_tf, z_part_enc_tf, surf_tf, full_tf, full_gen_tf, surf_dec_tf, full_dec_tf,\
     gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
     part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -158,8 +158,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         while epoch_flag:
             print colored('---Iteration:%d, epoch:%d', 'blue') % (ite, epoch)
             db_inds, epoch_flag = data_process.get_next_minibatch()
-            batch_voxel = data_process.get_voxel(db_inds)
             batch_tsdf = data_process.get_tsdf(db_inds)
+            batch_surf = data_process.get_surf(db_inds)
+            batch_voxel = data_process.get_voxel(db_inds)
 
             # Evaluation masks
             # NOTICE that the target should never have negative values,
@@ -172,6 +173,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 # occluded region
                 """
                 batch_tsdf[batch_tsdf < -1] = 0
+                batch_surf[batch_surf < 0] = 0
                 batch_voxel[batch_voxel < 0] = 0
 
             lr = learning_rate(cfg.LEARNING_RATE_V, ite)
@@ -187,8 +189,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     train_op_pred_sscnet,
                     feed_dict={
                         Z_tf: batch_z_var,
-                        full_tf: batch_voxel,
                         part_tf: batch_tsdf,
+                        surf_tf: batch_surf,
+                        full_tf: batch_voxel,
                         lr_VAE: lr
                     },
                 )
@@ -196,8 +199,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     [train_op_pred_com, train_op_pred_sem, train_op_refine],
                     feed_dict={
                         Z_tf: batch_z_var,
-                        full_tf: batch_voxel,
                         part_tf: batch_tsdf,
+                        surf_tf: batch_surf,
+                        full_tf: batch_voxel,
                         lr_VAE: lr
                     },
                 )
@@ -205,8 +209,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 [recons_com_loss_tf, recons_sem_loss_tf, z_part_enc_tf],
                 feed_dict={
                     Z_tf: batch_z_var,
-                    full_tf: batch_voxel,
                     part_tf: batch_tsdf,
+                    surf_tf: batch_surf,
+                    full_tf: batch_voxel,
                     lr_VAE: lr
                 },
             )
@@ -216,8 +221,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     [discrim_loss_tf, gen_loss_tf, scores_tf],
                     feed_dict={
                         Z_tf: batch_z_var,
-                        full_tf: batch_voxel,
                         part_tf: batch_tsdf,
+                        surf_tf: batch_surf,
+                        full_tf: batch_voxel,
                     },
                 )
                 if scores_discrim[0] - scores_discrim[1] > 0.2:
@@ -225,8 +231,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         train_op_gen_sdf,
                         feed_dict={
                             Z_tf: batch_z_var,
-                            full_tf: batch_voxel,
                             part_tf: batch_tsdf,
+                            surf_tf: batch_surf,
+                            full_tf: batch_voxel,
                             lr_VAE: lr
                         },
                     )
@@ -235,8 +242,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         train_op_gen_com,
                         feed_dict={
                             Z_tf: batch_z_var,
-                            full_tf: batch_voxel,
                             part_tf: batch_tsdf,
+                            surf_tf: batch_surf,
+                            full_tf: batch_voxel,
                             lr_VAE: lr
                         },
                     )
@@ -245,8 +253,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         train_op_gen_sem,
                         feed_dict={
                             Z_tf: batch_z_var,
-                            full_tf: batch_voxel,
                             part_tf: batch_tsdf,
+                            surf_tf: batch_surf,
+                            full_tf: batch_voxel,
                             lr_VAE: lr
                         },
                     )
@@ -255,8 +264,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         train_op_dis_sdf,
                         feed_dict={
                             Z_tf: batch_z_var,
-                            full_tf: batch_voxel,
                             part_tf: batch_tsdf,
+                            surf_tf: batch_surf,
+                            full_tf: batch_voxel,
                         },
                     )
                 if scores_discrim[3] > 0.45 or scores_discrim[2] < 0.8:
@@ -264,8 +274,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         train_op_dis_com,
                         feed_dict={
                             Z_tf: batch_z_var,
-                            full_tf: batch_voxel,
                             part_tf: batch_tsdf,
+                            surf_tf: batch_surf,
+                            full_tf: batch_voxel,
                         },
                     )
                 if scores_discrim[5] > 0.45 or scores_discrim[4] < 0.8:
@@ -273,8 +284,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         train_op_dis_sem,
                         feed_dict={
                             Z_tf: batch_z_var,
-                            full_tf: batch_voxel,
                             part_tf: batch_tsdf,
+                            surf_tf: batch_surf,
+                            full_tf: batch_voxel,
                         },
                     )
 

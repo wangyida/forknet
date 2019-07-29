@@ -65,6 +65,20 @@ class DataProcess():
             batch_voxel[batch_id, :, :, :] = voxel_data
         return batch_voxel
 
+    def get_surf(self, db_inds):
+        batch_surf = np.zeros(
+            (self.batch_size, self.n_vox[0], self.n_vox[1], self.n_vox[2]),
+            dtype=np.float32)
+
+        for batch_id, db_ind in enumerate(db_inds):
+            sceneId, model_id = self.data_paths[db_ind]
+
+            surf_fn = cfg.DIR.SURF_PATH + model_id
+            surf_data = np.load(surf_fn)
+
+            batch_surf[batch_id, :, :, :] = surf_data
+        return batch_surf
+
 
 def scene_model_id_pair(dataset_portion=[]):
     '''
@@ -110,10 +124,12 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
     n_vox = cfg.CONST.N_VOX
 
-    batch_voxel = np.zeros((num_models, n_vox[0], n_vox[1], n_vox[2]),
-                           dtype=np.float32)
     batch_tsdf = np.zeros((num_models, n_vox[0], n_vox[1], n_vox[2]),
                           dtype=np.float32)
+    batch_surf = np.zeros((num_models, n_vox[0], n_vox[1], n_vox[2]),
+                          dtype=np.float32)
+    batch_voxel = np.zeros((num_models, n_vox[0], n_vox[1], n_vox[2]),
+                           dtype=np.float32)
 
     for i in np.arange(num_models):
         sceneId, model_id = data_paths[i]
@@ -124,19 +140,21 @@ def scene_model_id_pair_test(dataset_portion=[]):
                                        ".npy", ".png")
         if os.path.isfile(depth_fn):
             img = mpimg.imread(depth_fn)
-            imsave('vis_suncg/vis_depth/' + str(i) + '.png', img)
-
-        voxel_fn = cfg.DIR.VOXEL_PATH + model_id
-        voxel_data = np.load(voxel_fn)
-
-        batch_voxel[i, :, :, :] = voxel_data
+            imsave('vis_depth/' + str(i) + '.png', img)
 
         tsdf_fn = cfg.DIR.TSDF_PATH + model_id
         tsdf_data = np.load(tsdf_fn)
-
         batch_tsdf[i, :, :, :] = tsdf_data
 
-    return batch_voxel, batch_tsdf, num_models, data_paths
+        surf_fn = cfg.DIR.SURF_PATH + model_id
+        surf_data = np.load(surf_fn)
+        batch_surf[i, :, :, :] = surf_data
+
+        voxel_fn = cfg.DIR.VOXEL_PATH + model_id
+        voxel_data = np.load(voxel_fn)
+        batch_voxel[i, :, :, :] = voxel_data
+
+    return batch_voxel, batch_surf, batch_tsdf, num_models, data_paths
 
 
 def onehot(voxel, class_num):

@@ -394,6 +394,12 @@ class depvox_gan():
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
         part_gt = tf.expand_dims(part_gt_, -1)
 
+        surf_gt_ = tf.placeholder(
+            tf.int32,
+            [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
+        surf_gt = tf.one_hot(surf_gt_, self.n_class)
+        surf_gt = tf.cast(surf_gt, tf.float32)
+
         full_gt_ = tf.placeholder(
             tf.int32,
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
@@ -401,7 +407,7 @@ class depvox_gan():
         full_gt = tf.cast(full_gt, tf.float32)
 
         comp_gt_ = tf.clip_by_value(
-            full_gt_ + tf.dtypes.cast(tf.math.round(part_gt_), tf.int32),
+            surf_gt_ + tf.dtypes.cast(tf.math.round(part_gt_), tf.int32),
             clip_value_min=0,
             clip_value_max=1)
         comp_gt = tf.one_hot(comp_gt_, 2)
@@ -432,7 +438,7 @@ class depvox_gan():
         dim_code = Z_mu.get_shape().as_list()
 
         comp_dec, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
-        full_dec, full_dec_ref = self.generate_full(Z_encode, h3_t, h4_t, h5_t)
+        surf_dec, full_dec = self.generate_full(Z_encode, h3_t, h4_t, h5_t)
 
         # complete = self.complete(full_dec)
         # encode again from loops
@@ -517,25 +523,25 @@ class depvox_gan():
         # segmentation
         recons_sem_loss = tf.reduce_sum(
             -tf.reduce_sum(
-                self.lamda_gamma * full_gt * tf.log(1e-6 + full_dec) +
+                self.lamda_gamma * surf_gt * tf.log(1e-6 + surf_dec) +
                 (1 - self.lamda_gamma) *
-                (1 - full_gt) * tf.log(1e-6 + 1 - full_dec), [1, 2, 3]) *
+                (1 - surf_gt) * tf.log(1e-6 + 1 - surf_dec), [1, 2, 3]) *
             weight_full, 1)
         # sscnet
         recons_ssc_loss = tf.reduce_sum(
             -tf.reduce_sum(
-                self.lamda_gamma * full_gt * tf.log(1e-6 + sscnet) +
+                self.lamda_gamma * surf_gt * tf.log(1e-6 + sscnet) +
                 (1 - self.lamda_gamma) *
-                (1 - full_gt) * tf.log(1e-6 + 1 - sscnet), [1, 2, 3]) *
+                (1 - surf_gt) * tf.log(1e-6 + 1 - sscnet), [1, 2, 3]) *
             weight_full, 1)
         # refine for segmentation
         refine_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * full_gt * tf.log(1e-6 + full_dec_ref) +
+                    self.lamda_gamma * full_gt * tf.log(1e-6 + full_dec) +
                     (1 - self.lamda_gamma) *
-                    (1 - full_gt) * tf.log(1e-6 + 1 - full_dec_ref), [1, 2, 3])
-                * weight_full, 1))
+                    (1 - full_gt) * tf.log(1e-6 + 1 - full_dec), [1, 2, 3]) *
+                weight_full, 1))
         """
         recons_loss += tf.reduce_sum(
                 tf.squared_difference(part_gt, part_gen_dec), [1, 2, 3, 4])
@@ -553,8 +559,8 @@ class depvox_gan():
         if self.discriminative is True:
             part_dec = self.generate_part(Z_encode)
             part_gen = self.generate_part(Z)
-            comp_gen, h3_z, h4_z, h5_t = self.generate_comp(Z_encode)
-            full_gen, full_gen_ref = self.generate_full(Z_encode, h3_z, h4_z, h5_t)
+            comp_gen, h3_z, h4_z, h5_t = self.generate_comp(Z)
+            full_gen, full_gen_ref = self.generate_full(Z, h3_z, h4_z, h5_t)
 
             recons_sdf_loss = tf.reduce_mean(
                 tf.reduce_sum(
@@ -639,7 +645,7 @@ class depvox_gan():
             part_dec = part_gt
             scores = tf.zeros([6])
             comp_gen = comp_dec
-            full_gen = full_dec
+            full_gen = surf_dec
             gen_loss = tf.zeros([1])
             discrim_loss = tf.zeros([1])
 
@@ -663,7 +669,7 @@ class depvox_gan():
 
         summary_op = tf.summary.merge_all()
 
-        return Z, Z_encode, full_gt_, full_gen, full_dec, full_dec_ref,\
+        return Z, Z_encode, surf_gt_, full_gt_, full_gen, surf_dec, full_dec,\
         gen_loss, discrim_loss, recons_ssc_loss, recons_com_loss, recons_sem_loss, variation_loss, refine_loss, summary_op,\
         part_gt_, part_dec, comp_gt, comp_gen, comp_dec, sscnet, scores
 
@@ -1556,7 +1562,7 @@ class depvox_gan():
 
         part = self.generate_part(Z)
         comp, h3_t, h4_t, h5_t = self.generate_comp(Z)
-        full, full_ref = self.generate_full(Z, h3_t, h4_t, h5_t)
+        surf, full = self.generate_full(Z, h3_t, h4_t, h5_t)
         scores = tf.concat([
             tf.math.sigmoid(self.discriminate_part(part)),
             tf.math.sigmoid(
@@ -1564,4 +1570,4 @@ class depvox_gan():
             tf.math.sigmoid(
                 tf.reduce_mean(self.discriminate_full(full), [1, 2, 3]))
         ], 0)
-        return Z, comp, full, full_ref, part, scores
+        return Z, comp, surf, full, part, scores

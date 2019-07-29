@@ -114,11 +114,11 @@ def evaluate(batch_size, checknum, mode, discriminative):
         is_train=False)
 
 
-    Z_tf, z_part_enc_tf, full_tf, full_gen_tf, full_dec_tf, full_dec_ref_tf,\
+    Z_tf, z_enc_tf, surf_tf, full_tf, full_gen_tf, surf_dec_tf, full_dec_tf,\
     gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
     part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
     if discriminative is True:
-        Z_tf_sample, comp_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_tf_sample = depvox_gan_model.samples_generator(
+        Z_tf_sample, comp_tf_sample, surf_tf_sample, full_tf_sample, part_tf_sample, scores_tf_sample = depvox_gan_model.samples_generator(
             visual_size=batch_size)
     sess = tf.InteractiveSession()
     saver = tf.train.Saver()
@@ -130,42 +130,46 @@ def evaluate(batch_size, checknum, mode, discriminative):
 
     if mode == 'recons':
         # evaluation for reconstruction
-        voxel_test, part_test, num, data_paths = scene_model_id_pair_test(
+        voxel_test, surf_test, part_test, num, data_paths = scene_model_id_pair_test(
             dataset_portion=cfg.TRAIN.DATASET_PORTION)
 
         # Evaluation masks
         if cfg.TYPE_TASK == 'scene':
+            # occluded region
             """
             space_effective = np.where(voxel_test > -1, 1, 0) * np.where(
                 part_test > -1, 1, 0)
             voxel_test *= space_effective
             part_test *= space_effective
-            # occluded region
             """
+            # occluded region
             part_test[part_test < -1] = 0
+            surf_test[surf_test < 0] = 0
             voxel_test[voxel_test < 0] = 0
 
         num = voxel_test.shape[0]
         print("test voxels loaded")
         for i in np.arange(int(num / batch_size)):
+            batch_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
+            batch_surf = surf_test[i * batch_size:i * batch_size + batch_size]
             batch_voxel = voxel_test[i * batch_size:i * batch_size +
                                      batch_size]
-            batch_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
 
-            batch_pred_full, batch_pred_ref_voxs, batch_pred_part, batch_part_enc_Z, batch_complete_gt, batch_pred_complete, batch_sscnet = sess.run(
+            batch_pred_surf, batch_pred_full, batch_pred_part, batch_part_enc_Z, batch_complete_gt, batch_pred_complete, batch_sscnet = sess.run(
                 [
-                    full_dec_tf, full_dec_ref_tf, part_dec_tf, z_part_enc_tf,
+                    surf_dec_tf, full_dec_tf, part_dec_tf, z_enc_tf,
                     complete_gt_tf, complete_dec_tf, sscnet_tf
                 ],
                 feed_dict={
                     part_tf: batch_tsdf,
+                    surf_tf: batch_surf,
                     full_tf: batch_voxel
                 })
 
             if i == 0:
                 pred_part = batch_pred_part
+                pred_surf = batch_pred_surf
                 pred_full = batch_pred_full
-                pred_ref_voxs = batch_pred_ref_voxs
                 pred_sscnet = batch_sscnet
                 part_enc_Z = batch_part_enc_Z
                 complete_gt = batch_complete_gt
@@ -173,10 +177,10 @@ def evaluate(batch_size, checknum, mode, discriminative):
             else:
                 pred_part = np.concatenate((pred_part, batch_pred_part),
                                            axis=0)
+                pred_surf = np.concatenate((pred_surf, batch_pred_surf),
+                                           axis=0)
                 pred_full = np.concatenate((pred_full, batch_pred_full),
                                            axis=0)
-                pred_ref_voxs = np.concatenate(
-                    (pred_ref_voxs, batch_pred_ref_voxs), axis=0)
                 pred_sscnet = np.concatenate((pred_sscnet, batch_sscnet),
                                              axis=0)
                 part_enc_Z = np.concatenate((part_enc_Z, batch_part_enc_Z),
@@ -222,17 +226,17 @@ def evaluate(batch_size, checknum, mode, discriminative):
             np.argmax(complete_gt, axis=4) * 2)
         error.astype('uint8').tofile(save_path + '/dec_sscnet_error.bin')
         np.argmax(
-            pred_full,
+            pred_surf,
             axis=4).astype('uint8').tofile(save_path + '/dec_vox.bin')
         error = np.array(
-            np.clip(np.argmax(pred_full, axis=4), 0, 1) +
+            np.clip(np.argmax(pred_surf, axis=4), 0, 1) +
             np.argmax(complete_gt, axis=4) * 2)
         error.astype('uint8').tofile(save_path + '/dec_vox_error.bin')
         np.argmax(
-            pred_ref_voxs,
+            pred_full,
             axis=4).astype('uint8').tofile(save_path + '/dec_ref_vox.bin')
         error = np.array(
-            np.clip(np.argmax(pred_ref_voxs, axis=4), 0, 1) +
+            np.clip(np.argmax(pred_full, axis=4), 0, 1) +
             np.argmax(complete_gt, axis=4) * 2)
         error.astype('uint8').tofile(save_path + '/dec_ref_vox_error.bin')
         np.argmax(
@@ -328,10 +332,11 @@ def evaluate(batch_size, checknum, mode, discriminative):
         print("voxels saved")
 
         # numerical evalutation
-        on_gt = onehot(voxel_test, vox_shape[3])
+        on_surf_gt = onehot(surf_test, vox_shape[3])
+        on_full_gt = onehot(voxel_test, vox_shape[3])
         on_depth_seg_gt = onehot(depth_seg_gt, vox_shape[3])
         on_depth_seg_pred = np.multiply(
-            onehot(np.argmax(pred_full, axis=4), vox_shape[3]),
+            onehot(np.argmax(pred_surf, axis=4), vox_shape[3]),
             np.expand_dims(np.clip(surface, 0, 1), -1))
         on_complete_gt = complete_gt
         complete_gen = np.argmax(pred_complete, axis=4)
@@ -352,32 +357,32 @@ def evaluate(batch_size, checknum, mode, discriminative):
         AP_class = np.zeros([vox_shape[3] + 1])
         IoU_class, AP_class = IoU_AP_calc(
             on_depth_seg_gt, on_depth_seg_pred,
-            np.multiply(pred_full,
+            np.multiply(pred_surf,
                         np.expand_dims(np.clip(surface - 5, 0, 1), -1)),
             IoU_class, AP_class, vox_shape)
         IoU_all = np.expand_dims(IoU_class, axis=1)
         AP_all = np.expand_dims(AP_class, axis=1)
 
         # volume segmentation
-        print(colored("SSCNet segmentation", 'cyan'))
+        print(colored("Geometric segmentation", 'cyan'))
         on_pred = onehot(np.argmax(pred_sscnet, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_gt, on_pred, pred_sscnet,
+        IoU_class, AP_class = IoU_AP_calc(on_surf_gt, on_pred, pred_sscnet,
                                           IoU_class, AP_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
         AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
                                 axis=1)
-        print(colored("Decoded segmentation", 'cyan'))
-        on_pred = onehot(np.argmax(pred_full, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_gt, on_pred, pred_full, IoU_class,
-                                          AP_class, vox_shape)
+        print(colored("Surface segmentation", 'cyan'))
+        on_pred = onehot(np.argmax(pred_surf, axis=4), vox_shape[3])
+        IoU_class, AP_class = IoU_AP_calc(on_surf_gt, on_pred, pred_surf,
+                                          IoU_class, AP_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
         AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
                                 axis=1)
-        print(colored("Refined segmentation", 'cyan'))
-        on_pred_ref = onehot(np.argmax(pred_ref_voxs, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_gt, on_pred_ref, pred_ref_voxs,
+        print(colored("Solid segmentation", 'cyan'))
+        on_pred = onehot(np.argmax(pred_full, axis=4), vox_shape[3])
+        IoU_class, AP_class = IoU_AP_calc(on_full_gt, on_pred, pred_full,
                                           IoU_class, AP_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
