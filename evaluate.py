@@ -256,26 +256,26 @@ def evaluate(batch_size, checknum, mode, discriminative):
                     size=(batch_size, start_vox_size[0], start_vox_size[1],
                           start_vox_size[2], dim_z)).astype(np.float32)
 
-                z_comp_rand, z_voxs_rand, z_voxs_ref_rand, z_part_rand, scores_sample = sess.run(
+                z_comp_rand, z_surf_rand, z_full_rand, z_part_rand, scores_sample = sess.run(
                     [
-                        comp_tf_sample, full_tf_sample, full_ref_tf_sample,
+                        comp_tf_sample, surf_tf_sample, full_tf_sample,
                         part_tf_sample, scores_tf_sample
                     ],
                     feed_dict={Z_tf_sample: Z_var_np_sample})
                 if j == 0:
                     z_comp_rand_all = z_comp_rand
                     z_part_rand_all = z_part_rand
-                    z_voxs_rand_all = z_voxs_rand
-                    z_voxs_ref_rand_all = z_voxs_ref_rand
+                    z_surf_rand_all = z_surf_rand
+                    z_full_rand_all = z_full_rand
                 else:
                     z_comp_rand_all = np.concatenate(
                         [z_comp_rand_all, z_comp_rand], axis=0)
                     z_part_rand_all = np.concatenate(
                         [z_part_rand_all, z_part_rand], axis=0)
-                    z_voxs_rand_all = np.concatenate(
-                        [z_voxs_rand_all, z_voxs_rand], axis=0)
-                    z_voxs_ref_rand_all = np.concatenate(
-                        [z_voxs_ref_rand_all, z_voxs_ref_rand], axis=0)
+                    z_surf_rand_all = np.concatenate(
+                        [z_surf_rand_all, z_surf_rand], axis=0)
+                    z_full_rand_all = np.concatenate(
+                        [z_full_rand_all, z_full_rand], axis=0)
                     print(scores_sample)
             Z_var_np_sample.astype('float32').tofile(save_path +
                                                      '/sample_z.bin')
@@ -283,11 +283,11 @@ def evaluate(batch_size, checknum, mode, discriminative):
                 z_comp_rand_all,
                 axis=4).astype('uint8').tofile(save_path + '/gen_comp.bin')
             np.argmax(
-                z_voxs_rand_all,
-                axis=4).astype('uint8').tofile(save_path + '/gen_full.bin')
+                z_surf_rand_all,
+                axis=4).astype('uint8').tofile(save_path + '/gen_surf.bin')
             np.argmax(
-                z_voxs_ref_rand_all,
-                axis=4).astype('uint8').tofile(save_path + '/gen_ref.bin')
+                z_full_rand_all,
+                axis=4).astype('uint8').tofile(save_path + '/gen_full.bin')
             if cfg.TYPE_TASK == 'scene':
                 z_part_rand_all = np.abs(z_part_rand_all)
                 z_part_rand_all *= 10
@@ -312,12 +312,12 @@ def evaluate(batch_size, checknum, mode, discriminative):
                         8, start_vox_size[0], start_vox_size[1],
                         start_vox_size[2], dim_z
                     ])
-                z_voxs_rand, z_voxs_ref_rand, z_part_rand = sess.run(
-                    [full_tf_sample, full_ref_tf_sample, part_tf_sample],
+                z_surf_rand, z_full_rand, z_part_rand = sess.run(
+                    [surf_tf_sample, full_tf_sample, part_tf_sample],
                     feed_dict={Z_tf_sample: z_V})
                 np.argmax(
-                    z_voxs_rand,
-                    axis=4).astype('uint8').tofile(save_path + '/gen_full.bin')
+                    z_surf_rand,
+                    axis=4).astype('uint8').tofile(save_path + '/gen_surf.bin')
                 if cfg.TYPE_TASK == 'scene':
                     z_part_rand = np.abs(z_part_rand)
                     z_part_rand *= 10

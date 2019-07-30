@@ -226,6 +226,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         full_tf: batch_voxel,
                     },
                 )
+                """
                 if scores_discrim[0] - scores_discrim[1] > 0.2:
                     _ = sess.run(
                         train_op_gen_sdf,
@@ -289,6 +290,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             full_tf: batch_voxel,
                         },
                     )
+                """
 
             print('GAN')
             np.set_printoptions(precision=2)

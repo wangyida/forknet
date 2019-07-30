@@ -135,7 +135,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
         sceneId, model_id = data_paths[i]
 
         # save depth images accordingly
-        depth_fn = sceneId.replace("surface_semantic_npy",
+        depth_fn = sceneId.replace("depth_tsdf_camera_npy",
                                    "depth_real_png") + "/" + model_id.replace(
                                        ".npy", ".png")
         if os.path.isfile(depth_fn):

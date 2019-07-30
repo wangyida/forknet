@@ -22,7 +22,8 @@ def voxel2pcd(file_npy, dir_tar_pcd, type='partial'):
     if type == 'partial':
         coordinate = np.transpose(np.where(voxels > 0.5))
         pcd.points = Vector3dVector(coordinate)
-        colors_cat = np.transpose(np.tile(voxels[voxels > 0.5], ( 3, 1)))
+        # colors_cat = np.transpose(np.tile(voxels[voxels > 0.5], ( 3, 1)))
+        colors_cat = np.ones_like(coordinate)
         pcd.colors = Vector3dVector(colors_cat)
     else:
         coordinate = np.transpose(np.where(voxels > 0))
@@ -32,7 +33,7 @@ def voxel2pcd(file_npy, dir_tar_pcd, type='partial'):
     # Save
     name_start = int(file_npy.rfind('/'))
     name_end = int(file_npy.find('.', name_start))
-    write_point_cloud(dir_tar_pcd + file_npy[name_start:name_end] + '.pcd', pcd)/12
+    write_point_cloud(dir_tar_pcd + file_npy[name_start:name_end] + '.pcd', pcd)/11
     # write_point_cloud(dir_tar_pcd + file_npy[name_start:name_end] + '.ply', pcd)
 
 
@@ -107,7 +108,6 @@ if __name__ == "__main__":
 
     # save voxel as npy files
     pbar = ProgressBar()
-    """
     num_cores = multiprocessing.cpu_count()
     Parallel(n_jobs=num_cores)(delayed(voxel2pcd)(file_npy, dir_tar_pcd, type=data_type)
                                for file_npy in pbar(files_npy))
@@ -115,3 +115,4 @@ if __name__ == "__main__":
     """
     for file_npy in pbar(files_npy):
         voxel2pcd(file_npy, dir_tar_pcd, type=data_type)
+    """
