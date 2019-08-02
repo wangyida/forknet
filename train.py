@@ -61,24 +61,24 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     print('---amount of data:', str(len(data_paths)))
     data_process = DataProcess(data_paths, batch_size, repeat=True)
 
-    enc_sscnet_vars = filter(lambda x: x.name.startswith('encode_sscnet'),
-                             tf.trainable_variables())
-    enc_sdf_vars = filter(lambda x: x.name.startswith('encode_x'),
-                          tf.trainable_variables())
-    dis_sdf_vars = filter(lambda x: x.name.startswith('discrim_x'),
-                          tf.trainable_variables())
-    dis_com_vars = filter(lambda x: x.name.startswith('discrim_g'),
-                          tf.trainable_variables())
-    dis_sem_vars = filter(lambda x: x.name.startswith('discrim_y'),
-                          tf.trainable_variables())
-    gen_com_vars = filter(lambda x: x.name.startswith('gen_x'),
-                          tf.trainable_variables())
-    gen_sem_vars = filter(lambda x: x.name.startswith('gen_y'),
-                          tf.trainable_variables())
-    gen_sdf_vars = filter(lambda x: x.name.startswith('gen_z'),
-                          tf.trainable_variables())
-    refine_vars = filter(lambda x: x.name.startswith('gen_y_ref'),
-                         tf.trainable_variables())
+    enc_sscnet_vars = list(filter(lambda x: x.name.startswith('encode_sscnet'),
+                             tf.trainable_variables()))
+    enc_sdf_vars = list(filter(lambda x: x.name.startswith('encode_x'),
+                          tf.trainable_variables()))
+    dis_sdf_vars = list(filter(lambda x: x.name.startswith('discrim_x'),
+                          tf.trainable_variables()))
+    dis_com_vars = list(filter(lambda x: x.name.startswith('discrim_g'),
+                          tf.trainable_variables()))
+    dis_sem_vars = list(filter(lambda x: x.name.startswith('discrim_y'),
+                          tf.trainable_variables()))
+    gen_com_vars = list(filter(lambda x: x.name.startswith('gen_x'),
+                          tf.trainable_variables()))
+    gen_sem_vars = list(filter(lambda x: x.name.startswith('gen_y'),
+                          tf.trainable_variables()))
+    gen_sdf_vars = list(filter(lambda x: x.name.startswith('gen_z'),
+                          tf.trainable_variables()))
+    refine_vars = list(filter(lambda x: x.name.startswith('gen_y_ref'),
+                         tf.trainable_variables()))
 
     lr_VAE = tf.placeholder(tf.float32, shape=[])
 
@@ -313,8 +313,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     colored("%.2f" % scores_discrim[1], 'magenta'),
                     colored("%.2f" % scores_discrim[2], 'green'),
                     colored("%.2f" % scores_discrim[3], 'magenta'),
-                    colored(".2f" % scores_discrim[4], 'green'),
-                    colored(".2f" % scores_discrim[5], 'magenta') if
+                    colored("%.2f" % scores_discrim[4], 'green'),
+                    colored("%.2f" % scores_discrim[5], 'magenta') if
                     ('scores_discrim' in locals()) else 'None')
 
             print(
