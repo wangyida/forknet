@@ -520,19 +520,19 @@ class depvox_gan():
                 (1 - self.lamda_gamma) *
                 (1 - comp_gt) * tf.log(1e-6 + 1 - comp_dec), [1, 2, 3]) *
             weight_complete, 1)
-        # segmentation
+        # geometric semantic scene completion (sscnet ops)
+        recons_ssc_loss = tf.reduce_sum(
+            -tf.reduce_sum(
+                self.lamda_gamma * full_gt * tf.log(1e-6 + sscnet) +
+                (1 - self.lamda_gamma) *
+                (1 - full_gt) * tf.log(1e-6 + 1 - sscnet), [1, 2, 3]) *
+            weight_full, 1)
+        # generative semantic scene completion (from latent features)
         recons_sem_loss = tf.reduce_sum(
             -tf.reduce_sum(
                 self.lamda_gamma * surf_gt * tf.log(1e-6 + surf_dec) +
                 (1 - self.lamda_gamma) *
                 (1 - surf_gt) * tf.log(1e-6 + 1 - surf_dec), [1, 2, 3]) *
-            weight_full, 1)
-        # sscnet
-        recons_ssc_loss = tf.reduce_sum(
-            -tf.reduce_sum(
-                self.lamda_gamma * surf_gt * tf.log(1e-6 + sscnet) +
-                (1 - self.lamda_gamma) *
-                (1 - surf_gt) * tf.log(1e-6 + 1 - sscnet), [1, 2, 3]) *
             weight_full, 1)
         # refine for segmentation
         refine_loss = tf.reduce_mean(

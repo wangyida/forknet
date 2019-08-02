@@ -28,12 +28,12 @@ def voxel2pcd(file_npy, dir_tar_pcd, type='partial'):
     else:
         coordinate = np.transpose(np.where(voxels > 0))
         pcd.points = Vector3dVector(coordinate)
-        colors_cat = np.float32(np.transpose(np.tile(voxels[voxels > 0], ( 3, 1))))
+        colors_cat = np.float32(np.transpose(np.tile(voxels[voxels > 0], ( 3, 1))))/11
         pcd.colors = Vector3dVector(colors_cat)
     # Save
     name_start = int(file_npy.rfind('/'))
     name_end = int(file_npy.find('.', name_start))
-    write_point_cloud(dir_tar_pcd + file_npy[name_start:name_end] + '.pcd', pcd)/11
+    write_point_cloud(dir_tar_pcd + file_npy[name_start:name_end] + '.pcd', pcd)
     # write_point_cloud(dir_tar_pcd + file_npy[name_start:name_end] + '.ply', pcd)
 
 

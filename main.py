@@ -48,7 +48,7 @@ def main():
     if not os.path.exists(cfg.DIR.EVAL_PATH):
         os.makedirs(cfg.DIR.EVAL_PATH)
     if FLAGS.middle_start:
-        print 'middle_start'
+        print('middle_start')
 
     if FLAGS.mode == 'train':
         train(FLAGS.epoch, FLAGS.learning_rate_G, FLAGS.learning_rate_D,

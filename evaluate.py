@@ -15,7 +15,7 @@ from pca import pca
 init()
 
 
-def IoU_AP_calc(on_gt, on_pred, pred_full, IoU_class, AP_class, vox_shape):
+def IoU(on_gt, on_pred, IoU_class, vox_shape):
     # calc_IoU
     if vox_shape[3] == 12:
         name_list = [
@@ -42,42 +42,8 @@ def IoU_AP_calc(on_gt, on_pred, pred_full, IoU_class, AP_class, vox_shape):
     elif vox_shape[3] == 2:
         IoU_class[vox_shape[3]] = np.round(np.sum(IoU_class) / vox_shape[3], 3)
     print 'IoU average: ' + str(IoU_class[vox_shape[3]])
-
-    #calc_AP
-    """
-    for class_n in np.arange(vox_shape[3]):
-        on_pred_ = pred_full[:, :, :, :, class_n]
-        on_gt_ = on_gt[:, :, :, :, class_n]
-
-        AP = 0.
-        for i in np.arange(num):
-            y_true = np.reshape(on_gt_[i], [-1])
-            y_scores = np.reshape(on_pred_[i], [-1])
-            if np.sum(y_true) > 0.:
-                AP += average_precision_score(y_true, y_scores)
-        AP = np.round(AP / num, 3)
-        AP_class[class_n] = AP
-        print 'AP class ' + str(class_n) + '=' + str(AP)
-    AP_class[vox_shape[3]] = np.round(
-        np.sum(AP_class[1:(vox_shape[3] - 1)]) / (vox_shape[3] - 1), 3)
-    print 'AP category-wise = ' + str(AP_class[vox_shape[3]])
-    """
-    """
-    on_pred_ = pred_full[:, :, :, :, 1:vox_shape[3]]
-    on_gt_ = on_gt[:, :, :, :, 1:vox_shape[3]]
-    AP = 0.
-    for i in np.arange(num):
-        y_true = np.reshape(on_gt_[i], [-1])
-        y_scores = np.reshape(on_pred_[i], [-1])
-        if np.sum(y_true) > 0.:
-            AP += average_precision_score(y_true, y_scores)
-
-    AP = np.round(AP / num, 3)
-    AP_class[vox_shape[3]] = AP
-    print 'AP space-wise =' + str(AP)
-    """
     print ''
-    return IoU_class, AP_class
+    return IoU_class
 
 
 def evaluate(batch_size, checknum, mode, discriminative):
@@ -116,7 +82,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
 
     Z_tf, z_enc_tf, surf_tf, full_tf, full_gen_tf, surf_dec_tf, full_dec_tf,\
     gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
+    part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, ssc_tf, scores_tf = depvox_gan_model.build_model()
     if discriminative is True:
         Z_tf_sample, comp_tf_sample, surf_tf_sample, full_tf_sample, part_tf_sample, scores_tf_sample = depvox_gan_model.samples_generator(
             visual_size=batch_size)
@@ -155,10 +121,10 @@ def evaluate(batch_size, checknum, mode, discriminative):
             batch_voxel = voxel_test[i * batch_size:i * batch_size +
                                      batch_size]
 
-            batch_pred_surf, batch_pred_full, batch_pred_part, batch_part_enc_Z, batch_complete_gt, batch_pred_complete, batch_sscnet = sess.run(
+            batch_pred_surf, batch_pred_full, batch_pred_part, batch_part_enc_Z, batch_complete_gt, batch_pred_complete, batch_ssc = sess.run(
                 [
                     surf_dec_tf, full_dec_tf, part_dec_tf, z_enc_tf,
-                    complete_gt_tf, complete_dec_tf, sscnet_tf
+                    complete_gt_tf, complete_dec_tf, ssc_tf
                 ],
                 feed_dict={
                     part_tf: batch_tsdf,
@@ -170,7 +136,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                 pred_part = batch_pred_part
                 pred_surf = batch_pred_surf
                 pred_full = batch_pred_full
-                pred_sscnet = batch_sscnet
+                pred_ssc = batch_ssc
                 part_enc_Z = batch_part_enc_Z
                 complete_gt = batch_complete_gt
                 pred_complete = batch_pred_complete
@@ -181,8 +147,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                            axis=0)
                 pred_full = np.concatenate((pred_full, batch_pred_full),
                                            axis=0)
-                pred_sscnet = np.concatenate((pred_sscnet, batch_sscnet),
-                                             axis=0)
+                pred_ssc = np.concatenate((pred_ssc, batch_ssc), axis=0)
                 part_enc_Z = np.concatenate((part_enc_Z, batch_part_enc_Z),
                                             axis=0)
                 complete_gt = np.concatenate((complete_gt, batch_complete_gt),
@@ -212,33 +177,33 @@ def evaluate(batch_size, checknum, mode, discriminative):
         surface.astype('uint8').tofile(save_path + '/surface.bin')
         pred_part.astype('uint8').tofile(save_path + '/dec_part.bin')
 
-        depth_seg_gt = np.multiply(voxel_test, np.clip(surface, 0, 1))
+        depsem_gt = np.multiply(voxel_test, np.clip(surface, 0, 1))
         if cfg.TYPE_TASK == 'scene':
-            depth_seg_gt[depth_seg_gt < 0] = 0
-        depth_seg_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
+            depsem_gt[depsem_gt < 0] = 0
+        depsem_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
 
         # decoded
         np.argmax(
-            pred_sscnet,
-            axis=4).astype('uint8').tofile(save_path + '/dec_sscnet.bin')
+            pred_ssc,
+            axis=4).astype('uint8').tofile(save_path + '/dec_ssc.bin')
         error = np.array(
-            np.clip(np.argmax(pred_sscnet, axis=4), 0, 1) +
+            np.clip(np.argmax(pred_ssc, axis=4), 0, 1) +
             np.argmax(complete_gt, axis=4) * 2)
-        error.astype('uint8').tofile(save_path + '/dec_sscnet_error.bin')
+        error.astype('uint8').tofile(save_path + '/dec_ssc_error.bin')
         np.argmax(
             pred_surf,
-            axis=4).astype('uint8').tofile(save_path + '/dec_vox.bin')
+            axis=4).astype('uint8').tofile(save_path + '/dec_surf.bin')
         error = np.array(
             np.clip(np.argmax(pred_surf, axis=4), 0, 1) +
             np.argmax(complete_gt, axis=4) * 2)
-        error.astype('uint8').tofile(save_path + '/dec_vox_error.bin')
+        error.astype('uint8').tofile(save_path + '/dec_surf_error.bin')
         np.argmax(
             pred_full,
-            axis=4).astype('uint8').tofile(save_path + '/dec_ref_vox.bin')
+            axis=4).astype('uint8').tofile(save_path + '/dec_full.bin')
         error = np.array(
             np.clip(np.argmax(pred_full, axis=4), 0, 1) +
             np.argmax(complete_gt, axis=4) * 2)
-        error.astype('uint8').tofile(save_path + '/dec_ref_vox_error.bin')
+        error.astype('uint8').tofile(save_path + '/dec_full_error.bin')
         np.argmax(
             pred_complete,
             axis=4).astype('uint8').tofile(save_path + '/dec_complete.bin')
@@ -332,71 +297,58 @@ def evaluate(batch_size, checknum, mode, discriminative):
         print("voxels saved")
 
         # numerical evalutation
-        on_surf_gt = onehot(surf_test, vox_shape[3])
-        on_full_gt = onehot(voxel_test, vox_shape[3])
-        on_depth_seg_gt = onehot(depth_seg_gt, vox_shape[3])
-        on_depth_seg_pred = np.multiply(
-            onehot(np.argmax(pred_surf, axis=4), vox_shape[3]),
-            np.expand_dims(np.clip(surface, 0, 1), -1))
-        on_complete_gt = complete_gt
-        complete_gen = np.argmax(pred_complete, axis=4)
-        on_complete_gen = onehot(complete_gen, 2)
 
         # calc_IoU
         # completion
+        on_complete_gt = complete_gt
+        complete_gen = np.argmax(pred_complete, axis=4)
+        on_complete_gen = onehot(complete_gen, 2)
         IoU_comp = np.zeros([2 + 1])
         AP_comp = np.zeros([2 + 1])
         print(colored("Completion", 'cyan'))
-        IoU_comp, AP_comp = IoU_AP_calc(
-            on_complete_gt, on_complete_gen, complete_gen, IoU_comp, AP_comp,
-            [vox_shape[0], vox_shape[1], vox_shape[2], 2])
+        IoU_comp = IoU(on_complete_gt, on_complete_gen, IoU_comp,
+                       [vox_shape[0], vox_shape[1], vox_shape[2], 2])
 
         # depth segmentation
-        print(colored("Depth segmentation", 'cyan'))
+        on_depsem_gt = onehot(depsem_gt, vox_shape[3])
+        on_depsem_ssc = np.multiply(
+            onehot(np.argmax(pred_ssc, axis=4), vox_shape[3]),
+            np.expand_dims(np.clip(surface, 0, 1), -1))
+        on_depsem_dec = np.multiply(
+            onehot(np.argmax(pred_full, axis=4), vox_shape[3]),
+            np.expand_dims(np.clip(surface, 0, 1), -1))
+        print(colored("Geometric depth segmentation", 'cyan'))
         IoU_class = np.zeros([vox_shape[3] + 1])
-        AP_class = np.zeros([vox_shape[3] + 1])
-        IoU_class, AP_class = IoU_AP_calc(
-            on_depth_seg_gt, on_depth_seg_pred,
-            np.multiply(pred_surf,
-                        np.expand_dims(np.clip(surface - 5, 0, 1), -1)),
-            IoU_class, AP_class, vox_shape)
+        IoU_class = IoU(on_depsem_gt, on_depsem_ssc, IoU_class, vox_shape)
         IoU_all = np.expand_dims(IoU_class, axis=1)
-        AP_all = np.expand_dims(AP_class, axis=1)
+
+        print(colored("Generative depth segmentation", 'cyan'))
+        IoU_class = np.zeros([vox_shape[3] + 1])
+        IoU_class = IoU(on_depsem_gt, on_depsem_dec, IoU_class, vox_shape)
+        IoU_all = np.expand_dims(IoU_class, axis=1)
 
         # volume segmentation
-        print(colored("Geometric segmentation", 'cyan'))
-        on_pred = onehot(np.argmax(pred_sscnet, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_surf_gt, on_pred, pred_sscnet,
-                                          IoU_class, AP_class, vox_shape)
+        on_surf_gt = onehot(surf_test, vox_shape[3])
+        on_full_gt = onehot(voxel_test, vox_shape[3])
+        print(colored("Geometric semantic completion", 'cyan'))
+        on_pred = onehot(np.argmax(pred_ssc, axis=4), vox_shape[3])
+        IoU_class = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
-        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
-                                axis=1)
-        print(colored("Surface segmentation", 'cyan'))
+        print(colored("Generative semantic completion", 'cyan'))
         on_pred = onehot(np.argmax(pred_surf, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_surf_gt, on_pred, pred_surf,
-                                          IoU_class, AP_class, vox_shape)
+        IoU_class = IoU(on_surf_gt, on_pred, IoU_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
-        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
-                                axis=1)
-        print(colored("Solid segmentation", 'cyan'))
+        print(colored("Solid generative semantic completion", 'cyan'))
         on_pred = onehot(np.argmax(pred_full, axis=4), vox_shape[3])
-        IoU_class, AP_class = IoU_AP_calc(on_full_gt, on_pred, pred_full,
-                                          IoU_class, AP_class, vox_shape)
+        IoU_class = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
-        AP_all = np.concatenate((AP_all, np.expand_dims(AP_class, axis=1)),
-                                axis=1)
 
         np.savetxt(
             save_path + '/IoU.csv',
             np.transpose(IoU_all[1:] * 100),
-            delimiter=" & ",
-            fmt='%2.1f')
-        np.savetxt(
-            save_path + '/AP.csv',
-            np.transpose(AP_all[1:] * 100),
             delimiter=" & ",
             fmt='%2.1f')
 

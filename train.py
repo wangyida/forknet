@@ -58,7 +58,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     saver = tf.train.Saver(max_to_keep=cfg.SAVER_MAX)
 
     data_paths = scene_model_id_pair(dataset_portion=cfg.TRAIN.DATASET_PORTION)
-    print '---amount of data:' + str(len(data_paths))
+    print('---amount of data:', str(len(data_paths)))
     data_process = DataProcess(data_paths, batch_size, repeat=True)
 
     enc_sscnet_vars = filter(lambda x: x.name.startswith('encode_sscnet'),
@@ -142,7 +142,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         Z_var_np_sample = np.load(cfg.DIR.TRAIN_OBJ_PATH +
                                   '/sample_z.npy').astype(np.float32)
         Z_var_np_sample = Z_var_np_sample[:batch_size]
-        print '---weights restored'
+        print('---weights restored')
     else:
         Z_var_np_sample = np.random.normal(
             size=(batch_size, start_vox_size[0], start_vox_size[1],
@@ -156,7 +156,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     for epoch in np.arange(cur_epochs, n_epochs):
         epoch_flag = True
         while epoch_flag:
-            print colored('---Iteration:%d, epoch:%d', 'blue') % (ite, epoch)
+            print(colored('---Iteration:%d, epoch:%d', 'blue') % (ite, epoch))
             db_inds, epoch_flag = data_process.get_next_minibatch()
             batch_tsdf = data_process.get_tsdf(db_inds)
             batch_surf = data_process.get_surf(db_inds)
@@ -294,41 +294,38 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             print('GAN')
             np.set_printoptions(precision=2)
-            print 'reconstruct-com loss:', gen_com_loss_val if (
-                'gen_com_loss_val' in locals()) else 'None'
+            print('reconstruct-com loss:', gen_com_loss_val)
 
-            print 'reconstruct-sem loss:', gen_sem_loss_val if (
-                'gen_sem_loss_val' in locals()) else 'None'
+            print('reconstruct-sem loss:', gen_sem_loss_val)
 
             if discriminative:
-                print '            gen loss:', "{0:.2f}".format(
-                    gen_loss_val) if ('gen_loss_val' in locals()) else 'None'
+                print(
+                    '            gen loss:', "%.2f" % gen_loss_val if
+                    ('gen_loss_val' in locals()) else 'None')
 
-                print '      output discrim:', "{0:.2f}".format(
-                    discrim_loss_val) if (
-                        'discrim_loss_val' in locals()) else 'None'
+                print(
+                    '      output discrim:', "%.2f" % discrim_loss_val if
+                    ('discrim_loss_val' in locals()) else 'None')
 
-                print '      scores discrim:', colored(
-                    "{0:.2f}".format(scores_discrim[0]), 'green'), colored(
-                        "{0:.2f}".format(scores_discrim[1]),
-                        'magenta'), colored(
-                            "{0:.2f}".format(scores_discrim[2]),
-                            'green'), colored(
-                                "{0:.2f}".format(scores_discrim[3]),
-                                'magenta'), colored(
-                                    "{0:.2f}".format(scores_discrim[4]),
-                                    'green'), colored(
-                                        "{0:.2f}".format(scores_discrim[5]),
-                                        'magenta') if ('scores_discrim' in
-                                                       locals()) else 'None'
+                print(
+                    '      scores discrim:',
+                    colored("%.2f" % scores_discrim[0], 'green'),
+                    colored("%.2f" % scores_discrim[1], 'magenta'),
+                    colored("%.2f" % scores_discrim[2], 'green'),
+                    colored("%.2f" % scores_discrim[3], 'magenta'),
+                    colored(".2f" % scores_discrim[4], 'green'),
+                    colored(".2f" % scores_discrim[5], 'magenta') if
+                    ('scores_discrim' in locals()) else 'None')
 
-            print '     avarage of code:', np.mean(
-                np.mean(z_part_enc_val,
-                        4)) if ('z_part_enc_val' in locals()) else 'None'
+            print(
+                '     avarage of code:',
+                np.mean(np.mean(z_part_enc_val, 4)) if
+                ('z_part_enc_val' in locals()) else 'None')
 
-            print '         std of code:', np.mean(
-                np.std(z_part_enc_val,
-                       4)) if ('z_part_enc_val' in locals()) else 'None'
+            print(
+                '         std of code:',
+                np.mean(np.std(z_part_enc_val, 4)) if
+                ('z_part_enc_val' in locals()) else 'None')
 
             if np.mod(ite, freq) == 0:
                 if discriminative is True:
