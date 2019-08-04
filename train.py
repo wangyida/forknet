@@ -61,24 +61,26 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     print('---amount of data:', str(len(data_paths)))
     data_process = DataProcess(data_paths, batch_size, repeat=True)
 
-    enc_sscnet_vars = list(filter(lambda x: x.name.startswith('encode_sscnet'),
-                             tf.trainable_variables()))
-    enc_sdf_vars = list(filter(lambda x: x.name.startswith('encode_x'),
-                          tf.trainable_variables()))
-    dis_sdf_vars = list(filter(lambda x: x.name.startswith('discrim_x'),
-                          tf.trainable_variables()))
-    dis_com_vars = list(filter(lambda x: x.name.startswith('discrim_g'),
-                          tf.trainable_variables()))
-    dis_sem_vars = list(filter(lambda x: x.name.startswith('discrim_y'),
-                          tf.trainable_variables()))
-    gen_com_vars = list(filter(lambda x: x.name.startswith('gen_x'),
-                          tf.trainable_variables()))
-    gen_sem_vars = list(filter(lambda x: x.name.startswith('gen_y'),
-                          tf.trainable_variables()))
-    gen_sdf_vars = list(filter(lambda x: x.name.startswith('gen_z'),
-                          tf.trainable_variables()))
-    refine_vars = list(filter(lambda x: x.name.startswith('gen_y_ref'),
-                         tf.trainable_variables()))
+    enc_sscnet_vars = list(
+        filter(lambda x: x.name.startswith('enc_ssc'),
+               tf.trainable_variables()))
+    enc_sdf_vars = list(
+        filter(lambda x: x.name.startswith('enc_x'), tf.trainable_variables()))
+    dis_sdf_vars = list(
+        filter(lambda x: x.name.startswith('dis_x'), tf.trainable_variables()))
+    dis_com_vars = list(
+        filter(lambda x: x.name.startswith('dis_g'), tf.trainable_variables()))
+    dis_sem_vars = list(
+        filter(lambda x: x.name.startswith('dis_y'), tf.trainable_variables()))
+    gen_com_vars = list(
+        filter(lambda x: x.name.startswith('gen_x'), tf.trainable_variables()))
+    gen_sem_vars = list(
+        filter(lambda x: x.name.startswith('gen_y'), tf.trainable_variables()))
+    gen_sdf_vars = list(
+        filter(lambda x: x.name.startswith('gen_z'), tf.trainable_variables()))
+    refine_vars = list(
+        filter(lambda x: x.name.startswith('gen_y_ref'),
+               tf.trainable_variables()))
 
     lr_VAE = tf.placeholder(tf.float32, shape=[])
 
@@ -113,13 +115,11 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         train_op_dis_sdf = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf,
-                var_list=dis_sdf_vars,
-                global_step=global_step)
+                var_list=dis_sdf_vars)
         train_op_dis_com = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf,
-                var_list=dis_com_vars,
-                global_step=global_step)
+                var_list=dis_com_vars)
         train_op_dis_sem = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf,
@@ -216,7 +216,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 },
             )
 
-            if discriminative:
+            if discriminative is True:
                 discrim_loss_val, gen_loss_val, scores_discrim = sess.run(
                     [discrim_loss_tf, gen_loss_tf, scores_tf],
                     feed_dict={
@@ -298,7 +298,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             print('reconstruct-sem loss:', gen_sem_loss_val)
 
-            if discriminative:
+            if discriminative is True:
                 print(
                     '            gen loss:', "%.2f" % gen_loss_val if
                     ('gen_loss_val' in locals()) else 'None')
@@ -336,11 +336,11 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     full_models_cat = np.argmax(full_models, axis=4)
                     record_vox = full_models_cat[:record_vox_num]
                     np.save(
-                        cfg.DIR.TRAIN_OBJ_PATH + '/' + str(ite / freq) +
+                        cfg.DIR.TRAIN_OBJ_PATH + '/' + str(ite // freq) +
                         '.npy', record_vox)
                 save_path = saver.save(
                     sess,
-                    model_path + '/checkpoint' + str(ite / freq),
+                    model_path + '/checkpoint' + str(ite // freq),
                     global_step=None)
 
             ite += 1

@@ -16,26 +16,35 @@ from progressbar import ProgressBar
 from joblib import Parallel, delayed
 
 
-def voxel2pcd(file_npy, dir_tar_pcd, type='partial'):
-    voxels = np.load(file_npy)
+def voxel2pcd(npy_sec, dir_pcd_dep, dir_pcd_sec):
+    npy_dep = npy_sec.replace('surface_semantic_npy', 'depth_tsdf_camera_npy')
+    voxel_sec = np.load(npy_sec)
+    voxel_dep = np.load(npy_dep)
+    voxel_dep[voxel_dep < 0] = 0
+    voxel_dep = np.ceil(np.abs(voxel_dep)) * voxel_sec
     pcd = PointCloud()
-    if type == 'partial':
-        coordinate = np.transpose(np.where(voxels > 0.5))
-        pcd.points = Vector3dVector(coordinate)
-        # colors_cat = np.transpose(np.tile(voxels[voxels > 0.5], ( 3, 1)))
-        colors_cat = np.ones_like(coordinate)
-        pcd.colors = Vector3dVector(colors_cat)
-    else:
-        coordinate = np.transpose(np.where(voxels > 0))
-        pcd.points = Vector3dVector(coordinate)
-        colors_cat = np.float32(np.transpose(np.tile(voxels[voxels > 0], ( 3, 1))))/11
-        pcd.colors = Vector3dVector(colors_cat)
+
+    coordinate_sec = np.transpose(np.where(voxel_sec > 0))
+    pcd.points = Vector3dVector(coordinate_sec)
+    colors_cat_sec = np.float32(np.transpose(np.tile(voxel_sec[voxel_sec > 0], (3, 1))))/11
+    pcd.colors = Vector3dVector(colors_cat_sec)
+
     # Save
-    name_start = int(file_npy.rfind('/'))
-    name_end = int(file_npy.find('.', name_start))
-    write_point_cloud(dir_tar_pcd + file_npy[name_start:name_end] + '.pcd', pcd)
+    name_start = int(npy_sec.rfind('/'))
+    name_end = int(npy_sec.find('.', name_start))
+    write_point_cloud(dir_pcd_sec + npy_sec[name_start:name_end] + '.pcd', pcd)
     # write_point_cloud(dir_tar_pcd + file_npy[name_start:name_end] + '.ply', pcd)
 
+    coordinate_dep = np.transpose(np.where(voxel_dep > 0))
+    pcd.points = Vector3dVector(coordinate_dep)
+    colors_cat_dep = np.float32(np.transpose(np.tile(voxel_dep[voxel_dep > 0], (3, 1))))/11
+    pcd.colors = Vector3dVector(colors_cat_dep)
+
+    # Save
+    name_start = int(npy_dep.rfind('/'))
+    name_end = int(npy_dep.find('.', name_start))
+    write_point_cloud(dir_pcd_dep + npy_dep[name_start:name_end] + '.pcd', pcd)
+    # write_point_cloud(dir_tar_pcd + file_npy[name_start:name_end] + '.ply', pcd)
 
 class ScanFile(object):
     def __init__(self, directory, prefix=None, postfix='.bin'):
@@ -82,10 +91,10 @@ if __name__ == "__main__":
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
         help='for storing generated npy')
     parser.add_argument(
-        '-dt',
+        '-tv_partial',
         action="store",
-        dest="data_type",
-        default='partial',
+        dest="dir_tar_pcd_partial",
+        default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
         help='for storing generated npy')
     parser.print_help()
     results = parser.parse_args()
@@ -94,7 +103,7 @@ if __name__ == "__main__":
     dir_src = results.dir_src
     # for storing generated npy
     dir_tar_pcd = results.dir_tar_pcd
-    data_type = results.data_type
+    dir_tar_pcd_partial = results.dir_tar_pcd_partial
 
     # scan for voxel files
     scan_npy = ScanFile(directory=dir_src, postfix='.npy')
@@ -109,10 +118,10 @@ if __name__ == "__main__":
     # save voxel as npy files
     pbar = ProgressBar()
     num_cores = multiprocessing.cpu_count()
-    Parallel(n_jobs=num_cores)(delayed(voxel2pcd)(file_npy, dir_tar_pcd, type=data_type)
+    Parallel(n_jobs=num_cores)(delayed(voxel2pcd)(file_npy, dir_tar_pcd_partial, dir_tar_pcd)
                                for file_npy in pbar(files_npy))
     # below is the normal procedure for processing
     """
     for file_npy in pbar(files_npy):
-        voxel2pcd(file_npy, dir_tar_pcd, type=data_type)
+        voxel2pcd(file_npy, dir_tar_pcd)
     """

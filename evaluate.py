@@ -317,12 +317,12 @@ def evaluate(batch_size, checknum, mode, discriminative):
         on_depsem_dec = np.multiply(
             onehot(np.argmax(pred_full, axis=4), vox_shape[3]),
             np.expand_dims(np.clip(surface, 0, 1), -1))
-        print(colored("Geometric depth segmentation", 'cyan'))
+        print(colored("Geometric segmentation", 'cyan'))
         IoU_class = np.zeros([vox_shape[3] + 1])
         IoU_class = IoU(on_depsem_gt, on_depsem_ssc, IoU_class, vox_shape)
         IoU_all = np.expand_dims(IoU_class, axis=1)
 
-        print(colored("Generative depth segmentation", 'cyan'))
+        print(colored("Generative segmentation", 'cyan'))
         IoU_class = np.zeros([vox_shape[3] + 1])
         IoU_class = IoU(on_depsem_gt, on_depsem_dec, IoU_class, vox_shape)
         IoU_all = np.expand_dims(IoU_class, axis=1)
@@ -337,7 +337,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                  axis=1)
         print(colored("Generative semantic completion", 'cyan'))
         on_pred = onehot(np.argmax(pred_surf, axis=4), vox_shape[3])
-        IoU_class = IoU(on_surf_gt, on_pred, IoU_class, vox_shape)
+        IoU_class = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
         IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
                                  axis=1)
         print(colored("Solid generative semantic completion", 'cyan'))

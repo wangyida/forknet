@@ -5,12 +5,16 @@ cfg = __C
 #
 # Common
 #
+__C.TYPE_TASK = 'scene'
+__C.TYPE_EVAL = 'synthetic'
+__C.TYPE_DATA = 'test'
+
 __C.SUB_CONFIG_FILE = []
 
 __C.CONST = edict()
 __C.CONST.BATCH_SIZE = 8
-__C.CONST.BATCH_SIZE_TEST = 8
-__C.SAVER_MAX = 1000
+__C.CONST.BATCH_SIZE_TEST = 2
+__C.SAVER_MAX = 2000
 __C.CHECK_FREQ = 1000
 __C.RECORD_VOX_NUM = 10
 __C.SWITCHING_ITE = 100001
@@ -23,9 +27,6 @@ __C.NET.KERNEL = [[4, 4, 4, 4, 4], [4, 4, 4, 4, 4], [4, 4, 4, 4, 4]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
 
-__C.TYPE_TASK = 'scene'
-__C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'train'
 if __C.TYPE_TASK is 'scene':
     __C.CONST.N_VOX = [80, 48, 80]
     __C.NET.START_VOX = [5, 3, 5]
