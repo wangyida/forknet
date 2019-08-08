@@ -24,7 +24,7 @@ def voxel2pcd(npy_sec, dir_pcd_dep, dir_pcd_sec):
     voxel_dep = np.ceil(np.abs(voxel_dep)) * voxel_sec
     pcd = PointCloud()
 
-    coordinate_sec = np.transpose(np.where(voxel_sec > 0))/80
+    coordinate_sec = np.float32(np.transpose(np.where(voxel_sec > 0)))/80
     pcd.points = Vector3dVector(coordinate_sec)
     colors_cat_sec = np.float32(np.transpose(np.tile(voxel_sec[voxel_sec > 0], (3, 1))))/11
     pcd.colors = Vector3dVector(colors_cat_sec)
@@ -35,7 +35,7 @@ def voxel2pcd(npy_sec, dir_pcd_dep, dir_pcd_sec):
     write_point_cloud(dir_pcd_sec + npy_sec[name_start:name_end] + '.pcd', pcd)
     # write_point_cloud(dir_tar_pcd + npy_sec[name_start:name_end] + '.ply', pcd)
 
-    coordinate_dep = np.transpose(np.where(voxel_dep > 0))/80
+    coordinate_dep = np.float32(np.transpose(np.where(voxel_dep > 0)))/80
     pcd.points = Vector3dVector(coordinate_dep)
     colors_cat_dep = np.float32(np.transpose(np.tile(voxel_dep[voxel_dep > 0], (3, 1))))/11
     pcd.colors = Vector3dVector(colors_cat_dep)
@@ -56,7 +56,7 @@ def voxel2pcd_cat(npy_sec, dir_pcd_dep, dir_pcd_sec):
 
     for catogory in range(1, 12):
         if np.array(np.where(voxel_dep == catogory)).size > 0:
-            coordinate_sec = np.transpose(np.where(voxel_sec == catogory))/80
+            coordinate_sec = np.float32(np.transpose(np.where(voxel_sec == catogory)))/80
             pcd.points = Vector3dVector(coordinate_sec)
             colors_cat_sec = np.float32(np.ones_like(coordinate_sec))/11
             pcd.colors = Vector3dVector(colors_cat_sec)
@@ -67,7 +67,7 @@ def voxel2pcd_cat(npy_sec, dir_pcd_dep, dir_pcd_sec):
             write_point_cloud(dir_pcd_sec + npy_sec[name_start:name_end] + str(catogory) + '.pcd', pcd)
             # write_point_cloud(dir_tar_pcd + file_npy[name_start:name_end] + '.ply', pcd)
 
-            coordinate_dep = np.transpose(np.where(voxel_dep == catogory))/80
+            coordinate_dep = np.float32(np.transpose(np.where(voxel_dep == catogory)))/80
             pcd.points = Vector3dVector(coordinate_dep)
             colors_cat_dep = np.float32(np.ones_like(coordinate_dep))/11
             pcd.colors = Vector3dVector(colors_cat_dep)

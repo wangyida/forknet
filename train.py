@@ -114,12 +114,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 gen_loss_tf, var_list=gen_sem_vars)
         train_op_dis_sdf = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
-                discrim_loss_tf,
-                var_list=dis_sdf_vars)
+                discrim_loss_tf, var_list=dis_sdf_vars)
         train_op_dis_com = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
-                discrim_loss_tf,
-                var_list=dis_com_vars)
+                discrim_loss_tf, var_list=dis_com_vars)
         train_op_dis_sem = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf,

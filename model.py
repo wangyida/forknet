@@ -382,20 +382,22 @@ class depvox_gan():
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
         part_gt = tf.expand_dims(part_gt_, -1)
 
-        surf_gt_ = tf.placeholder(
-            tf.int32,
-            [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
-        surf_gt = tf.one_hot(surf_gt_, self.n_class)
-        surf_gt = tf.cast(surf_gt, tf.float32)
-
         full_gt_ = tf.placeholder(
             tf.int32,
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
-        full_gt = tf.one_hot(full_gt_, self.n_class)
-        full_gt = tf.cast(full_gt, tf.float32)
+        full_gt = tf.cast(tf.one_hot(full_gt_, self.n_class), tf.float32)
+
+        surf_gt_ = tf.placeholder(
+            tf.int32,
+            [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
+        surf_gt_tmp = tf.cast(tf.one_hot(surf_gt_, self.n_class), tf.float32)
+        surf_gt = tf.concat([
+            tf.expand_dims(full_gt[:, :, :, :, 0], -1),
+            surf_gt_tmp[:, :, :, :, 1:]
+        ], -1)
 
         comp_gt_ = tf.clip_by_value(
-            surf_gt_ + tf.dtypes.cast(tf.math.round(part_gt_), tf.int32),
+            full_gt_ + tf.dtypes.cast(tf.math.round(part_gt_), tf.int32),
             clip_value_min=0,
             clip_value_max=1)
         comp_gt = tf.one_hot(comp_gt_, 2)
@@ -516,7 +518,7 @@ class depvox_gan():
         recons_ssc_loss = tf.reduce_sum(
             -tf.reduce_sum(
                 self.lamda_gamma * full_gt * tf.log(1e-6 + sscnet) +
-                self.lamda_gamma * surf_gt * tf.log(1e-6 + sscnet) * (1 - tf.one_hot(0, self.n_class)) +
+                self.lamda_gamma * surf_gt * tf.log(1e-6 + sscnet) +
                 (1 - self.lamda_gamma) *
                 (1 - full_gt) * tf.log(1e-6 + 1 - sscnet), [1, 2, 3]) *
             weight_full, 1)
@@ -524,7 +526,7 @@ class depvox_gan():
         recons_sem_loss = tf.reduce_sum(
             -tf.reduce_sum(
                 self.lamda_gamma * full_gt * tf.log(1e-6 + surf_dec) +
-                self.lamda_gamma * surf_gt * tf.log(1e-6 + surf_dec) * (1 - tf.one_hot(0, self.n_class)) +
+                self.lamda_gamma * surf_gt * tf.log(1e-6 + surf_dec) +
                 (1 - self.lamda_gamma) *
                 (1 - surf_gt) * tf.log(1e-6 + 1 - surf_dec), [1, 2, 3]) *
             weight_surf, 1)
@@ -533,7 +535,7 @@ class depvox_gan():
             tf.reduce_sum(
                 -tf.reduce_sum(
                     self.lamda_gamma * full_gt * tf.log(1e-6 + full_dec) +
-                    self.lamda_gamma * surf_gt * tf.log(1e-6 + full_dec) * (1 - tf.one_hot(0, self.n_class)) +
+                    self.lamda_gamma * surf_gt * tf.log(1e-6 + full_dec) +
                     (1 - self.lamda_gamma) *
                     (1 - full_gt) * tf.log(1e-6 + 1 - full_dec), [1, 2, 3]) *
                 weight_full, 1))
