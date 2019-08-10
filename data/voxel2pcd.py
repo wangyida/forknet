@@ -21,7 +21,7 @@ def voxel2pcd(npy_sec, dir_pcd_dep, dir_pcd_sec):
     voxel_sec = np.load(npy_sec)
     voxel_dep = np.load(npy_dep)
     voxel_dep[voxel_dep < 0] = 0
-    voxel_dep = np.ceil(np.abs(voxel_dep)) * voxel_sec
+    voxel_dep = np.round(np.abs(voxel_dep)) * voxel_sec
     pcd = PointCloud()
 
     coordinate_sec = np.float32(np.transpose(np.where(voxel_sec > 0)))/80

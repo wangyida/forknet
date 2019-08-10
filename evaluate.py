@@ -165,12 +165,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
         if cfg.TYPE_TASK == 'scene':
             surface = np.abs(surface)
             surface *= 10
-            surface -= 6
-            surface[surface < 0] = 0
             pred_part = np.abs(pred_part)
             pred_part *= 10
-            pred_part -= 6
-            pred_part[pred_part < 0] = 0
         elif cfg.TYPE_TASK == 'object':
             surface = np.clip(surface, 0, 1)
             pred_part = np.clip(pred_part, 0, 1)
@@ -256,8 +252,6 @@ def evaluate(batch_size, checknum, mode, discriminative):
             if cfg.TYPE_TASK == 'scene':
                 z_part_rand_all = np.abs(z_part_rand_all)
                 z_part_rand_all *= 10
-                z_part_rand_all -= 6
-                z_part_rand_all[z_part_rand_all < 0] = 0
             elif cfg.TYPE_TASK == 'object':
                 z_part_rand_all[z_part_rand_all <= 0.4] = 0
                 z_part_rand_all[z_part_rand_all > 0.4] = 1
@@ -286,8 +280,6 @@ def evaluate(batch_size, checknum, mode, discriminative):
                 if cfg.TYPE_TASK == 'scene':
                     z_part_rand = np.abs(z_part_rand)
                     z_part_rand *= 10
-                    z_part_rand -= 6
-                    z_part_rand[z_part_rand < 0] = 0
                 elif cfg.TYPE_TASK == 'object':
                     z_part_rand[z_part_rand <= 0.4] = 0
                     z_part_rand[z_part_rand > 0.4] = 1

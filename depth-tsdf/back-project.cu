@@ -60,7 +60,7 @@ void Integrate(float * cam_K, float * cam2base, float * depth_im,
 
     // This is for labeling the -1 space (occluded space)
     // sdf_threshold = 0.12
-    float sdf_threshold = 0.5;
+    float sdf_threshold = 0.8;
     /*
     if (diff < -sdf_threshold || depth_val == 0.0) {
       voxel_grid_TSDF[volume_idx] = 2.0f;
@@ -81,6 +81,7 @@ void Integrate(float * cam_K, float * cam2base, float * depth_im,
     // voxel_grid_TSDF[volume_idx] = (voxel_grid_TSDF[volume_idx] * weight_old + dist) / weight_new;
     if (abs(diff) < sdf_threshold) {
       // voxel_grid_TSDF[volume_idx] = 1.0f;
+      // ((diff > 0) - (diff <= 0)) is used for giving positive or negative sign
       voxel_grid_TSDF[volume_idx] = ((diff > 0) - (diff <= 0)) * (sdf_threshold - abs(diff)) / sdf_threshold;
     }
   }
