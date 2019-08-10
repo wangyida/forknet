@@ -1,5 +1,6 @@
 import os.path
 from struct import *
+from open3d import *
 from subprocess import call
 import numpy as np
 # I considered using multiprocessing package, but I find this code version is fine.
@@ -64,7 +65,7 @@ class ScanFile(object):
         return subdir_list
 
 
-def process_data(file_depth, dir_voxel, dir_ply):
+def process_data(file_depth, dir_voxel, dir_pcd):
 
     img_path = file_depth
     camera_intrinsic = "./depth-tsdf/data/camera-intrinsics.txt"
@@ -85,11 +86,16 @@ def process_data(file_depth, dir_voxel, dir_ply):
         # save numpy
         np.save(dir_voxel + img_path[name_start:name_end] + '.npy', voxel)
 
-        # save ply
+        # save pcd
+        """
         call([
             "cp", "./tsdf.ply",
             dir_ply + img_path[name_start:name_end] + '.ply'
         ])
+
+        pcd = read_point_cloud("./tsdf.ply")
+        write_point_cloud(dir_pcd + img_path[name_start:name_end] + '.pcd', pcd)
+        """
         # call(["rm -rf", tsdf_bin_path])
     else:
         print(camera_origin, 'does not exist.')
@@ -113,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '-tp',
         action="store",
-        dest="dir_ply",
+        dest="dir_pcd",
         default="/media/wangyida/D0-P1/database/SUNCGtrain_3001_5000_depvox",
         help='for storing generated ply')
     parser.print_help()
@@ -123,7 +129,7 @@ if __name__ == "__main__":
     dir_src = results.dir_src
     # for storing generated npy
     dir_voxel = results.dir_tar
-    dir_ply = results.dir_ply
+    dir_pcd = results.dir_pcd
 
     # scan for depth files
     scan_png = ScanFile(directory=dir_src, postfix='.png')
@@ -136,9 +142,9 @@ if __name__ == "__main__":
         os.mkdir(dir_voxel)
 
     try:
-        os.stat(dir_ply)
+        os.stat(dir_pcd)
     except:
-        os.mkdir(dir_ply)
+        os.mkdir(dir_pcd)
 
     # save voxel as npy files
     pbar = ProgressBar()
@@ -147,10 +153,10 @@ if __name__ == "__main__":
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
     Parallel(n_jobs=num_cores)(
-        delayed(process_data)(file_depth, dir_voxel, dir_ply)
+        delayed(process_data)(file_depth, dir_voxel, dir_pcd)
         for file_depth in pbar(files_png))
     # below is the normal procedure for processing
     """
     for file_depth in pbar(files_png):
-        process_data(file_depth, dir_voxel, dir_ply)
+        process_data(file_depth, dir_voxel, dir_pcd)
     """

@@ -37,40 +37,52 @@ void Integrate(float * cam_K, float * cam2base, float * depth_im,
 
     int volume_idx = pt_grid_z * voxel_grid_dim_y * voxel_grid_dim_x + pt_grid_y * voxel_grid_dim_x + pt_grid_x;
     if (pt_cam_z <= 0) {
-      // voxel_grid_TSDF[volume_idx] = 3.0f;
+      voxel_grid_TSDF[volume_idx] = -2.0f;
       continue;
     }
 
     int pt_pix_x = roundf(cam_K[0 * 3 + 0] * (pt_cam_x / pt_cam_z) + cam_K[0 * 3 + 2]);
     int pt_pix_y = roundf(cam_K[1 * 3 + 1] * (pt_cam_y / pt_cam_z) + cam_K[1 * 3 + 2]);
     if (pt_pix_x < 0 || pt_pix_x >= im_width || pt_pix_y < 0 || pt_pix_y >= im_height) {
-      // voxel_grid_TSDF[volume_idx] = 3.0f;
+      voxel_grid_TSDF[volume_idx] = -2.0f;
       continue;
     }
 
     float depth_val = depth_im[pt_pix_y * im_width + pt_pix_x];
+    // printf("%f\n", voxel_grid_TSDF[volume_idx]);
 
-    if (depth_val <= 0.5 || depth_val > 8) {
-      // voxel_grid_TSDF[volume_idx] = 3.0f;
+    if (depth_val > 8) {
+      voxel_grid_TSDF[volume_idx] = -2.0f;
       continue;
     }
 
     float diff = depth_val - pt_cam_z;
 
-    if (diff <= -0.1) {
-      // This is for labeling the -1 space (occluded space)
+    // This is for labeling the -1 space (occluded space)
+    // sdf_threshold = 0.12
+    float sdf_threshold = 0.8;
+    /*
+    if (diff < -sdf_threshold || depth_val == 0.0) {
       voxel_grid_TSDF[volume_idx] = 2.0f;
       continue;
     }
 
+    // This is for labeling the empty space
+    if (diff > sdf_threshold) {
+      voxel_grid_TSDF[volume_idx] = -1.0f;
+      continue;
+    }
+    */
     // Integrate
     // float dist = fmin(1.0f, diff / trunc_margin);
     // float weight_old = voxel_grid_weight[volume_idx];
     // float weight_new = weight_old + 1.0f;
     // voxel_grid_weight[volume_idx] = weight_new;
     // voxel_grid_TSDF[volume_idx] = (voxel_grid_TSDF[volume_idx] * weight_old + dist) / weight_new;
-    if (abs(diff) < 0.1) {
-      voxel_grid_TSDF[volume_idx] = 1.0f;
+    if (abs(diff) < sdf_threshold) {
+      // voxel_grid_TSDF[volume_idx] = 1.0f;
+      // ((diff > 0) - (diff <= 0)) is used for giving positive or negative sign
+      voxel_grid_TSDF[volume_idx] = ((diff > 0) - (diff <= 0)) * (sdf_threshold - abs(diff)) / sdf_threshold;
     }
   }
 }

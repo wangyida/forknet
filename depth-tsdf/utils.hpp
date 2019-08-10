@@ -13,7 +13,7 @@ void SaveVoxelGrid2SurfacePointCloud(const std::string &file_name, int voxel_gri
   // Count total number of points in point cloud
   int num_pts = 0;
   for (int i = 0; i < voxel_grid_dim_x * voxel_grid_dim_y * voxel_grid_dim_z; i++)
-    if (voxel_grid_TSDF[i] == 1.0f)
+    if (std::abs(voxel_grid_TSDF[i]) > 0.8f && std::abs(voxel_grid_TSDF[i]) < 1.0f)
       num_pts++;
 
   // Create header for .ply file
@@ -30,7 +30,7 @@ void SaveVoxelGrid2SurfacePointCloud(const std::string &file_name, int voxel_gri
   for (int i = 0; i < voxel_grid_dim_x * voxel_grid_dim_y * voxel_grid_dim_z; i++) {
 
     // If TSDF value of voxel is less than some threshold, add voxel coordinates to point cloud
-    if (voxel_grid_TSDF[i] == 1.0f) {
+    if (std::abs(voxel_grid_TSDF[i]) > 0.8f && std::abs(voxel_grid_TSDF[i]) < 1.0f) {
 
       // Compute voxel indices in int for higher positive number range
       int z = floor(i / (voxel_grid_dim_x * voxel_grid_dim_y));

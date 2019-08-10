@@ -1,50 +1,91 @@
 from easydict import EasyDict as edict
-
 __C = edict()
 cfg = __C
 
 #
 # Common
 #
+__C.TYPE_TASK = 'scene'
+__C.TYPE_EVAL = 'synthetic'
+__C.TYPE_DATA = 'train'
+
 __C.SUB_CONFIG_FILE = []
 
 __C.CONST = edict()
-__C.CONST.N_VOX = [80, 48, 80]
 __C.CONST.BATCH_SIZE = 8
-__C.CONST.BATCH_SIZE_TEST = 4
-__C.SAVER_MAX = 1000
+__C.CONST.BATCH_SIZE_TEST = 2
+__C.SAVER_MAX = 2000
 __C.CHECK_FREQ = 1000
 __C.RECORD_VOX_NUM = 10
-__C.SWITCHING_ITE = 20001
+__C.SWITCHING_ITE = 100001
 
 # Network
 __C.NET = edict()
-__C.NET.DIM_Z = 16
+__C.NET.DIM_Z = 256
 # The last dimension of NET.DIM matters much for GPU consumption for loss function
-__C.NET.DIM = [512, 256, 128, 64, 12]
-__C.NET.START_VOX = [5, 3, 5]
-__C.NET.KERNEL = [[3, 3, 3, 3, 3], [3, 3, 3, 3, 3], [3, 3, 3, 3, 3]]
+__C.NET.KERNEL = [[4, 4, 4, 4, 4], [4, 4, 4, 4, 4], [4, 4, 4, 4, 4]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
 __C.NET.DILATIONS = [1, 1, 1, 1, 1]
-__C.NET.REFINE_CH = 32
-__C.NET.REFINE_KERNEL = 3
-__C.NET.REFINER = 'sscnet'
-__C.NET.DISCRIMINATIVE = True
-__C.NET.GENERATIVE = True
-__C.NET.VARIATIONAL = True
+
+if __C.TYPE_TASK is 'scene':
+    __C.CONST.N_VOX = [80, 48, 80]
+    __C.NET.START_VOX = [5, 3, 5]
+    __C.NET.DIM = [512, 256, 128, 32, 12]
+elif __C.TYPE_TASK is 'object':
+    __C.CONST.N_VOX = [64, 64, 64]
+    __C.NET.START_VOX = [4, 4, 4]
+    __C.NET.DIM = [512, 256, 128, 32, 5]
 
 #
 # Directories
 #
 __C.DIR = edict()
 # Path where taxonomy.json is stored
-# __C.DIR.SCENE_ID_PATH = '../3D-FCR-alphaGAN/Scenevox'
-# __C.DIR.VOXEL_PATH = '../3D-FCR-alphaGAN/Scenevox/%s/%s'
-__C.DIR.ROOT_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/voxel_semantic_npy'
-__C.DIR.VOXEL_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/voxel_semantic_npy/%s'
-__C.DIR.TSDF_PATH = '/media/wangyida/SSD2T/database/SUNCG_Yida/train/depth_tsdf_occluded_npy/%s'
-__C.DIR.CHECK_POINT_PATH = '/media/wangyida/SSD2T/models/depvox-gan'
-__C.DIR.CHECK_PT_PATH = '/media/wangyida/SSD2T/models/depvox-gan/checkpoint'
+path_ssd = '/media/wangyida/SSD2T/database/'
+path_hdd = '/media/wangyida/HDD/database/'
+if __C.TYPE_TASK is 'scene':
+    if __C.TYPE_EVAL == 'real':
+        __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-r'
+        if __C.TYPE_DATA == 'test':
+            __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/test/voxel_semantic_npy/'
+            __C.DIR.SURF_PATH = path_ssd + 'NYU_Yida/test/surface_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_ssd + 'NYU_Yida/test/depth_tsdf_camera_npy/'
+        elif __C.TYPE_DATA == 'train':
+            __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/train/voxel_semantic_npy/'
+            __C.DIR.SURF_PATH = path_ssd + 'NYU_Yida/train/surface_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_ssd + 'NYU_Yida/train/depth_tsdf_camera_npy/'
+    elif __C.TYPE_EVAL == 'synthetic':
+        __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-s'
+        if __C.TYPE_DATA == 'test':
+            __C.DIR.VOXEL_PATH = path_ssd + 'SUNCG_Yida/test/voxel_semantic_npy/'
+            __C.DIR.SURF_PATH = path_ssd + 'SUNCG_Yida/test/surface_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_ssd + 'SUNCG_Yida/test/depth_tsdf_camera_npy/'
+        elif __C.TYPE_DATA == 'train':
+            __C.DIR.VOXEL_PATH = path_ssd + 'SUNCG_Yida/train/voxel_semantic_npy/'
+            __C.DIR.SURF_PATH = path_ssd + 'SUNCG_Yida/train/surface_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_ssd + 'SUNCG_Yida/train/depth_tsdf_camera_npy/'
+elif __C.TYPE_TASK is 'object':
+    if __C.TYPE_EVAL == 'real':
+        __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-object-r'
+        if __C.TYPE_DATA == 'test':
+            __C.DIR.VOXEL_PATH = path_hdd + 'RecGAN_Yida/test/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_hdd + 'RecGAN_Yida/test/depth_tsdf_npy/'
+        elif __C.TYPE_DATA == 'train':
+            __C.DIR.VOXEL_PATH = path_hdd + 'RecGAN_Yida/train/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_hdd + 'RecGAN_Yida/train/depth_tsdf_npy/'
+    elif __C.TYPE_EVAL == 'synthetic':
+        __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-object-s'
+        if __C.TYPE_DATA == 'test':
+            __C.DIR.VOXEL_PATH = path_hdd + 'Shapenet_Yida/test/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_hdd + 'Shapenet_Yida/test/depth_tsdf_npy/'
+        elif __C.TYPE_DATA == 'train':
+            __C.DIR.VOXEL_PATH = path_hdd + 'Shapenet_Yida/train/voxel_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_hdd + 'Shapenet_Yida/train/depth_tsdf_npy/'
+    elif __C.TYPE_EVAL == 'register':
+        __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-object-s'
+        __C.DIR.VOXEL_PATH = './data/object_registration/voxel_semantic_npy/'
+        __C.DIR.TSDF_PATH = './data/object_registration/depth_tsdf_npy/'
+
 __C.DIR.TRAIN_OBJ_PATH = './train_vox'
 __C.DIR.EVAL_PATH = './eval'
 __C.DIR.LOG_PATH = './log'
@@ -54,8 +95,8 @@ __C.DIR.LOG_PATH = './log'
 #
 __C.TRAIN = edict()
 
-__C.TRAIN.DATASET_PORTION = [0, 0.9]
-__C.TRAIN.NUM_EPOCH = 500  # maximum number of training epochs
+__C.TRAIN.DATASET_PORTION = [0, 1.0]
+__C.TRAIN.NUM_EPOCH = 50000  # maximum number of training epochs
 
 # Learning
 __C.LEARNING_RATE_G = 0.0001

@@ -6,4 +6,6 @@ tsdf.bin
 tsdf.ply
 .DS*
 vis_*
+eval_*
 eval
+data/object_registration
