@@ -20,7 +20,7 @@ def voxel2pcd(npy_sec, dir_pcd_dep, dir_pcd_sec):
     npy_dep = npy_sec.replace('surface_semantic_npy', 'depth_tsdf_camera_npy')
     voxel_sec = np.load(npy_sec)
     voxel_dep = np.load(npy_dep)
-    voxel_dep[voxel_dep < 0] = 0
+    voxel_dep[voxel_dep < -1] = 0
     voxel_dep = np.round(np.abs(voxel_dep)) * voxel_sec
     pcd = PointCloud()
 
