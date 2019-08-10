@@ -1,8 +1,6 @@
-ForkNet: Multi-branch Volumetric Semantic Completion from a Single Depth Image
+# ForkNet: Multi-branch Volumetric Semantic Completion from a Single Depth Image
 
-The implementation of our paper accepted to **ICCV** *2019* (*International Conference on Computer Vision*, IEEE)
-
-## Authors
+The implementation of our paper accepted in **ICCV** *2019* (*International Conference on Computer Vision*, IEEE)
 **[Yida Wang](https://wangyida.github.io/#about), David Tan, Nassir Navab and [Federico Tombari](http://campar.in.tum.de/Main/FedericoTombari)**
 
 ## Showcase
@@ -17,4 +15,7 @@ training.
 
 ## Generated samples
 ![](iccv/learning_dataset.png)
+
+## Indoor scenes
+![](iccv/qualitative.png)
 
