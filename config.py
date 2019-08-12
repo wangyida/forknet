@@ -6,7 +6,7 @@ cfg = __C
 # Common
 #
 __C.TYPE_TASK = 'scene'
-__C.TYPE_EVAL = 'real'
+__C.TYPE_EVAL = 'synthetic'
 __C.TYPE_DATA = 'test'
 
 __C.SUB_CONFIG_FILE = []
@@ -47,9 +47,9 @@ if __C.TYPE_TASK is 'scene':
     if __C.TYPE_EVAL == 'real':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-r'
         if __C.TYPE_DATA == 'test':
-            __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/test/voxel_semantic_npy/'
-            __C.DIR.SURF_PATH = path_ssd + 'NYU_Yida/test/surface_semantic_npy/'
-            __C.DIR.TSDF_PATH = path_ssd + 'NYU_Yida/test/depth_tsdf_camera_npy/'
+            __C.DIR.VOXEL_PATH = path_hdd + 'NYU_Yida/test/voxel_semantic_npy/'
+            __C.DIR.SURF_PATH = path_hdd + 'NYU_Yida/test/surface_semantic_npy/'
+            __C.DIR.TSDF_PATH = path_hdd + 'NYU_Yida/test/depth_tsdf_camera_npy/'
         elif __C.TYPE_DATA == 'train':
             __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/train/voxel_semantic_npy/'
             __C.DIR.SURF_PATH = path_ssd + 'NYU_Yida/train/surface_semantic_npy/'
