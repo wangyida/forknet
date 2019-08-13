@@ -120,7 +120,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 discrim_loss_tf, var_list=dis_com_vars)
         train_op_dis_sem = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
-                discrim_loss_tf, var_list=dis_sem_vars,
+                discrim_loss_tf,
+                var_list=dis_sem_vars,
                 global_step=global_step)
 
         Z_tf_sample, comp_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_tf_sample = depvox_gan_model.samples_generator(

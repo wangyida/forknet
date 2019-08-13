@@ -161,19 +161,22 @@ def evaluate(batch_size, checknum, mode, discriminative):
         bin_file = np.uint8(voxel_test)
         bin_file.tofile(save_path + '/scene.bin')
 
-        surface = np.array(part_test)
+        sdf_volume = np.round(10 * np.abs(np.array(part_test)))
+        observed = np.array(part_test)
         if cfg.TYPE_TASK == 'scene':
-            surface = np.abs(surface)
-            surface *= 10
+            observed = np.abs(observed)
+            observed *= 10
+            observed -= 7
+            observed = np.round(observed)
             pred_part = np.abs(pred_part)
             pred_part *= 10
         elif cfg.TYPE_TASK == 'object':
-            surface = np.clip(surface, 0, 1)
+            observed = np.clip(observed, 0, 1)
             pred_part = np.clip(pred_part, 0, 1)
-        surface.astype('uint8').tofile(save_path + '/surface.bin')
+        sdf_volume.astype('uint8').tofile(save_path + '/surface.bin')
         pred_part.astype('uint8').tofile(save_path + '/dec_part.bin')
 
-        depsem_gt = np.multiply(voxel_test, np.clip(surface, 0, 1))
+        depsem_gt = np.multiply(voxel_test, np.clip(observed, 0, 1))
         if cfg.TYPE_TASK == 'scene':
             depsem_gt[depsem_gt < 0] = 0
         depsem_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
@@ -305,37 +308,37 @@ def evaluate(batch_size, checknum, mode, discriminative):
         on_depsem_gt = onehot(depsem_gt, vox_shape[3])
         on_depsem_ssc = np.multiply(
             onehot(np.argmax(pred_ssc, axis=4), vox_shape[3]),
-            np.expand_dims(np.clip(surface, 0, 1), -1))
-        on_depsem_dec = np.multiply(
-            onehot(np.argmax(pred_full, axis=4), vox_shape[3]),
-            np.expand_dims(np.clip(surface, 0, 1), -1))
+            np.expand_dims(np.clip(observed, 0, 1), -1))
         print(colored("Geometric segmentation", 'cyan'))
         IoU_class = np.zeros([vox_shape[3] + 1])
-        IoU_class = IoU(on_depsem_gt, on_depsem_ssc, IoU_class, vox_shape)
-        IoU_all = np.expand_dims(IoU_class, axis=1)
+        IoU_temp = IoU(on_depsem_gt, on_depsem_ssc, IoU_class, vox_shape)
+        IoU_all = np.expand_dims(IoU_temp, axis=1)
 
+        on_depsem_dec = np.multiply(
+            onehot(np.argmax(pred_full, axis=4), vox_shape[3]),
+            np.expand_dims(np.clip(observed, 0, 1), -1))
         print(colored("Generative segmentation", 'cyan'))
-        IoU_class = np.zeros([vox_shape[3] + 1])
-        IoU_class = IoU(on_depsem_gt, on_depsem_dec, IoU_class, vox_shape)
-        IoU_all = np.expand_dims(IoU_class, axis=1)
+        IoU_temp = IoU(on_depsem_gt, on_depsem_dec, IoU_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
+                                 axis=1)
 
         # volume segmentation
         on_surf_gt = onehot(surf_test, vox_shape[3])
         on_full_gt = onehot(voxel_test, vox_shape[3])
         print(colored("Geometric semantic completion", 'cyan'))
         on_pred = onehot(np.argmax(pred_ssc, axis=4), vox_shape[3])
-        IoU_class = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
-        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+        IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
                                  axis=1)
         print(colored("Generative semantic completion", 'cyan'))
         on_pred = onehot(np.argmax(pred_surf, axis=4), vox_shape[3])
-        IoU_class = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
-        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+        IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
                                  axis=1)
         print(colored("Solid generative semantic completion", 'cyan'))
         on_pred = onehot(np.argmax(pred_full, axis=4), vox_shape[3])
-        IoU_class = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
-        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_class, axis=1)),
+        IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
                                  axis=1)
 
         np.savetxt(
@@ -428,8 +431,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                         '-' + str(r) + '.bin')
                     if cfg.TYPE_TASK == 'scene':
                         pred_part = np.abs(pred_part)
-                        pred_part[pred_part < 0.2] = 0
-                        pred_part[pred_part >= 0.2] = 1
+                        pred_part *= 10
                     elif cfg.TYPE_TASK == 'object':
                         pred_part = np.argmax(pred_part, axis=4)
                     pred_part.astype('uint8').tofile(

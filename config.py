@@ -6,7 +6,7 @@ cfg = __C
 # Common
 #
 __C.TYPE_TASK = 'scene'
-__C.TYPE_EVAL = 'synthetic'
+__C.TYPE_EVAL = 'real'
 __C.TYPE_DATA = 'test'
 
 __C.SUB_CONFIG_FILE = []
