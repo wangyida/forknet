@@ -51,7 +51,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
     vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
-    complete_shape = [n_vox[0], n_vox[1], n_vox[2], 2]
+    com_shape = [n_vox[0], n_vox[1], n_vox[2], 2]
     dim_z = cfg.NET.DIM_Z
     start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
@@ -69,7 +69,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
     depvox_gan_model = depvox_gan(
         batch_size=batch_size,
         vox_shape=vox_shape,
-        complete_shape=complete_shape,
+        com_shape=com_shape,
         dim_z=dim_z,
         dim=dim,
         start_vox_size=start_vox_size,
@@ -261,34 +261,6 @@ def evaluate(batch_size, checknum, mode, discriminative):
                 z_part_rand = np.squeeze(z_part_rand)
             z_part_rand_all.astype('uint8').tofile(save_path + '/gen_part.bin')
 
-            eigen_shape = False
-            if eigen_shape:
-                z_U, z_V = pca(
-                    np.reshape(part_enc_Z, [
-                        200, start_vox_size[0] * start_vox_size[1] *
-                        start_vox_size[2] * dim_z
-                    ]),
-                    dim_remain=200)
-                z_V = np.reshape(
-                    np.transpose(z_V[:, 0:8]), [
-                        8, start_vox_size[0], start_vox_size[1],
-                        start_vox_size[2], dim_z
-                    ])
-                z_surf_rand, z_full_rand, z_part_rand = sess.run(
-                    [surf_tf_sample, full_tf_sample, part_tf_sample],
-                    feed_dict={Z_tf_sample: z_V})
-                np.argmax(
-                    z_surf_rand,
-                    axis=4).astype('uint8').tofile(save_path + '/gen_surf.bin')
-                if cfg.TYPE_TASK == 'scene':
-                    z_part_rand = np.abs(z_part_rand)
-                    z_part_rand *= 10
-                elif cfg.TYPE_TASK == 'object':
-                    z_part_rand[z_part_rand <= 0.4] = 0
-                    z_part_rand[z_part_rand > 0.4] = 1
-                    z_part_rand = np.squeeze(z_part_rand)
-                z_part_rand.astype('uint8').tofile(save_path + '/gen_sdf.bin')
-
         print("voxels saved")
 
         # numerical evalutation
@@ -410,7 +382,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                         ])
                         interpolate_part = np.reshape(pred_part_rand[0], [
                             1, vox_shape[0], vox_shape[1], vox_shape[2],
-                            complete_shape[3]
+                            com_shape[3]
                         ])
 
                         if i == 0:
