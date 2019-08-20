@@ -170,6 +170,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
             observed = np.round(observed)
             pred_part = np.abs(pred_part)
             pred_part *= 10
+            pred_part -= 7
         elif cfg.TYPE_TASK == 'object':
             observed = np.clip(observed, 0, 1)
             pred_part = np.clip(pred_part, 0, 1)
@@ -216,7 +217,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
             np.save(save_path + '/decode_z.npy', part_enc_Z)
             sample_times = 10
             for j in np.arange(sample_times):
-                Z_var_np_sample = np.random.normal(
+                gaussian_sample = np.random.normal(
                     size=(batch_size, start_vox_size[0], start_vox_size[1],
                           start_vox_size[2], dim_z)).astype(np.float32)
 
@@ -225,7 +226,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                         comp_tf_sample, surf_tf_sample, full_tf_sample,
                         part_tf_sample, scores_tf_sample
                     ],
-                    feed_dict={Z_tf_sample: Z_var_np_sample})
+                    feed_dict={Z_tf_sample: gaussian_sample})
                 if j == 0:
                     z_comp_rand_all = z_comp_rand
                     z_part_rand_all = z_part_rand
@@ -241,7 +242,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                     z_full_rand_all = np.concatenate(
                         [z_full_rand_all, z_full_rand], axis=0)
                     print(scores_sample)
-            Z_var_np_sample.astype('float32').tofile(save_path +
+            gaussian_sample.astype('float32').tofile(save_path +
                                                      '/sample_z.bin')
             np.argmax(
                 z_comp_rand_all,
@@ -255,6 +256,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
             if cfg.TYPE_TASK == 'scene':
                 z_part_rand_all = np.abs(z_part_rand_all)
                 z_part_rand_all *= 10
+                z_part_rand_all -= 7
             elif cfg.TYPE_TASK == 'object':
                 z_part_rand_all[z_part_rand_all <= 0.4] = 0
                 z_part_rand_all[z_part_rand_all > 0.4] = 1
@@ -371,11 +373,11 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                                            axis=0)
 
                         # Z_np_sample is used to fill up the batch
-                        Z_var_np_sample = np.concatenate([Z, Z_np_sample],
+                        gaussian_sample = np.concatenate([Z, Z_np_sample],
                                                          axis=0)
                         pred_full_rand, pred_part_rand = sess.run(
                             [full_tf_sample, part_tf_sample],
-                            feed_dict={Z_tf_sample: Z_var_np_sample})
+                            feed_dict={Z_tf_sample: gaussian_sample})
                         interpolate_vox = np.reshape(pred_full_rand[0], [
                             1, vox_shape[0], vox_shape[1], vox_shape[2],
                             vox_shape[3]
@@ -404,6 +406,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                     if cfg.TYPE_TASK == 'scene':
                         pred_part = np.abs(pred_part)
                         pred_part *= 10
+                        pred_part -= 7
                     elif cfg.TYPE_TASK == 'object':
                         pred_part = np.argmax(pred_part, axis=4)
                     pred_part.astype('uint8').tofile(
@@ -453,11 +456,11 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                 Z = copy.copy(base)
                                 Z[0, c, l, d, :] += eps[i - 1]
                                 noise_z = np.concatenate([noise_z, Z], axis=0)
-                            Z_var_np_sample = np.concatenate([Z, Z_np_sample],
+                            gaussian_sample = np.concatenate([Z, Z_np_sample],
                                                              axis=0)
                             pred_full_rand = sess.run(
                                 full_tf_sample,
-                                feed_dict={Z_tf_sample: Z_var_np_sample})
+                                feed_dict={Z_tf_sample: gaussian_sample})
                             """
                             refined_voxs_rand = sess.run(
                                 sample_refine_full_tf,
