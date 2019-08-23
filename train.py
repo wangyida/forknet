@@ -224,40 +224,39 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         full_tf: batch_voxel,
                     },
                 )
-                for i in range(2):
-                    # if scores_discrim[0] - scores_discrim[1] > 0.3:
-                    _ = sess.run(
-                        train_op_gen_sdf,
-                        feed_dict={
-                            Z_tf: batch_z_var,
-                            part_tf: batch_tsdf,
-                            surf_tf: batch_surf,
-                            full_tf: batch_voxel,
-                            lr_VAE: lr
-                        },
-                    )
-                    # if scores_discrim[2] - scores_discrim[3] > 0.3:
-                    _ = sess.run(
-                        train_op_gen_com,
-                        feed_dict={
-                            Z_tf: batch_z_var,
-                            part_tf: batch_tsdf,
-                            surf_tf: batch_surf,
-                            full_tf: batch_voxel,
-                            lr_VAE: lr
-                        },
-                    )
-                    # if scores_discrim[4] - scores_discrim[5] > 0.3:
-                    _ = sess.run(
-                        train_op_gen_sem,
-                        feed_dict={
-                            Z_tf: batch_z_var,
-                            part_tf: batch_tsdf,
-                            surf_tf: batch_surf,
-                            full_tf: batch_voxel,
-                            lr_VAE: lr
-                        },
-                    )
+                # if scores_discrim[0] - scores_discrim[1] > 0.3:
+                _ = sess.run(
+                    train_op_gen_sdf,
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        part_tf: batch_tsdf,
+                        surf_tf: batch_surf,
+                        full_tf: batch_voxel,
+                        lr_VAE: lr
+                    },
+                )
+                # if scores_discrim[2] - scores_discrim[3] > 0.3:
+                _ = sess.run(
+                    train_op_gen_com,
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        part_tf: batch_tsdf,
+                        surf_tf: batch_surf,
+                        full_tf: batch_voxel,
+                        lr_VAE: lr
+                    },
+                )
+                # if scores_discrim[4] - scores_discrim[5] > 0.3:
+                _ = sess.run(
+                    train_op_gen_sem,
+                    feed_dict={
+                        Z_tf: batch_z_var,
+                        part_tf: batch_tsdf,
+                        surf_tf: batch_surf,
+                        full_tf: batch_voxel,
+                        lr_VAE: lr
+                    },
+                )
                 _ = sess.run(
                     train_op_dis_sdf,
                     feed_dict={
