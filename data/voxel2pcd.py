@@ -144,7 +144,6 @@ if __name__ == "__main__":
 
     # save voxel as npy files
     pbar = ProgressBar()
-    """
     num_cores = multiprocessing.cpu_count()
     Parallel(n_jobs=num_cores)(delayed(voxel2pcd)(file_npy, dir_tar_pcd_partial, dir_tar_pcd)
                                for file_npy in pbar(files_npy))
@@ -152,3 +151,4 @@ if __name__ == "__main__":
     """
     for file_npy in pbar(files_npy):
         voxel2pcd(file_npy, dir_tar_pcd_partial, dir_tar_pcd)
+    """
