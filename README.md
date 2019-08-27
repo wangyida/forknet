@@ -4,10 +4,10 @@ The implementation of our paper accepted in **ICCV** *2019* (*International Conf
 **[Yida Wang](https://wangyida.github.io/#about), David Tan, [Nassir Navab](http://campar.in.tum.de/Main/NassirNavab) and [Federico Tombari](http://campar.in.tum.de/Main/FedericoTombari)**
 
 ## ForkNet
- <img src="iccv/PrasentationICCV.gif" alt="road condition" frameborder="0" style="border:0" >
- 
-### Advantages
+
 ![](iccv/teaser.png)
+
+ <img src="iccv/PrasentationICCV.gif" alt="road condition" frameborder="0" style="border:0" >
 
 ### Architecture
 ![](iccv/architecture.png)

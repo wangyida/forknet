@@ -111,7 +111,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 gen_loss_tf, var_list=gen_com_vars)
         train_op_gen_sem = tf.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
-                gen_loss_tf, var_list=gen_sem_vars)
+                gen_loss_tf, var_list=gen_sem_vars + gen_com_vars)
         train_op_dis_sdf = tf.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf, var_list=dis_sdf_vars)
@@ -181,7 +181,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                       start_vox_size[2], dim_z)).astype(np.float32)
 
             # updating for the main network
-            is_supervised = False
+            is_supervised = True
             if is_supervised is True:
                 _ = sess.run(
                     train_op_pred_sscnet,
