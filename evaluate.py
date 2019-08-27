@@ -2,48 +2,90 @@ import numpy as np
 import tensorflow as tf
 
 from config import cfg
-from model import FCR_aGAN
+from model import depvox_gan
 from util import DataProcess, scene_model_id_pair, onehot, scene_model_id_pair_test
 from sklearn.metrics import average_precision_score
 import copy
 
-def evaluate(batch_size, checknum, mode):
+from colorama import init
+from termcolor import colored
+from pca import pca
+
+# use Colorama to make Termcolor work on Windows too
+init()
+
+
+def IoU(on_gt, on_pred, IoU_class, vox_shape):
+    # calc_IoU
+    if vox_shape[3] == 12:
+        name_list = [
+            'empty', 'ceili', 'floor', ' wall', 'windo', 'chair', '  bed',
+            ' sofa', 'table', '  tvs', 'furni', 'objec'
+        ]
+    elif vox_shape[3] == 5:
+        name_list = ['empty', 'bench', 'chair', 'couch', 'table']
+    elif vox_shape[3] == 2:
+        name_list = ['empty', 'objec']
+    num = on_gt.shape[0]
+    for class_n in np.arange(vox_shape[3]):
+        on_pred_ = on_pred[:, :, :, :, class_n]
+        on_gt_ = on_gt[:, :, :, :, class_n]
+        mother = np.sum(np.clip(np.add(on_pred_, on_gt_), 0, 1), (0, 1, 2, 3))
+        child = np.sum(np.multiply(on_pred_, on_gt_), (0, 1, 2, 3))
+
+        IoU_calc = np.round(child / mother, 3)
+        IoU_class[class_n] = IoU_calc
+        print 'IoU of ' + name_list[class_n] + ':' + str(IoU_calc)
+    if vox_shape[3] != 2:
+        IoU_class[vox_shape[3]] = np.round(
+            np.sum(IoU_class[1:vox_shape[3]]) / (vox_shape[3] - 1), 3)
+    elif vox_shape[3] == 2:
+        IoU_class[vox_shape[3]] = np.round(np.sum(IoU_class) / vox_shape[3], 3)
+    print 'IoU average: ' + str(IoU_class[vox_shape[3]])
+    print ''
+    return IoU_class
+
+
+def evaluate(batch_size, checknum, mode, discriminative):
 
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
-    vox_shape = [n_vox[0],n_vox[1],n_vox[2],dim[4]]
+    vox_shape = [n_vox[0], n_vox[1], n_vox[2], dim[4]]
+    com_shape = [n_vox[0], n_vox[1], n_vox[2], 2]
     dim_z = cfg.NET.DIM_Z
-    start_vox_size = cfg.NET.START_VOX 
+    start_vox_size = cfg.NET.START_VOX
     kernel = cfg.NET.KERNEL
     stride = cfg.NET.STRIDE
+    dilations = cfg.NET.DILATIONS
     freq = cfg.CHECK_FREQ
-    refine_ch = cfg.NET.REFINE_CH
-    refine_kernel = cfg.NET.REFINE_KERNEL
 
     save_path = cfg.DIR.EVAL_PATH
-    chckpt_path = cfg.DIR.CHECK_PT_PATH + str(checknum) + '-' + str(checknum * freq)
+    if discriminative is True:
+        model_path = cfg.DIR.CHECK_POINT_PATH + '-d'
+    else:
+        model_path = cfg.DIR.CHECK_POINT_PATH
+    chckpt_path = model_path + '/checkpoint' + str(checknum)
 
-    fcr_agan_model = FCR_aGAN(
-                batch_size=batch_size,
-                vox_shape=vox_shape,
-                dim_z=dim_z,
-                dim=dim,
-                start_vox_size=start_vox_size,
-                kernel=kernel,
-                stride=stride,
-                refine_ch=refine_ch,
-                refine_kernel = refine_kernel,
-                )
+    depvox_gan_model = depvox_gan(
+        batch_size=batch_size,
+        vox_shape=vox_shape,
+        com_shape=com_shape,
+        dim_z=dim_z,
+        dim=dim,
+        start_vox_size=start_vox_size,
+        kernel=kernel,
+        stride=stride,
+        dilations=dilations,
+        discriminative=discriminative,
+        is_train=False)
 
 
-    Z_tf, z_enc_tf, vox_tf, vox_gen_tf, vox_gen_decode_tf, vox_refine_dec_tf, vox_refine_gen_tf,\
-     recons_loss_tf, code_encode_loss_tf, gen_loss_tf, discrim_loss_tf, recons_loss_refine_tfs, gen_loss_refine_tf, discrim_loss_refine_tf,\
-      cost_enc_tf, cost_code_tf, cost_gen_tf, cost_discrim_tf, cost_gen_ref_tf, cost_discrim_ref_tf, summary_tf,\
-      z_enc_dep_tf, dep_tf, vox_gen_decode_dep_tf,\
-      recons_dep_loss_tf, code_encode_dep_loss_tf, gen_dep_loss_tf, discrim_dep_loss_tf,\
-      cost_enc_dep_tf, cost_code_dep_tf, cost_gen_dep_tf, cost_discrim_dep_tf = fcr_agan_model.build_model()
-    Z_tf_sample, vox_tf_sample = fcr_agan_model.samples_generator(visual_size=batch_size)
-    sample_vox_tf, sample_refine_vox_tf = fcr_agan_model.refine_generator(visual_size=batch_size)
+    Z_tf, z_enc_tf, surf_tf, full_tf, full_gen_tf, surf_dec_tf, full_dec_tf,\
+    gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
+    part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, ssc_tf, scores_tf = depvox_gan_model.build_model()
+    if discriminative is True:
+        Z_tf_sample, comp_tf_sample, surf_tf_sample, full_tf_sample, part_tf_sample, scores_tf_sample = depvox_gan_model.samples_generator(
+            visual_size=batch_size)
     sess = tf.InteractiveSession()
     saver = tf.train.Saver()
 
@@ -53,283 +95,355 @@ def evaluate(batch_size, checknum, mode):
     print("...Weights restored.")
 
     if mode == 'recons':
-        #reconstruction and generation from normal distribution evaluation
-        #generator from random distribution
-        for i in np.arange(batch_size):
-        	Z_np_sample=np.random.normal(size=(1,start_vox_size[0],start_vox_size[1],start_vox_size[2],dim_z)).astype(np.float32)
-        	if i == 0:
-        	    Z_var_np_sample = Z_np_sample
-        	else:
-        	    Z_var_np_sample = np.concatenate((Z_var_np_sample, Z_np_sample), axis=0)
-        np.save(save_path + '/sample_z.npy', Z_var_np_sample)
+        # evaluation for reconstruction
+        voxel_test, surf_test, part_test, num, data_paths = scene_model_id_pair_test(
+            dataset_portion=cfg.TRAIN.DATASET_PORTION)
 
-        generated_voxs_fromrand=sess.run(
-            vox_tf_sample,
-            feed_dict={Z_tf_sample:Z_var_np_sample})
-        vox_models_cat = np.argmax(generated_voxs_fromrand, axis=4)
-        np.save(save_path + '/generate.npy', vox_models_cat)
+        # Evaluation masks
+        if cfg.TYPE_TASK == 'scene':
+            # occluded region
+            """
+            space_effective = np.where(voxel_test > -1, 1, 0) * np.where(
+                part_test > -1, 1, 0)
+            voxel_test *= space_effective
+            part_test *= space_effective
+            """
+            # occluded region
+            part_test[part_test < -1] = 0
+            surf_test[surf_test < 0] = 0
+            voxel_test[voxel_test < 0] = 0
 
-        refined_voxs_fromrand = sess.run(
-            sample_refine_vox_tf,
-            feed_dict={sample_vox_tf:generated_voxs_fromrand})
-        vox_models_cat = np.argmax(refined_voxs_fromrand, axis=4)
-        np.save(save_path + '/generate_refine.npy', vox_models_cat)
-
-        #evaluation for reconstruction
-        voxel_test, depth_test, num = scene_model_id_pair_test(dataset_portion=cfg.TRAIN.DATASET_PORTION)
         num = voxel_test.shape[0]
         print("test voxels loaded")
-        for i in np.arange(int(num/batch_size)):
-            batch_voxel_test = voxel_test[i*batch_size:i*batch_size+batch_size]
-            # depth--start
-            batch_depth_test = depth_test[i*batch_size:i*batch_size+batch_size]
-            # depth--end
+        for i in np.arange(int(num / batch_size)):
+            batch_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
+            batch_surf = surf_test[i * batch_size:i * batch_size + batch_size]
+            batch_voxel = voxel_test[i * batch_size:i * batch_size +
+                                     batch_size]
 
-            batch_generated_voxs, batch_enc_Z = sess.run(
-                [vox_gen_decode_tf, z_enc_tf],
-                feed_dict={vox_tf:batch_voxel_test})
-            # depth--start
-            batch_dep_generated_voxs, batch_enc_dep_Z = sess.run(
-                [vox_gen_decode_dep_tf, z_enc_dep_tf],
-                feed_dict={dep_tf:batch_depth_test})
-            # depth--end
-            batch_refined_vox = sess.run(
-                sample_refine_vox_tf,
-                feed_dict={sample_vox_tf:batch_generated_voxs})
+            batch_pred_surf, batch_pred_full, batch_pred_part, batch_part_enc_Z, batch_complete_gt, batch_pred_complete, batch_ssc = sess.run(
+                [
+                    surf_dec_tf, full_dec_tf, part_dec_tf, z_enc_tf,
+                    complete_gt_tf, complete_dec_tf, ssc_tf
+                ],
+                feed_dict={
+                    part_tf: batch_tsdf,
+                    surf_tf: batch_surf,
+                    full_tf: batch_voxel
+                })
 
             if i == 0:
-                generated_voxs = batch_generated_voxs
-                generated_deps = batch_dep_generated_voxs
-                refined_voxs = batch_refined_vox
-                enc_Z = batch_enc_Z
+                pred_part = batch_pred_part
+                pred_surf = batch_pred_surf
+                pred_full = batch_pred_full
+                pred_ssc = batch_ssc
+                part_enc_Z = batch_part_enc_Z
+                complete_gt = batch_complete_gt
+                pred_complete = batch_pred_complete
             else:
-                generated_voxs = np.concatenate((generated_voxs, batch_generated_voxs), axis=0)
-                generated_deps = np.concatenate((generated_deps, batch_dep_generated_voxs), axis=0)
-                refined_voxs = np.concatenate((refined_voxs, batch_refined_vox), axis=0)
-                enc_Z = np.concatenate((enc_Z, batch_enc_Z), axis=0)
+                pred_part = np.concatenate((pred_part, batch_pred_part),
+                                           axis=0)
+                pred_surf = np.concatenate((pred_surf, batch_pred_surf),
+                                           axis=0)
+                pred_full = np.concatenate((pred_full, batch_pred_full),
+                                           axis=0)
+                pred_ssc = np.concatenate((pred_ssc, batch_ssc), axis=0)
+                part_enc_Z = np.concatenate((part_enc_Z, batch_part_enc_Z),
+                                            axis=0)
+                complete_gt = np.concatenate((complete_gt, batch_complete_gt),
+                                             axis=0)
+                pred_complete = np.concatenate(
+                    (pred_complete, batch_pred_complete), axis=0)
 
         print("forwarded")
 
-        #real
-        vox_models_cat = voxel_test
-        np.save(save_path + '/real.npy', vox_models_cat)
+        # For visualization
+        bin_file = np.uint8(voxel_test)
+        bin_file.tofile(save_path + '/scene.bin')
 
-        #decoded
-        vox_models_cat = np.argmax(generated_voxs, axis=4)
-        np.save(save_path + '/recons.npy', vox_models_cat)
-        vox_models_cat = np.argmax(generated_deps, axis=4)
-        np.save(save_path + '/recons_dep.npy', vox_models_cat)
-        vox_models_cat = np.argmax(refined_voxs, axis=4)
-        np.save(save_path + '/recons_refine.npy', vox_models_cat)
-        np.save(save_path + '/decode_z.npy', enc_Z)
+        sdf_volume = np.round(10 * np.abs(np.array(part_test)))
+        observed = np.array(part_test)
+        if cfg.TYPE_TASK == 'scene':
+            observed = np.abs(observed)
+            observed *= 10
+            observed -= 7
+            observed = np.round(observed)
+            pred_part = np.abs(pred_part)
+            pred_part *= 10
+            pred_part -= 7
+        elif cfg.TYPE_TASK == 'object':
+            observed = np.clip(observed, 0, 1)
+            pred_part = np.clip(pred_part, 0, 1)
+        sdf_volume.astype('uint8').tofile(save_path + '/surface.bin')
+        pred_part.astype('uint8').tofile(save_path + '/dec_part.bin')
+
+        depsem_gt = np.multiply(voxel_test, np.clip(observed, 0, 1))
+        if cfg.TYPE_TASK == 'scene':
+            depsem_gt[depsem_gt < 0] = 0
+        depsem_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
+
+        # decoded
+        np.argmax(
+            pred_ssc,
+            axis=4).astype('uint8').tofile(save_path + '/dec_ssc.bin')
+        error = np.array(
+            np.clip(np.argmax(pred_ssc, axis=4), 0, 1) +
+            np.argmax(complete_gt, axis=4) * 2)
+        error.astype('uint8').tofile(save_path + '/dec_ssc_error.bin')
+        np.argmax(
+            pred_surf,
+            axis=4).astype('uint8').tofile(save_path + '/dec_surf.bin')
+        error = np.array(
+            np.clip(np.argmax(pred_surf, axis=4), 0, 1) +
+            np.argmax(complete_gt, axis=4) * 2)
+        error.astype('uint8').tofile(save_path + '/dec_surf_error.bin')
+        np.argmax(
+            pred_full,
+            axis=4).astype('uint8').tofile(save_path + '/dec_full.bin')
+        error = np.array(
+            np.clip(np.argmax(pred_full, axis=4), 0, 1) +
+            np.argmax(complete_gt, axis=4) * 2)
+        error.astype('uint8').tofile(save_path + '/dec_full_error.bin')
+        np.argmax(
+            pred_complete,
+            axis=4).astype('uint8').tofile(save_path + '/dec_complete.bin')
+        np.argmax(
+            complete_gt,
+            axis=4).astype('uint8').tofile(save_path + '/complete_gt.bin')
+
+        # reconstruction and generation from normal distribution evaluation
+        # generator from random distribution
+        if discriminative is True:
+            np.save(save_path + '/decode_z.npy', part_enc_Z)
+            sample_times = 10
+            for j in np.arange(sample_times):
+                gaussian_sample = np.random.normal(
+                    size=(batch_size, start_vox_size[0], start_vox_size[1],
+                          start_vox_size[2], dim_z)).astype(np.float32)
+
+                z_comp_rand, z_surf_rand, z_full_rand, z_part_rand, scores_sample = sess.run(
+                    [
+                        comp_tf_sample, surf_tf_sample, full_tf_sample,
+                        part_tf_sample, scores_tf_sample
+                    ],
+                    feed_dict={Z_tf_sample: gaussian_sample})
+                if j == 0:
+                    z_comp_rand_all = z_comp_rand
+                    z_part_rand_all = z_part_rand
+                    z_surf_rand_all = z_surf_rand
+                    z_full_rand_all = z_full_rand
+                else:
+                    z_comp_rand_all = np.concatenate(
+                        [z_comp_rand_all, z_comp_rand], axis=0)
+                    z_part_rand_all = np.concatenate(
+                        [z_part_rand_all, z_part_rand], axis=0)
+                    z_surf_rand_all = np.concatenate(
+                        [z_surf_rand_all, z_surf_rand], axis=0)
+                    z_full_rand_all = np.concatenate(
+                        [z_full_rand_all, z_full_rand], axis=0)
+                    print(scores_sample)
+            gaussian_sample.astype('float32').tofile(save_path +
+                                                     '/sample_z.bin')
+            np.argmax(
+                z_comp_rand_all,
+                axis=4).astype('uint8').tofile(save_path + '/gen_comp.bin')
+            np.argmax(
+                z_surf_rand_all,
+                axis=4).astype('uint8').tofile(save_path + '/gen_surf.bin')
+            np.argmax(
+                z_full_rand_all,
+                axis=4).astype('uint8').tofile(save_path + '/gen_full.bin')
+            if cfg.TYPE_TASK == 'scene':
+                z_part_rand_all = np.abs(z_part_rand_all)
+                z_part_rand_all *= 10
+                z_part_rand_all -= 7
+            elif cfg.TYPE_TASK == 'object':
+                z_part_rand_all[z_part_rand_all <= 0.4] = 0
+                z_part_rand_all[z_part_rand_all > 0.4] = 1
+                z_part_rand = np.squeeze(z_part_rand)
+            z_part_rand_all.astype('uint8').tofile(save_path + '/gen_part.bin')
 
         print("voxels saved")
 
+        # numerical evalutation
 
-        #numerical evalutation
-        on_real = onehot(voxel_test,vox_shape[3])
-        on_recons = onehot(np.argmax(generated_voxs, axis=4),vox_shape[3])
+        # calc_IoU
+        # completion
+        on_complete_gt = complete_gt
+        complete_gen = np.argmax(pred_complete, axis=4)
+        on_complete_gen = onehot(complete_gen, 2)
+        IoU_comp = np.zeros([2 + 1])
+        AP_comp = np.zeros([2 + 1])
+        print(colored("Completion", 'cyan'))
+        IoU_comp = IoU(on_complete_gt, on_complete_gen, IoU_comp,
+                       [vox_shape[0], vox_shape[1], vox_shape[2], 2])
 
-        #calc_IoU
-        IoU_class = np.zeros([vox_shape[3]+1])
-        for class_n in np.arange(vox_shape[3]):
-            on_recons_ = on_recons[:,:,:,:,class_n]
-            on_real_ = on_real[:,:,:,:,class_n]
-            mother = np.sum(np.add(on_recons_, on_real_),(1,2,3))
-            child = np.sum(np.multiply(on_recons_, on_real_),(1,2,3))
-            count = 0
-            IoU_element = 0
-            for i in np.arange(num):
-                if mother[i] != 0:
-                    IoU_element += child[i]/mother[i]
-                    count += 1
-            IoU_calc = np.round(IoU_element/count,3)
-            IoU_class[class_n] = IoU_calc
-            print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
+        # depth segmentation
+        on_depsem_gt = onehot(depsem_gt, vox_shape[3])
+        on_depsem_ssc = np.multiply(
+            onehot(np.argmax(pred_ssc, axis=4), vox_shape[3]),
+            np.expand_dims(np.clip(observed, 0, 1), -1))
+        print(colored("Geometric segmentation", 'cyan'))
+        IoU_class = np.zeros([vox_shape[3] + 1])
+        IoU_temp = IoU(on_depsem_gt, on_depsem_ssc, IoU_class, vox_shape)
+        IoU_all = np.expand_dims(IoU_temp, axis=1)
 
-        on_recons_ = on_recons[:,:,:,:,1:vox_shape[3]]
-        on_real_ = on_real[:,:,:,:,1:vox_shape[3]]
-        mother = np.sum(np.add(on_recons_, on_real_),(1,2,3,4))
-        child = np.sum(np.multiply(on_recons_, on_real_),(1,2,3,4))
-        count = 0
-        IoU_element = 0
-        for i in np.arange(num):
-            if mother[i] != 0:
-                IoU_element += child[i]/mother[i]
-                count += 1
-        IoU_calc = np.round(IoU_element/count,3)
-        IoU_class[vox_shape[3]] = IoU_calc
-        print 'IoU all =' + str(IoU_calc)
-        np.savetxt(save_path + '/IoU.csv', IoU_class, delimiter=",")
+        on_depsem_dec = np.multiply(
+            onehot(np.argmax(pred_full, axis=4), vox_shape[3]),
+            np.expand_dims(np.clip(observed, 0, 1), -1))
+        print(colored("Generative segmentation", 'cyan'))
+        IoU_temp = IoU(on_depsem_gt, on_depsem_dec, IoU_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
+                                 axis=1)
 
+        # volume segmentation
+        on_surf_gt = onehot(surf_test, vox_shape[3])
+        on_full_gt = onehot(voxel_test, vox_shape[3])
+        print(colored("Geometric semantic completion", 'cyan'))
+        on_pred = onehot(np.argmax(pred_ssc, axis=4), vox_shape[3])
+        IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
+                                 axis=1)
+        print(colored("Generative semantic completion", 'cyan'))
+        on_pred = onehot(np.argmax(pred_surf, axis=4), vox_shape[3])
+        IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
+                                 axis=1)
+        print(colored("Solid generative semantic completion", 'cyan'))
+        on_pred = onehot(np.argmax(pred_full, axis=4), vox_shape[3])
+        IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
+        IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
+                                 axis=1)
 
-        #calc_AP
-        AP_class = np.zeros([vox_shape[3]+1])
-        for class_n in np.arange(vox_shape[3]):
-            on_recons_ = generated_voxs[:,:,:,:,class_n]
-            on_real_ = on_real[:,:,:,:,class_n]
+        np.savetxt(
+            save_path + '/IoU.csv',
+            np.transpose(IoU_all[1:] * 100),
+            delimiter=" & ",
+            fmt='%2.1f')
 
-            AP = 0.
-            for i in np.arange(num):
-                y_true = np.reshape(on_real_[i],[-1])
-                y_scores = np.reshape(on_recons_[i],[-1])
-                if np.sum(y_true) > 0.:
-                    AP += average_precision_score(y_true, y_scores)
-            AP = np.round(AP/num,3)
-            AP_class[class_n] = AP
-            print 'AP class ' + str(class_n) + '=' + str(AP)
-
-        on_recons_ = generated_voxs[:,:,:,:,1:vox_shape[3]]
-        on_real_ = on_real[:,:,:,:,1:vox_shape[3]]
-        AP = 0.
-        for i in np.arange(num):
-            y_true = np.reshape(on_real_[i],[-1])
-            y_scores = np.reshape(on_recons_[i],[-1])
-            if np.sum(y_true) > 0.:
-                AP += average_precision_score(y_true, y_scores)
-
-        AP = np.round(AP/num,3)
-        AP_class[vox_shape[3]] = AP
-        print 'AP all =' + str(AP)
-        np.savetxt(save_path + '/AP.csv', AP_class, delimiter=",")
-
-        #Refine
-        #calc_IoU
-        on_recons = onehot(np.argmax(refined_voxs, axis=4),vox_shape[3])
-
-        IoU_class = np.zeros([vox_shape[3]+1])
-        for class_n in np.arange(vox_shape[3]):
-            on_recons_ = on_recons[:,:,:,:,class_n]
-            on_real_ = on_real[:,:,:,:,class_n]
-            mother = np.sum(np.add(on_recons_, on_real_),(1,2,3))
-            child = np.sum(np.multiply(on_recons_, on_real_),(1,2,3))
-            count = 0
-            IoU_element = 0
-            for i in np.arange(num):
-                if mother[i] != 0:
-                    IoU_element += child[i]/mother[i]
-                    count += 1
-            IoU_calc = np.round(IoU_element/count,3)
-            IoU_class[class_n] = IoU_calc
-            print 'IoU class ' + str(class_n) + '=' + str(IoU_calc)
-
-        on_recons_ = on_recons[:,:,:,:,1:vox_shape[3]]
-        on_real_ = on_real[:,:,:,:,1:vox_shape[3]]
-        mother = np.sum(np.add(on_recons_, on_real_),(1,2,3,4))
-        child = np.sum(np.multiply(on_recons_, on_real_),(1,2,3,4))
-        count = 0
-        IoU_element = 0
-        for i in np.arange(num):
-            if mother[i] != 0:
-                IoU_element += child[i]/mother[i]
-                count += 1
-        IoU_calc = np.round(IoU_element/count,3)
-        IoU_class[vox_shape[3]] = IoU_calc
-        print 'IoU all =' + str(IoU_calc)
-        np.savetxt(save_path + '/IoU_refine.csv', IoU_class, delimiter=",")
-
-        #calc_AP
-        AP_class = np.zeros([vox_shape[3]+1])
-        for class_n in np.arange(vox_shape[3]):
-            on_recons_ = refined_voxs[:,:,:,:,class_n]
-            on_real_ = on_real[:,:,:,:,class_n]
-
-            AP = 0.
-            for i in np.arange(num):
-                y_true = np.reshape(on_real_[i],[-1])
-                y_scores = np.reshape(on_recons_[i],[-1])
-                if np.sum(y_true) > 0.:
-                    AP += average_precision_score(y_true, y_scores)
-            AP = np.round(AP/num,3)
-            AP_class[class_n] = AP
-            print 'AP class ' + str(class_n) + '=' + str(AP)
-
-        on_recons_ = refined_voxs[:,:,:,:,1:vox_shape[3]]
-        on_real_ = on_real[:,:,:,:,1:vox_shape[3]]
-        AP = 0.
-        for i in np.arange(num):
-            y_true = np.reshape(on_real_[i],[-1])
-            y_scores = np.reshape(on_recons_[i],[-1])
-            if np.sum(y_true) > 0.:
-                AP += average_precision_score(y_true, y_scores)
-
-        AP = np.round(AP/num,3)
-        AP_class[vox_shape[3]] = AP
-        print 'AP all =' + str(AP)
-        np.savetxt(save_path + '/AP_refine.csv', AP_class, delimiter=",")
-
-
-
-    #interpolation evaluation
+    # interpolation evaluation
     if mode == 'interpolate':
-        interpolate_num = 30
+        interpolate_num = 8
         #interpolatioin latent vectores
         decode_z = np.load(save_path + '/decode_z.npy')
-        decode_z = decode_z[:batch_size]
+        print(save_path)
+        decode_z = decode_z[20:20 + batch_size]
         for l in np.arange(batch_size):
             for r in np.arange(batch_size):
                 if l != r:
-                    print l,r
+                    print l, r
                     base_num_left = l
                     base_num_right = r
-                    left = np.reshape(decode_z[base_num_left], [1,start_vox_size[0],start_vox_size[1],start_vox_size[2],dim_z])
-                    right = np.reshape(decode_z[base_num_right], [1,start_vox_size[0],start_vox_size[1],start_vox_size[2],dim_z])
+                    left = np.reshape(decode_z[base_num_left], [
+                        1, start_vox_size[0], start_vox_size[1],
+                        start_vox_size[2], dim_z
+                    ])
+                    right = np.reshape(decode_z[base_num_right], [
+                        1, start_vox_size[0], start_vox_size[1],
+                        start_vox_size[2], dim_z
+                    ])
 
-                    duration = (right - left)/(interpolate_num-1)
+                    duration = (right - left) / (interpolate_num - 1)
+                    # left is the reference sample and Z_np_sample is the remaining samples
                     if base_num_left == 0:
                         Z_np_sample = decode_z[1:]
-                    elif base_num_left == batch_size-1:
-                        Z_np_sample = decode_z[:batch_size-1]
+                    elif base_num_left == batch_size - 1:
+                        Z_np_sample = decode_z[:batch_size - 1]
                     else:
-                        Z_np_sample_before = np.reshape(decode_z[:base_num_left], [base_num_left,start_vox_size[0],start_vox_size[1],start_vox_size[2],dim_z])
-                        Z_np_sample_after = np.reshape(decode_z[base_num_left+1:], [batch_size-base_num_left-1,start_vox_size[0],start_vox_size[1],start_vox_size[2],dim_z])
-                        Z_np_sample = np.concatenate([Z_np_sample_before, Z_np_sample_after], axis=0)
+                        Z_np_sample_before = np.reshape(
+                            decode_z[:base_num_left], [
+                                base_num_left, start_vox_size[0],
+                                start_vox_size[1], start_vox_size[2], dim_z
+                            ])
+                        Z_np_sample_after = np.reshape(
+                            decode_z[base_num_left + 1:], [
+                                batch_size - base_num_left - 1,
+                                start_vox_size[0], start_vox_size[1],
+                                start_vox_size[2], dim_z
+                            ])
+                        Z_np_sample = np.concatenate(
+                            [Z_np_sample_before, Z_np_sample_after], axis=0)
                     for i in np.arange(interpolate_num):
                         if i == 0:
                             Z = copy.copy(left)
                             interpolate_z = copy.copy(Z)
                         else:
-                            Z=Z + duration
-                            interpolate_z = np.concatenate([interpolate_z, Z], axis = 0)
-                        Z_var_np_sample = np.concatenate([Z, Z_np_sample], axis=0)
-                        generated_voxs_fromrand=sess.run(
-                            vox_tf_sample,
-                            feed_dict={Z_tf_sample:Z_var_np_sample})
-                        refined_voxs_fromrand=sess.run(
-                            sample_refine_vox_tf,
-                            feed_dict={sample_vox_tf:generated_voxs_fromrand})
-                        interpolate_vox = np.reshape(refined_voxs_fromrand[0], [1,vox_shape[0],vox_shape[1],vox_shape[2],vox_shape[3]])
+                            Z = Z + duration
+                            interpolate_z = np.concatenate([interpolate_z, Z],
+                                                           axis=0)
+
+                        # Z_np_sample is used to fill up the batch
+                        gaussian_sample = np.concatenate([Z, Z_np_sample],
+                                                         axis=0)
+                        pred_full_rand, pred_part_rand = sess.run(
+                            [full_tf_sample, part_tf_sample],
+                            feed_dict={Z_tf_sample: gaussian_sample})
+                        interpolate_vox = np.reshape(pred_full_rand[0], [
+                            1, vox_shape[0], vox_shape[1], vox_shape[2],
+                            vox_shape[3]
+                        ])
+                        interpolate_part = np.reshape(pred_part_rand[0], [
+                            1, vox_shape[0], vox_shape[1], vox_shape[2],
+                            com_shape[3]
+                        ])
+
                         if i == 0:
-                            generated_voxs = interpolate_vox
+                            pred_full = interpolate_vox
+                            pred_part = interpolate_part
                         else:
-                            generated_voxs = np.concatenate([generated_voxs, interpolate_vox], axis=0)
-                    
-                    np.save(save_path + '/interpolation_z' + str(l) + '-' + str(r) + '.npy', interpolate_z)
-                    
-                    vox_models_cat = np.argmax(generated_voxs, axis=4)
-                    np.save(save_path + '/interpolation' + str(l) + '-' + str(r) + '.npy', vox_models_cat)
+                            pred_full = np.concatenate(
+                                [pred_full, interpolate_vox], axis=0)
+                            pred_part = np.concatenate(
+                                [pred_part, interpolate_part], axis=0)
+                    interpolate_z.astype('uint8').tofile(
+                        save_path + '/interpolate/interpolation_z' + str(l) +
+                        '-' + str(r) + '.bin')
+
+                    full_models_cat = np.argmax(pred_full, axis=4)
+                    full_models_cat.astype('uint8').tofile(
+                        save_path + '/interpolate/interpolation_f' + str(l) +
+                        '-' + str(r) + '.bin')
+                    if cfg.TYPE_TASK == 'scene':
+                        pred_part = np.abs(pred_part)
+                        pred_part *= 10
+                        pred_part -= 7
+                    elif cfg.TYPE_TASK == 'object':
+                        pred_part = np.argmax(pred_part, axis=4)
+                    pred_part.astype('uint8').tofile(
+                        save_path + '/interpolate/interpolation_p' + str(l) +
+                        '-' + str(r) + '.bin')
         print("voxels saved")
 
-    #add noise evaluation
+    # add noise evaluation
     if mode == 'noise':
         decode_z = np.load(save_path + '/decode_z.npy')
         decode_z = decode_z[:batch_size]
         noise_num = 10
         for base_num in np.arange(batch_size):
             print base_num
-            base = np.reshape(decode_z[base_num], [1,start_vox_size[0],start_vox_size[1],start_vox_size[2],dim_z])
-            eps = np.random.normal(size=(noise_num-1,dim_z)).astype(np.float32)
-            
+            base = np.reshape(decode_z[base_num], [
+                1, start_vox_size[0], start_vox_size[1], start_vox_size[2],
+                dim_z
+            ])
+            eps = np.random.normal(size=(noise_num - 1,
+                                         dim_z)).astype(np.float32)
+
             if base_num == 0:
                 Z_np_sample = decode_z[1:]
-            elif base_num == batch_size-1:
-                Z_np_sample = decode_z[:batch_size-1]
+            elif base_num == batch_size - 1:
+                Z_np_sample = decode_z[:batch_size - 1]
             else:
-                Z_np_sample_before = np.reshape(decode_z[:base_num], [base_num,start_vox_size[0],start_vox_size[1],start_vox_size[2],dim_z])
-                Z_np_sample_after = np.reshape(decode_z[base_num+1:], [batch_size-base_num-1,start_vox_size[0],start_vox_size[1],start_vox_size[2],dim_z])
-                Z_np_sample = np.concatenate([Z_np_sample_before, Z_np_sample_after], axis=0)
+                Z_np_sample_before = np.reshape(decode_z[:base_num], [
+                    base_num, start_vox_size[0], start_vox_size[1],
+                    start_vox_size[2], dim_z
+                ])
+                Z_np_sample_after = np.reshape(decode_z[base_num + 1:], [
+                    batch_size - base_num - 1, start_vox_size[0],
+                    start_vox_size[1], start_vox_size[2], dim_z
+                ])
+                Z_np_sample = np.concatenate(
+                    [Z_np_sample_before, Z_np_sample_after], axis=0)
 
-       
             for c in np.arange(start_vox_size[0]):
                 for l in np.arange(start_vox_size[1]):
                     for d in np.arange(start_vox_size[2]):
@@ -340,29 +454,37 @@ def evaluate(batch_size, checknum, mode):
                                 noise_z = copy.copy(Z)
                             else:
                                 Z = copy.copy(base)
-                                Z[0,c,l,d,:] += eps[i-1]
-                                noise_z = np.concatenate([noise_z, Z], axis = 0)
-                            Z_var_np_sample = np.concatenate([Z, Z_np_sample], axis=0)
-                            generated_voxs_fromrand=sess.run(
-                                vox_tf_sample,
-                                feed_dict={Z_tf_sample:Z_var_np_sample})
-                            refined_voxs_fromrand=sess.run(
-                                sample_refine_vox_tf,
-                                feed_dict={sample_vox_tf:generated_voxs_fromrand})
-                            noise_vox = np.reshape(refined_voxs_fromrand[0], [1,vox_shape[0],vox_shape[1],vox_shape[2],vox_shape[3]])
+                                Z[0, c, l, d, :] += eps[i - 1]
+                                noise_z = np.concatenate([noise_z, Z], axis=0)
+                            gaussian_sample = np.concatenate([Z, Z_np_sample],
+                                                             axis=0)
+                            pred_full_rand = sess.run(
+                                full_tf_sample,
+                                feed_dict={Z_tf_sample: gaussian_sample})
+                            """
+                            refined_voxs_rand = sess.run(
+                                sample_refine_full_tf,
+                                feed_dict={
+                                    sample_full_tf: pred_full_rand
+                                })
+                            """
+                            noise_vox = np.reshape(pred_full_rand[0], [
+                                1, vox_shape[0], vox_shape[1], vox_shape[2],
+                                vox_shape[3]
+                            ])
                             if i == 0:
-                                generated_voxs = noise_vox
+                                pred_full = noise_vox
                             else:
-                                generated_voxs = np.concatenate([generated_voxs, noise_vox], axis=0)
-                        
-                        np.save(save_path + '/noise_z' + str(base_num) + '_' + str(c) + str(l) + str(d) + '.npy', noise_z)
+                                pred_full = np.concatenate(
+                                    [pred_full, noise_vox], axis=0)
 
-                        
-                        vox_models_cat = np.argmax(generated_voxs, axis=4)
-                        np.save(save_path + '/noise' + str(base_num) +'_' + str(c) + str(l) + str(d) + '.npy', vox_models_cat)
+                        np.save(
+                            save_path + '/noise_z' + str(base_num) + '_' +
+                            str(c) + str(l) + str(d) + '.npy', noise_z)
 
+                        full_models_cat = np.argmax(pred_full, axis=4)
+                        np.save(
+                            save_path + '/noise' + str(base_num) + '_' + str(c)
+                            + str(l) + str(d) + '.npy', full_models_cat)
 
         print("voxels saved")
-
-
-

@@ -1,0 +1,55 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/wangyida/Documents/gitfarm/depvox-gan/depth-tsdf/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_cc8fa/fast"
+/usr/bin/make -f CMakeFiles/cmTC_cc8fa.dir/build.make CMakeFiles/cmTC_cc8fa.dir/build
+make[1]: Entering directory '/home/wangyida/Documents/gitfarm/depvox-gan/depth-tsdf/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_cc8fa.dir/CheckSymbolExists.c.o
+/usr/bin/cc   -fPIC    -o CMakeFiles/cmTC_cc8fa.dir/CheckSymbolExists.c.o   -c /home/wangyida/Documents/gitfarm/depvox-gan/depth-tsdf/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_cc8fa
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_cc8fa.dir/link.txt --verbose=1
+/usr/bin/cc -fPIC     -rdynamic CMakeFiles/cmTC_cc8fa.dir/CheckSymbolExists.c.o  -o cmTC_cc8fa 
+CMakeFiles/cmTC_cc8fa.dir/CheckSymbolExists.c.o: In function `main':
+CheckSymbolExists.c:(.text+0x1b): undefined reference to `pthread_create'
+collect2: error: ld returned 1 exit status
+CMakeFiles/cmTC_cc8fa.dir/build.make:97: recipe for target 'cmTC_cc8fa' failed
+make[1]: *** [cmTC_cc8fa] Error 1
+make[1]: Leaving directory '/home/wangyida/Documents/gitfarm/depvox-gan/depth-tsdf/CMakeFiles/CMakeTmp'
+Makefile:126: recipe for target 'cmTC_cc8fa/fast' failed
+make: *** [cmTC_cc8fa/fast] Error 2
+
+File /home/wangyida/Documents/gitfarm/depvox-gan/depth-tsdf/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/wangyida/Documents/gitfarm/depvox-gan/depth-tsdf/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_570ed/fast"
+/usr/bin/make -f CMakeFiles/cmTC_570ed.dir/build.make CMakeFiles/cmTC_570ed.dir/build
+make[1]: Entering directory '/home/wangyida/Documents/gitfarm/depvox-gan/depth-tsdf/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_570ed.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_570ed.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.10/Modules/CheckFunctionExists.c
+Linking C executable cmTC_570ed
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_570ed.dir/link.txt --verbose=1
+/usr/bin/cc -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_570ed.dir/CheckFunctionExists.c.o  -o cmTC_570ed -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+CMakeFiles/cmTC_570ed.dir/build.make:97: recipe for target 'cmTC_570ed' failed
+make[1]: *** [cmTC_570ed] Error 1
+make[1]: Leaving directory '/home/wangyida/Documents/gitfarm/depvox-gan/depth-tsdf/CMakeFiles/CMakeTmp'
+Makefile:126: recipe for target 'cmTC_570ed/fast' failed
+make: *** [cmTC_570ed/fast] Error 2
+
+

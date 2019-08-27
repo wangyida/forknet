@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 2.8)
+project(back-project)
+find_package(CUDA REQUIRED)
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS} ${CUDA_INCLUDE_DIRS})
+
+IF(CUDA_FOUND)
+    SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3)
+    cuda_compile(CudaKernels -project back-project.cu)
+    cuda_add_executable(back-project back-project.cu)
+    target_link_libraries(back-project ${OpenCV_LIBS} ${CUDA_LIBS})
+ENDIF()
