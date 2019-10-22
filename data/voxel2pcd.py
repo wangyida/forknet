@@ -21,57 +21,56 @@ def voxel2pcd(npy_sec, dir_pcd_dep, dir_pcd_sec):
     voxel_sec = np.load(npy_sec)
     voxel_dep = np.load(npy_dep)
     voxel_dep[voxel_dep < -1] = 0
-    voxel_dep = np.round(np.abs(voxel_dep)) * voxel_sec
+    voxel_dep = np.round(np.abs(voxel_dep))
+    # voxel_dep = np.round(np.abs(voxel_dep)) * voxel_sec
     pcd = PointCloud()
 
-    for idx in range(1, 12):
-        if np.array(np.where(voxel_sec == idx)).size * np.array(np.where(voxel_dep == idx)).size > 0:
-            coordinate_sec = np.float32(np.transpose(np.where(voxel_sec == idx)))/80
-            pcd.points = Vector3dVector(coordinate_sec)
-            colors_cat_sec = np.float32(np.transpose(np.tile(voxel_sec[voxel_sec == idx], (3, 1))))/11
-            pcd.colors = Vector3dVector(colors_cat_sec)
+    idx_sec = np.where(voxel_sec > 0)
+    coor_sec = np.float32(np.transpose(idx_sec))/80 - 0.5
+    pcd.points = Vector3dVector(coor_sec)
+    colo_cat_sec = np.float32(np.transpose(np.tile(voxel_sec[idx_sec], (3, 1))))/11
+    pcd.colors = Vector3dVector(colo_cat_sec)
 
-            # Save
-            name_start = int(npy_sec.rfind('/'))
-            name_end = int(npy_sec.find('.', name_start))
-            write_point_cloud(dir_pcd_sec + npy_sec[name_start:name_end] + str(idx) + '.pcd', pcd)
-            # write_point_cloud(dir_tar_pcd + npy_sec[name_start:name_end] + '.ply', pcd)
+    # Save
+    name_start = int(npy_sec.rfind('/'))
+    name_end = int(npy_sec.find('.', name_start))
+    write_point_cloud(dir_pcd_sec + npy_sec[name_start:name_end] + '.pcd', pcd)
 
-            coordinate_dep = np.float32(np.transpose(np.where(voxel_dep == idx)))/80
-            pcd.points = Vector3dVector(coordinate_dep)
-            colors_cat_dep = np.float32(np.transpose(np.tile(voxel_dep[voxel_dep == idx], (3, 1))))/11
-            pcd.colors = Vector3dVector(colors_cat_dep)
+    idx_dep = np.where(voxel_dep > 0)
+    coor_dep = np.float32(np.transpose(idx_dep))/80 - 0.5
+    pcd.points = Vector3dVector(coor_dep)
+    colo_cat_dep = np.float32(np.transpose(np.tile(voxel_dep[idx_dep], (3, 1))))
+    pcd.colors = Vector3dVector(colo_cat_dep)
 
-            # Save
-            name_start = int(npy_dep.rfind('/'))
-            name_end = int(npy_dep.find('.', name_start))
-            write_point_cloud(dir_pcd_dep + npy_dep[name_start:name_end] + str(idx) + '.pcd', pcd)
-            # write_point_cloud(dir_tar_pcd + npy_dep[name_start:name_end] + '.ply', pcd)
+    # Save
+    name_start = int(npy_dep.rfind('/'))
+    name_end = int(npy_dep.find('.', name_start))
+    write_point_cloud(dir_pcd_dep + npy_dep[name_start:name_end] + '.pcd', pcd)
 
     """
     if np.array(np.where(voxel_sec > 4)).size * np.array(np.where(voxel_dep > 4)).size > 0:
-        coordinate_sec = np.float32(np.transpose(np.where(voxel_sec > 4)))/80
-        pcd.points = Vector3dVector(coordinate_sec)
-        colors_cat_sec = np.float32(np.transpose(np.tile(voxel_sec[voxel_sec > 4], (3, 1))))/11
-        pcd.colors = Vector3dVector(colors_cat_sec)
+        idx_sec = np.where((voxel_sec == 1) | (voxel_sec > 4))
+        coor_sec = np.float32(np.transpose(idx_sec))/80 - 0.5
+        pcd.points = Vector3dVector(coor_sec)
+        colo_cat_sec = np.float32(np.transpose(np.tile(voxel_sec[idx_sec], (3, 1))))/11
+        pcd.colors = Vector3dVector(colo_cat_sec)
 
         # Save
         name_start = int(npy_sec.rfind('/'))
         name_end = int(npy_sec.find('.', name_start))
-        write_point_cloud(dir_pcd_sec + npy_sec[name_start:name_end] + '1.pcd', pcd)
-        # write_point_cloud(dir_tar_pcd + npy_sec[name_start:name_end] + '.ply', pcd)
+        write_point_cloud(dir_pcd_sec + npy_sec[name_start:name_end] + '.pcd', pcd)
 
-        coordinate_dep = np.float32(np.transpose(np.where(voxel_dep > 4)))/80
-        pcd.points = Vector3dVector(coordinate_dep)
-        colors_cat_dep = np.float32(np.transpose(np.tile(voxel_dep[voxel_dep > 4], (3, 1))))/11
-        pcd.colors = Vector3dVector(colors_cat_dep)
+        idx_dep = np.where((voxel_dep == 1) | (voxel_dep > 4))
+        coor_dep = np.float32(np.transpose(idx_dep))/80 - 0.5
+        pcd.points = Vector3dVector(coor_dep)
+        colo_cat_dep = np.float32(np.transpose(np.tile(voxel_dep[idx_dep], (3, 1))))
+        pcd.colors = Vector3dVector(colo_cat_dep)
 
         # Save
         name_start = int(npy_dep.rfind('/'))
         name_end = int(npy_dep.find('.', name_start))
-        write_point_cloud(dir_pcd_dep + npy_dep[name_start:name_end] + '1.pcd', pcd)
-        # write_point_cloud(dir_tar_pcd + npy_dep[name_start:name_end] + '.ply', pcd)
-        """
+        write_point_cloud(dir_pcd_dep + npy_dep[name_start:name_end] + '.pcd', pcd)
+    """
 
 class ScanFile(object):
     def __init__(self, directory, prefix=None, postfix='.bin'):
