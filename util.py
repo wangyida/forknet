@@ -154,7 +154,8 @@ def scene_model_id_pair_test(dataset_portion=[]):
         voxel_data = np.load(voxel_fn)
         batch_voxel[i, :, :, :] = voxel_data
 
-    return batch_voxel, batch_surf, batch_tsdf, num_models, data_paths
+    return batch_voxel, batch_surf, batch_tsdf, num_models, data_paths[:
+                                                                       num_models]
 
 
 def onehot(voxel, class_num):

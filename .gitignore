@@ -3,6 +3,7 @@ Checkpt
 *.pyc
 log
 train_vox*
+results_pcds
 tsdf.bin
 tsdf.ply
 .DS*

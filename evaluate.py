@@ -1,5 +1,7 @@
 import numpy as np
 import tensorflow as tf
+import matplotlib
+import os
 
 from config import cfg
 from model import depvox_gan
@@ -10,6 +12,7 @@ import copy
 from colorama import init
 from termcolor import colored
 from pca import pca
+from io_util import read_pcd, save_pcd
 
 # use Colorama to make Termcolor work on Windows too
 init()
@@ -183,6 +186,19 @@ def evaluate(batch_size, checknum, mode, discriminative):
         depsem_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
 
         # decoded
+        save_pcd = False
+        if save_pcd is True:
+            results_pcds = np.argmax(pred_ssc, axis=4)
+            for i in range(np.shape(results_pcds)[0]):
+                pcd_idx = np.where(results_pcds[i] > 0)
+                pts_coord = np.float32(np.transpose(pcd_idx)) / 80 - 0.5
+                pts_color = matplotlib.cm.Paired(
+                    np.float32(results_pcds[i][pcd_idx]) / 11 - 0.5 / 11)
+                save_pcd(
+                    os.path.join('results_pcds',
+                                 '%s.ply' % data_paths[i][1][:-4]),
+                    np.concatenate((pts_coord, pts_color[:, 0:3]), -1))
+
         np.argmax(
             pred_ssc,
             axis=4).astype('uint8').tofile(save_path + '/dec_ssc.bin')

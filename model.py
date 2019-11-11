@@ -397,7 +397,8 @@ class depvox_gan():
         ], -1)
 
         comp_gt_ = tf.clip_by_value(
-            full_gt_ + tf.dtypes.cast(tf.math.round(tf.abs(part_gt_) - 0.2), tf.int32),
+            full_gt_ + tf.dtypes.cast(
+                tf.math.round(tf.abs(part_gt_) - 0.2), tf.int32),
             clip_value_min=0,
             clip_value_max=1)
         comp_gt = tf.one_hot(comp_gt_, 2)
