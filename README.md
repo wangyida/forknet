@@ -2,6 +2,17 @@
 
 The implementation of our paper accepted in **ICCV** *2019* (*International Conference on Computer Vision*, IEEE)
 **[Yida Wang](https://wangyida.github.io/#about), David Tan, [Nassir Navab](http://campar.in.tum.de/Main/NassirNavab) and [Federico Tombari](http://campar.in.tum.de/Main/FedericoTombari)**
+If you find this work useful in yourr research, please cite:
+
+```bash
+@inproceedings{wang2019forknet,
+  title={ForkNet: Multi-branch Volumetric Semantic Completion from a Single Depth Image},
+  author={Wang, Yida and Tan, David Joseph and Navab, Nassir and Tombari, Federico},
+  booktitle={Proceedings of the IEEE International Conference on Computer Vision},
+  pages={8608--8617},
+  year={2019}
+}
+```
 
 ## ForkNet
 
