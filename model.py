@@ -719,7 +719,7 @@ class depvox_gan():
         h2_0 = h1_0 + h1_2
         h2_1 = tf.layers.conv3d(
             h2_0,
-            filters=64,
+            filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
@@ -729,7 +729,7 @@ class depvox_gan():
 
         h2_2 = tf.layers.conv3d(
             h2_1,
-            filters=64,
+            filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
@@ -739,7 +739,7 @@ class depvox_gan():
 
         h3_0 = h2_2 + tf.layers.conv3d(
             h2_1,
-            filters=64,
+            filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
@@ -749,7 +749,7 @@ class depvox_gan():
 
         h3_1 = tf.layers.conv3d(
             h3_0,
-            filters=64,
+            filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
@@ -759,7 +759,7 @@ class depvox_gan():
 
         h4_0 = h3_1 + tf.layers.conv3d(
             h3_1,
-            filters=64,
+            filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
@@ -769,7 +769,7 @@ class depvox_gan():
 
         h4_1 = tf.layers.conv3d(
             h4_0,
-            filters=64,
+            filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
@@ -779,7 +779,7 @@ class depvox_gan():
 
         h5_0 = h4_1 + tf.layers.conv3d(
             h4_1,
-            filters=64,
+            filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
@@ -789,7 +789,7 @@ class depvox_gan():
 
         h5_1 = tf.layers.conv3d(
             h5_0,
-            filters=64,
+            filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
@@ -799,7 +799,7 @@ class depvox_gan():
 
         h6_0 = h5_1 + tf.layers.conv3d(
             h5_1,
-            filters=64,
+            filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
@@ -810,7 +810,7 @@ class depvox_gan():
 
         h7_1 = tf.layers.conv3d_transpose(
             h7_0,
-            filters=64,
+            filters=32,
             kernel_size=(4, 4, 4),
             strides=(2, 2, 2),
             padding='same',
@@ -819,7 +819,7 @@ class depvox_gan():
 
         h7_2 = tf.layers.conv3d(
             tf.concat([h7_1, sdf], -1),
-            filters=128,
+            filters=64,
             kernel_size=(1, 1, 1),
             strides=(1, 1, 1),
             padding='same',
@@ -828,7 +828,7 @@ class depvox_gan():
             reuse=tf.AUTO_REUSE)
         h7_3 = tf.layers.conv3d(
             h7_2,
-            filters=128,
+            filters=64,
             kernel_size=(1, 1, 1),
             strides=(1, 1, 1),
             padding='same',
@@ -1375,7 +1375,7 @@ class depvox_gan():
             reuse=tf.AUTO_REUSE)
         h1_2 = tf.layers.conv3d(
             h1_1,
-            filters=32,
+            filters=16,
             kernel_size=(1, 1, 1),
             strides=(1, 1, 1),
             padding='same',
@@ -1521,7 +1521,7 @@ class depvox_gan():
             reuse=tf.AUTO_REUSE)
         h1_2 = tf.layers.conv3d(
             h1_1,
-            filters=32,
+            filters=16,
             kernel_size=(1, 1, 1),
             strides=(1, 1, 1),
             padding='same',
@@ -1622,7 +1622,7 @@ class depvox_gan():
 
     def samples_generator(self, visual_size):
         Z = tf.placeholder(tf.float32, [
-            visual_size, self.start_vox_size[0], self.start_vox_size[1],
+            None, self.start_vox_size[0], self.start_vox_size[1],
             self.start_vox_size[2], self.dim_z
         ])
 

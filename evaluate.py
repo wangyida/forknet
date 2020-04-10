@@ -257,7 +257,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                         [z_surf_rand_all, z_surf_rand], axis=0)
                     z_full_rand_all = np.concatenate(
                         [z_full_rand_all, z_full_rand], axis=0)
-                    print(scores_sample)
+                    print('Average a', np.mean(scores_sample))
             gaussian_sample.astype('float32').tofile(save_path +
                                                      '/sample_z.bin')
             np.argmax(

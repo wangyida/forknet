@@ -137,15 +137,12 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     if mid_flag:
         chckpt_path = model_path + '/checkpoint' + str(check_num)
         saver.restore(sess, chckpt_path)
-        Z_var_np_sample = np.load(cfg.DIR.TRAIN_OBJ_PATH +
-                                  '/sample_z.npy').astype(np.float32)
-        Z_var_np_sample = Z_var_np_sample[:batch_size]
         print('---weights restored')
-    else:
-        Z_var_np_sample = np.random.normal(
-            size=(batch_size, start_vox_size[0], start_vox_size[1],
-                  start_vox_size[2], dim_z)).astype(np.float32)
-        np.save(cfg.DIR.TRAIN_OBJ_PATH + '/sample_z.npy', Z_var_np_sample)
+
+    Z_var_np_sample = np.random.normal(
+        size=(batch_size, start_vox_size[0], start_vox_size[1],
+              start_vox_size[2], dim_z)).astype(np.float32)
+    np.save(cfg.DIR.TRAIN_OBJ_PATH + '/sample_z.npy', Z_var_np_sample)
 
     ite = check_num * freq + 1
     cur_epochs = int(ite / int(len(data_paths) / batch_size))
@@ -224,7 +221,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         full_tf: batch_voxel,
                     },
                 )
-                if scores_discrim[0] - scores_discrim[1] > 0.3:
+                if scores_discrim[0] - scores_discrim[1] > 0.2:
                     _ = sess.run(
                         train_op_gen_sdf,
                         feed_dict={
@@ -235,7 +232,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             lr_VAE: lr
                         },
                     )
-                if scores_discrim[2] - scores_discrim[3] > 0.3:
+                if scores_discrim[2] - scores_discrim[3] > 0.2:
                     _ = sess.run(
                         train_op_gen_com,
                         feed_dict={
@@ -246,7 +243,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             lr_VAE: lr
                         },
                     )
-                if scores_discrim[4] - scores_discrim[5] > 0.3:
+                if scores_discrim[4] - scores_discrim[5] > 0.2:
                     _ = sess.run(
                         train_op_gen_sem,
                         feed_dict={

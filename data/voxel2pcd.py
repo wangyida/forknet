@@ -17,7 +17,10 @@ from joblib import Parallel, delayed
 
 
 def voxel2pcd(npy_sec, dir_pcd_dep, dir_pcd_sec):
+    # SUNCG
     npy_dep = npy_sec.replace('surface_semantic_npy', 'depth_tsdf_camera_npy')
+    # ShapeNet
+    # npy_dep = npy_sec.replace('depth_tsdf_npy', 'voxel_semantic_npy')
     voxel_sec = np.load(npy_sec)
     voxel_dep = np.load(npy_dep)
     voxel_dep[voxel_dep < -1] = 0
@@ -49,7 +52,7 @@ def voxel2pcd(npy_sec, dir_pcd_dep, dir_pcd_sec):
 
     """
     if np.array(np.where(voxel_sec > 4)).size * np.array(np.where(voxel_dep > 4)).size > 0:
-        idx_sec = np.where((voxel_sec == 1) | (voxel_sec > 4))
+        idx_sec = np.where((voxel_sec == 5) | (voxel_sec > 4))
         coor_sec = np.float32(np.transpose(idx_sec))/80 - 0.5
         pcd.points = Vector3dVector(coor_sec)
         colo_cat_sec = np.float32(np.transpose(np.tile(voxel_sec[idx_sec], (3, 1))))/11
@@ -60,7 +63,7 @@ def voxel2pcd(npy_sec, dir_pcd_dep, dir_pcd_sec):
         name_end = int(npy_sec.find('.', name_start))
         write_point_cloud(dir_pcd_sec + npy_sec[name_start:name_end] + '.pcd', pcd)
 
-        idx_dep = np.where((voxel_dep == 1) | (voxel_dep > 4))
+        idx_dep = np.where((voxel_dep == 5) | (voxel_dep > 4))
         coor_dep = np.float32(np.transpose(idx_dep))/80 - 0.5
         pcd.points = Vector3dVector(coor_dep)
         colo_cat_dep = np.float32(np.transpose(np.tile(voxel_dep[idx_dep], (3, 1))))

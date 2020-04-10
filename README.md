@@ -52,11 +52,18 @@ wait
 ```
 
 ## Train and Test
-Then you can start to train with
+### Training
 ```shell
 CUDA_VISIBLE_DEVICES=0 python3 main.py --mode train --discriminative True
 ```
-and test with
+### Testing
+We provide a compact version of ForkNet which is only 25 MB in the pretrained_model folder
+If the model is not discriminative 
 ```shell
 CUDA_VISIBLE_DEVICES=1 python main.py --mode evaluate_recons --conf_epoch 0
 ```
+Otherwise
+```shell
+CUDA_VISIBLE_DEVICES=1 python main.py --mode evaluate_recons --conf_epoch 4 --discriminative True
+```
+where '--conf_epoch' indicates the index of the pretrained model

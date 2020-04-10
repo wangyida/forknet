@@ -7,21 +7,21 @@ cfg = __C
 #
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'test'
+__C.TYPE_DATA = 'train'
 
 __C.SUB_CONFIG_FILE = []
 
 __C.CONST = edict()
 __C.CONST.BATCH_SIZE = 8
 __C.CONST.BATCH_SIZE_TEST = 2
-__C.SAVER_MAX = 2000
-__C.CHECK_FREQ = 1000
+__C.SAVER_MAX = 20000
+__C.CHECK_FREQ = 10000
 __C.RECORD_VOX_NUM = 10
 __C.SWITCHING_ITE = 100001
 
 # Network
 __C.NET = edict()
-__C.NET.DIM_Z = 256
+__C.NET.DIM_Z = 64
 # The last dimension of NET.DIM matters much for GPU consumption for loss function
 __C.NET.KERNEL = [[4, 4, 4, 4, 4], [4, 4, 4, 4, 4], [4, 4, 4, 4, 4]]
 __C.NET.STRIDE = [1, 2, 2, 2, 1]
@@ -30,7 +30,7 @@ __C.NET.DILATIONS = [1, 1, 1, 1, 1]
 if __C.TYPE_TASK is 'scene':
     __C.CONST.N_VOX = [80, 48, 80]
     __C.NET.START_VOX = [5, 3, 5]
-    __C.NET.DIM = [512, 256, 128, 32, 12]
+    __C.NET.DIM = [128, 64, 32, 16, 12]
 elif __C.TYPE_TASK is 'object':
     __C.CONST.N_VOX = [64, 64, 64]
     __C.NET.START_VOX = [4, 4, 4]
@@ -101,7 +101,7 @@ __C.TRAIN.NUM_EPOCH = 50000  # maximum number of training epochs
 # Learning
 __C.LEARNING_RATE_G = 0.0001
 __C.LEARNING_RATE_D = 0.0001
-__C.LEARNING_RATE_V = [0.001, 1000, 0.001]
+__C.LEARNING_RATE_V = [0.001, 1000, 0.0001]
 __C.TRAIN.ADAM_BETA_G = 0.5
 __C.TRAIN.ADAM_BETA_D = 0.5
 __C.LAMDA_RECONS = 1
