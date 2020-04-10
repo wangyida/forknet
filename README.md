@@ -1,7 +1,7 @@
 # ForkNet: Multi-branch Volumetric Semantic Completion from a Single Depth Image
 
 The implementation of our paper accepted in **ICCV** *2019* (*International Conference on Computer Vision*, IEEE)
-**[Yida Wang](https://wangyida.github.io/#about), David Tan, [Nassir Navab](http://campar.in.tum.de/Main/NassirNavab) and [Federico Tombari](http://campar.in.tum.de/Main/FedericoTombari)**
+**[Yida Wang](https://wangyida.github.io/#about), David Tan, [Nassir Navab](http://campar.in.tum.de/Main/NassirNavab) and [Federico Tombari](http://campar.in.tum.de/Main/FedericoTombari)**.
 If you find this work useful in yourr research, please cite:
 
 ```bash
@@ -16,22 +16,22 @@ If you find this work useful in yourr research, please cite:
 
 ## ForkNet
 
-![](iccv/teaser.png)
-
  <img src="iccv/PrasentationICCV.gif" alt="road condition" frameborder="0" style="border:0" >
 
 ### Architecture
+![](iccv/teaser.png)
+
+The overall architecture is combined with 1 encoder with input of a TSDF volume and 3 decoders.
 ![](iccv/architecture.png)
-training.
 
 ### Generated synthetic samples
+Given 1 latent sample, we can use 2 decoders to generate a pair of TSDF volume and semantic scene separately.
 ![](iccv/learning_dataset.png)
 
 ### More examples
 ![](iccv/qualitative.png)
 
 ## Data preprocessing
-
 ### Depth image to TSDF volumes
 Firstly you need to go to depth-tsdf folder to compile the our depth converter. Then *camake* and *make* are suggested tools to compile our codes.
 
