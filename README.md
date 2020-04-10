@@ -46,7 +46,7 @@ CUDA_VISIBLE_DEVICES=0 python2 data/depth_backproject.py -s /media/wangyida/SSD2
 ```
 
 ### Semantic volumes used for training
-We further convert the binary files from SUNCG and NYU datasets into numpy arrays in dimension of 80*48*80 with 12 semantic channels. Those voxel data are used as training ground truth.
+We further convert the binary files from SUNCG and NYU datasets into numpy arrays in dimension of [80, 48, 80] with 12 semantic channels. Those voxel data are used as training ground truth. Notice that our data is presented in numpy array format which is converted from the original [binary data](https://sscnet.cs.princeton.edu/)
 
 ```shell
 python2 data/depthbin2npy.py -s /media/wangyida/HDD/database/SUNCGtrain_1001_2000  -tv /media/wangyida/HDD/database/SUNCG_Yida/train/voxel_semantic_npy &
