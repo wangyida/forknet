@@ -1,26 +1,37 @@
 # ForkNet: Multi-branch Volumetric Semantic Completion from a Single Depth Image
 
 The implementation of our paper accepted in **ICCV** *2019* (*International Conference on Computer Vision*, IEEE)
-**[Yida Wang](https://wangyida.github.io/#about), David Tan, [Nassir Navab](http://campar.in.tum.de/Main/NassirNavab) and [Federico Tombari](http://campar.in.tum.de/Main/FedericoTombari)**
+**[Yida Wang](https://wangyida.github.io/#about), David Tan, [Nassir Navab](http://campar.in.tum.de/Main/NassirNavab) and [Federico Tombari](http://campar.in.tum.de/Main/FedericoTombari)**.
+If you find this work useful in yourr research, please cite:
+
+```bash
+@inproceedings{wang2019forknet,
+  title={ForkNet: Multi-branch Volumetric Semantic Completion from a Single Depth Image},
+  author={Wang, Yida and Tan, David Joseph and Navab, Nassir and Tombari, Federico},
+  booktitle={Proceedings of the IEEE International Conference on Computer Vision},
+  pages={8608--8617},
+  year={2019}
+}
+```
 
 ## ForkNet
-
-![](iccv/teaser.png)
 
  <img src="iccv/PrasentationICCV.gif" alt="road condition" frameborder="0" style="border:0" >
 
 ### Architecture
+![](iccv/teaser.png)
+
+The overall architecture is combined with 1 encoder with input of a TSDF volume and 3 decoders.
 ![](iccv/architecture.png)
-training.
 
 ### Generated synthetic samples
+Given 1 latent sample, we can use 2 decoders to generate a pair of TSDF volume and semantic scene separately.
 ![](iccv/learning_dataset.png)
 
 ### More examples
 ![](iccv/qualitative.png)
 
 ## Data preprocessing
-
 ### Depth image to TSDF volumes
 Firstly you need to go to depth-tsdf folder to compile the our depth converter. Then *camake* and *make* are suggested tools to compile our codes.
 
@@ -35,7 +46,7 @@ CUDA_VISIBLE_DEVICES=0 python2 data/depth_backproject.py -s /media/wangyida/SSD2
 ```
 
 ### Semantic volumes used for training
-We further convert the binary files from SUNCG and NYU datasets into numpy arrays in dimension of 80*48*80 with 12 semantic channels. Those voxel data are used as training ground truth.
+We further convert the binary files from SUNCG and NYU datasets into numpy arrays in dimension of [80, 48, 80] with 12 semantic channels. Those voxel data are used as training ground truth. Notice that our data is presented in numpy array format which is converted from the original [binary data](https://sscnet.cs.princeton.edu/)
 
 ```shell
 python2 data/depthbin2npy.py -s /media/wangyida/HDD/database/SUNCGtrain_1001_2000  -tv /media/wangyida/HDD/database/SUNCG_Yida/train/voxel_semantic_npy &
