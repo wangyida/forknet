@@ -118,12 +118,14 @@ def evaluate(batch_size, checknum, mode, discriminative):
 
         num = voxel_test.shape[0]
         print("test voxels loaded")
+        import timeit
         for i in np.arange(int(num / batch_size)):
             batch_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
             batch_surf = surf_test[i * batch_size:i * batch_size + batch_size]
             batch_voxel = voxel_test[i * batch_size:i * batch_size +
                                      batch_size]
 
+            start = timeit.default_timer()
             batch_pred_surf, batch_pred_full, batch_pred_part, batch_part_enc_Z, batch_complete_gt, batch_pred_complete, batch_ssc = sess.run(
                 [
                     surf_dec_tf, full_dec_tf, part_dec_tf, z_enc_tf,
@@ -134,6 +136,9 @@ def evaluate(batch_size, checknum, mode, discriminative):
                     surf_tf: batch_surf,
                     full_tf: batch_voxel
                 })
+            stop = timeit.default_timer()
+
+            print('Time: ', (stop - start)/batch_size)  
 
             if i == 0:
                 pred_part = batch_pred_part
