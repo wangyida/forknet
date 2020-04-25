@@ -101,7 +101,7 @@ def scene_model_id_pair(dataset_portion=[]):
 
 def scene_model_id_pair_test(dataset_portion=[]):
 
-    amount_of_test_sample = 200
+    amount_of_test_sample = 4
 
     scene_name_pair = []  # full path of the objs files
 

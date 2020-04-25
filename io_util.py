@@ -1,13 +1,13 @@
 # Author: Wentao Yuan (wyuan1@cs.cmu.edu) 05/31/2018
 
 import numpy as np
-from open3d import *
+import open3d as o3d 
 import matplotlib
 
 
 def read_pcd(filename):
-    set_verbosity_level(VerbosityLevel.Error)
-    pcd = read_point_cloud(filename)
+    o3d.set_verbosity_level(VerbosityLevel.Error)
+    pcd = o3d.read_point_cloud(filename)
     if pcd.colors:
         return np.concatenate([np.array(pcd.points), np.array(pcd.colors)], 1)
     else:
@@ -16,8 +16,8 @@ def read_pcd(filename):
 
 
 def save_pcd(filename, points):
-    set_verbosity_level(VerbosityLevel.Error)
-    pcd = PointCloud()
-    pcd.points = Vector3dVector(points[:, 0:3])
-    pcd.colors = Vector3dVector(points[:, 3:6])
-    write_point_cloud(filename, pcd)
+    # o3d.set_verbosity_level(VerbosityLevel.Error)
+    pcd = o3d.PointCloud()
+    pcd.points = o3d.Vector3dVector(points[:, 0:3])
+    pcd.colors = o3d.Vector3dVector(points[:, 3:6])
+    o3d.write_point_cloud(filename, pcd)
