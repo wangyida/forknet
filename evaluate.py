@@ -137,7 +137,6 @@ def evaluate(batch_size, checknum, mode, discriminative):
                     full_tf: batch_voxel
                 })
 
-
             if i == 0:
                 pred_part = batch_pred_part
                 pred_surf = batch_pred_surf
@@ -197,8 +196,10 @@ def evaluate(batch_size, checknum, mode, discriminative):
                 pts_coord = np.float32(np.transpose(pcd_idx)) / 80 - 0.5
                 pts_color = matplotlib.cm.Paired(
                     np.float32(results_pcds[i][pcd_idx]) / 11 - 0.5 / 11)
-                output_name = os.path.join('results_pcds','%s.pcd' % data_paths[i][1][:-4])
-                output_pcds = np.concatenate((pts_coord, pts_color[:, 0:3]), -1)
+                output_name = os.path.join('results_pcds',
+                                           '%s.pcd' % data_paths[i][1][:-4])
+                output_pcds = np.concatenate((pts_coord, pts_color[:, 0:3]),
+                                             -1)
                 save_pcd(output_name, output_pcds)
 
         np.argmax(
@@ -312,8 +313,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
                 np.expand_dims(np.clip(observed, 0, 1), -1))
             print(colored("Generative segmentation", 'cyan'))
             IoU_temp = IoU(on_depsem_gt, on_depsem_dec, IoU_class, vox_shape)
-            IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
-                                     axis=1)
+            IoU_all = np.concatenate(
+                (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 
             # volume segmentation
             on_surf_gt = onehot(surf_test, vox_shape[3])
@@ -321,18 +322,18 @@ def evaluate(batch_size, checknum, mode, discriminative):
             print(colored("Geometric semantic completion", 'cyan'))
             on_pred = onehot(np.argmax(pred_ssc, axis=4), vox_shape[3])
             IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
-            IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
-                                     axis=1)
+            IoU_all = np.concatenate(
+                (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
             print(colored("Generative semantic completion", 'cyan'))
             on_pred = onehot(np.argmax(pred_surf, axis=4), vox_shape[3])
             IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
-            IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
-                                     axis=1)
+            IoU_all = np.concatenate(
+                (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
             print(colored("Solid generative semantic completion", 'cyan'))
             on_pred = onehot(np.argmax(pred_full, axis=4), vox_shape[3])
             IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
-            IoU_all = np.concatenate((IoU_all, np.expand_dims(IoU_temp, axis=1)),
-                                     axis=1)
+            IoU_all = np.concatenate(
+                (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 
             np.savetxt(
                 save_path + '/IoU.csv',

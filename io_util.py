@@ -1,7 +1,7 @@
 # Author: Wentao Yuan (wyuan1@cs.cmu.edu) 05/31/2018
 
 import numpy as np
-import open3d as o3d 
+import open3d as o3d
 import matplotlib
 
 
