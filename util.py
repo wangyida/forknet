@@ -115,7 +115,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
                                       0:]
     random.seed(1)
     random.shuffle(data_paths_test)
-    print('---the first sample is:', data_paths_test[0])
+    print('---the first sample is:', data_paths_test[0][1])
 
     # data_paths = data_paths_test[:amount_of_test_sample]
     data_paths = data_paths_test
@@ -141,7 +141,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
                                        ".npy", ".png")
         if os.path.isfile(depth_fn):
             img = mpimg.imread(depth_fn)
-            imsave('vis_depth/' + str(i) + '.png', img)
+            imsave('results_depth/' + data_paths_test[i][1][:-4] + '.png', img)
 
         tsdf_fn = cfg.DIR.TSDF_PATH + model_id
         tsdf_data = np.load(tsdf_fn)
@@ -160,6 +160,9 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
 
 def onehot(voxel, class_num):
+    # import ipdb; ipdb.set_trace()
+    return np.eye(class_num)[voxel.astype(int)]
+    """
     onehot_voxels = np.zeros((voxel.shape[0], voxel.shape[1], voxel.shape[2],
                               voxel.shape[3], class_num))
     for i in np.arange(class_num):
@@ -167,3 +170,4 @@ def onehot(voxel, class_num):
         onehot_voxel[np.where(voxel == i)] = 1
         onehot_voxels[:, :, :, :, i] = onehot_voxel[:, :, :, :]
     return onehot_voxels
+    """

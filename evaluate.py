@@ -29,17 +29,16 @@ def IoU(on_gt, on_pred, IoU_class, vox_shape):
         name_list = ['empty', 'bench', 'chair', 'couch', 'table']
     elif vox_shape[3] == 2:
         name_list = ['empty', 'objec']
-    num = on_gt.shape[0]
     for class_n in np.arange(vox_shape[3]):
         IoU_calc = 0
-        for sample_n in np.arange(vox_shape[0]):
+        for sample_n in np.arange(on_gt.shape[0]):
             on_pd_ = on_pred[sample_n, :, :, :, class_n]
             on_gt_ = on_gt[sample_n, :, :, :, class_n]
             mother = np.sum(np.clip(np.add(on_pd_, on_gt_), 0, 1), (0, 1, 2))
             child = np.sum(np.multiply(on_pd_, on_gt_), (0, 1, 2))
             IoU_calc += (child + 0.1) / (mother + 0.1)
 
-        IoU_class[class_n] = np.round(IoU_calc / vox_shape[0], 3)
+        IoU_class[class_n] = np.round(IoU_calc / on_gt.shape[0], 3)
         print 'IoU of ' + name_list[class_n] + ':' + str(IoU_class[class_n])
     if vox_shape[3] != 2:
         IoU_class[vox_shape[3]] = np.round(
