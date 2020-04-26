@@ -50,7 +50,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
     Z_tf, z_part_enc_tf, surf_tf, full_tf, full_gen_tf, surf_dec_tf, full_dec_tf,\
     gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
+    part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -85,14 +85,14 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     lr_VAE = tf.placeholder(tf.float32, shape=[])
 
     # main optimiser
-    train_op_pred_sscnet = tf.train.AdamOptimizer(
+    train_op_pd_sscnet = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             recons_ssc_loss_tf, var_list=enc_sscnet_vars)
-    train_op_pred_com = tf.train.AdamOptimizer(
+    train_op_pd_com = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             recons_com_loss_tf,
             var_list=enc_sdf_vars + gen_com_vars + gen_sdf_vars)
-    train_op_pred_sem = tf.train.AdamOptimizer(
+    train_op_pd_sem = tf.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             recons_sem_loss_tf,
             var_list=enc_sdf_vars + gen_sem_vars + gen_sdf_vars)
@@ -124,7 +124,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 var_list=dis_sem_vars,
                 global_step=global_step)
 
-        Z_tf_sample, comp_tf_sample, full_tf_sample, full_ref_tf_sample, part_tf_sample, scores_tf_sample = depvox_gan_model.samples_generator(
+        Z_tf_samp, comp_tf_samp, full_tf_samp, full_ref_tf_samp, part_tf_samp, scores_tf_samp = depvox_gan_model.samples_generator(
             visual_size=batch_size)
 
         model_path = cfg.DIR.CHECK_POINT_PATH + '-d'
@@ -139,10 +139,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         saver.restore(sess, chckpt_path)
         print('---weights restored')
 
-    Z_var_np_sample = np.random.normal(
+    Z_var_np_samp = np.random.normal(
         size=(batch_size, start_vox_size[0], start_vox_size[1],
               start_vox_size[2], dim_z)).astype(np.float32)
-    np.save(cfg.DIR.TRAIN_OBJ_PATH + '/sample_z.npy', Z_var_np_sample)
+    np.save(cfg.DIR.TRAIN_OBJ_PATH + '/sample_z.npy', Z_var_np_samp)
 
     ite = check_num * freq + 1
     cur_epochs = int(ite / int(len(data_paths) / batch_size))
@@ -153,27 +153,27 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
         while epoch_flag:
             print(colored('---Iteration:%d, epoch:%d', 'blue') % (ite, epoch))
             db_inds, epoch_flag = data_process.get_next_minibatch()
-            batch_tsdf = data_process.get_tsdf(db_inds)
-            batch_surf = data_process.get_surf(db_inds)
-            batch_voxel = data_process.get_voxel(db_inds)
+            bth_tsdf = data_process.get_tsdf(db_inds)
+            bth_surf = data_process.get_surf(db_inds)
+            bth_voxel = data_process.get_voxel(db_inds)
 
             # Evaluation masks
             # NOTICE that the target should never have negative values,
             # otherwise the one-hot coding never works for that region
             if cfg.TYPE_TASK == 'scene':
                 """
-                space_effective = np.where(batch_voxel > -1, 1, 0) * np.where(batch_tsdf > -1, 1, 0)
-                batch_voxel *= space_effective
-                batch_tsdf *= space_effective
+                space_effective = np.where(bth_voxel > -1, 1, 0) * np.where(bth_tsdf > -1, 1, 0)
+                bth_voxel *= space_effective
+                bth_tsdf *= space_effective
                 # occluded region
                 """
-                batch_tsdf[batch_tsdf < -1] = 0
-                batch_surf[batch_surf < 0] = 0
-                batch_voxel[batch_voxel < 0] = 0
+                bth_tsdf[bth_tsdf < -1] = 0
+                bth_surf[bth_surf < 0] = 0
+                bth_voxel[bth_voxel < 0] = 0
 
             lr = learning_rate(cfg.LEARNING_RATE_V, ite)
 
-            batch_z_var = np.random.normal(
+            bth_z_var = np.random.normal(
                 size=(batch_size, start_vox_size[0], start_vox_size[1],
                       start_vox_size[2], dim_z)).astype(np.float32)
 
@@ -181,32 +181,32 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             is_supervised = True
             if is_supervised is True:
                 _ = sess.run(
-                    train_op_pred_sscnet,
+                    train_op_pd_sscnet,
                     feed_dict={
-                        Z_tf: batch_z_var,
-                        part_tf: batch_tsdf,
-                        surf_tf: batch_surf,
-                        full_tf: batch_voxel,
+                        Z_tf: bth_z_var,
+                        part_tf: bth_tsdf,
+                        surf_tf: bth_surf,
+                        full_tf: bth_voxel,
                         lr_VAE: lr
                     },
                 )
                 _, _, _ = sess.run(
-                    [train_op_pred_com, train_op_pred_sem, train_op_refine],
+                    [train_op_pd_com, train_op_pd_sem, train_op_refine],
                     feed_dict={
-                        Z_tf: batch_z_var,
-                        part_tf: batch_tsdf,
-                        surf_tf: batch_surf,
-                        full_tf: batch_voxel,
+                        Z_tf: bth_z_var,
+                        part_tf: bth_tsdf,
+                        surf_tf: bth_surf,
+                        full_tf: bth_voxel,
                         lr_VAE: lr
                     },
                 )
             gen_com_loss_val, gen_sem_loss_val, z_part_enc_val = sess.run(
                 [recons_com_loss_tf, recons_sem_loss_tf, z_part_enc_tf],
                 feed_dict={
-                    Z_tf: batch_z_var,
-                    part_tf: batch_tsdf,
-                    surf_tf: batch_surf,
-                    full_tf: batch_voxel,
+                    Z_tf: bth_z_var,
+                    part_tf: bth_tsdf,
+                    surf_tf: bth_surf,
+                    full_tf: bth_voxel,
                     lr_VAE: lr
                 },
             )
@@ -215,20 +215,20 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 discrim_loss_val, gen_loss_val, scores_discrim = sess.run(
                     [discrim_loss_tf, gen_loss_tf, scores_tf],
                     feed_dict={
-                        Z_tf: batch_z_var,
-                        part_tf: batch_tsdf,
-                        surf_tf: batch_surf,
-                        full_tf: batch_voxel,
+                        Z_tf: bth_z_var,
+                        part_tf: bth_tsdf,
+                        surf_tf: bth_surf,
+                        full_tf: bth_voxel,
                     },
                 )
                 if scores_discrim[0] - scores_discrim[1] > 0.2:
                     _ = sess.run(
                         train_op_gen_sdf,
                         feed_dict={
-                            Z_tf: batch_z_var,
-                            part_tf: batch_tsdf,
-                            surf_tf: batch_surf,
-                            full_tf: batch_voxel,
+                            Z_tf: bth_z_var,
+                            part_tf: bth_tsdf,
+                            surf_tf: bth_surf,
+                            full_tf: bth_voxel,
                             lr_VAE: lr
                         },
                     )
@@ -236,10 +236,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     _ = sess.run(
                         train_op_gen_com,
                         feed_dict={
-                            Z_tf: batch_z_var,
-                            part_tf: batch_tsdf,
-                            surf_tf: batch_surf,
-                            full_tf: batch_voxel,
+                            Z_tf: bth_z_var,
+                            part_tf: bth_tsdf,
+                            surf_tf: bth_surf,
+                            full_tf: bth_voxel,
                             lr_VAE: lr
                         },
                     )
@@ -247,38 +247,38 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     _ = sess.run(
                         train_op_gen_sem,
                         feed_dict={
-                            Z_tf: batch_z_var,
-                            part_tf: batch_tsdf,
-                            surf_tf: batch_surf,
-                            full_tf: batch_voxel,
+                            Z_tf: bth_z_var,
+                            part_tf: bth_tsdf,
+                            surf_tf: bth_surf,
+                            full_tf: bth_voxel,
                             lr_VAE: lr
                         },
                     )
                 _ = sess.run(
                     train_op_dis_sdf,
                     feed_dict={
-                        Z_tf: batch_z_var,
-                        part_tf: batch_tsdf,
-                        surf_tf: batch_surf,
-                        full_tf: batch_voxel,
+                        Z_tf: bth_z_var,
+                        part_tf: bth_tsdf,
+                        surf_tf: bth_surf,
+                        full_tf: bth_voxel,
                     },
                 )
                 _ = sess.run(
                     train_op_dis_com,
                     feed_dict={
-                        Z_tf: batch_z_var,
-                        part_tf: batch_tsdf,
-                        surf_tf: batch_surf,
-                        full_tf: batch_voxel,
+                        Z_tf: bth_z_var,
+                        part_tf: bth_tsdf,
+                        surf_tf: bth_surf,
+                        full_tf: bth_voxel,
                     },
                 )
                 _ = sess.run(
                     train_op_dis_sem,
                     feed_dict={
-                        Z_tf: batch_z_var,
-                        part_tf: batch_tsdf,
-                        surf_tf: batch_surf,
-                        full_tf: batch_voxel,
+                        Z_tf: bth_z_var,
+                        part_tf: bth_tsdf,
+                        surf_tf: bth_surf,
+                        full_tf: bth_voxel,
                     },
                 )
 
@@ -320,8 +320,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             if np.mod(ite, freq) == 0:
                 if discriminative is True:
                     full_models = sess.run(
-                        full_tf_sample,
-                        feed_dict={Z_tf_sample: Z_var_np_sample},
+                        full_tf_samp,
+                        feed_dict={Z_tf_samp: Z_var_np_samp},
                     )
                     full_models_cat = np.argmax(full_models, axis=4)
                     record_vox = full_models_cat[:record_vox_num]

@@ -31,14 +31,16 @@ def IoU(on_gt, on_pred, IoU_class, vox_shape):
         name_list = ['empty', 'objec']
     num = on_gt.shape[0]
     for class_n in np.arange(vox_shape[3]):
-        on_pred_ = on_pred[:, :, :, :, class_n]
-        on_gt_ = on_gt[:, :, :, :, class_n]
-        mother = np.sum(np.clip(np.add(on_pred_, on_gt_), 0, 1), (0, 1, 2, 3))
-        child = np.sum(np.multiply(on_pred_, on_gt_), (0, 1, 2, 3))
+        IoU_calc = 0
+        for sample_n in np.arange(vox_shape[0]):
+            on_pd_ = on_pred[sample_n, :, :, :, class_n]
+            on_gt_ = on_gt[sample_n, :, :, :, class_n]
+            mother = np.sum(np.clip(np.add(on_pd_, on_gt_), 0, 1), (0, 1, 2))
+            child = np.sum(np.multiply(on_pd_, on_gt_), (0, 1, 2))
+            IoU_calc += (child + 0.1) / (mother + 0.1)
 
-        IoU_calc = np.round(child / mother, 3)
-        IoU_class[class_n] = IoU_calc
-        print 'IoU of ' + name_list[class_n] + ':' + str(IoU_calc)
+        IoU_class[class_n] = np.round(IoU_calc / vox_shape[0], 3)
+        print 'IoU of ' + name_list[class_n] + ':' + str(IoU_class[class_n])
     if vox_shape[3] != 2:
         IoU_class[vox_shape[3]] = np.round(
             np.sum(IoU_class[1:vox_shape[3]]) / (vox_shape[3] - 1), 3)
@@ -85,9 +87,9 @@ def evaluate(batch_size, checknum, mode, discriminative):
 
     Z_tf, z_enc_tf, surf_tf, full_tf, full_gen_tf, surf_dec_tf, full_dec_tf,\
     gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, part_dec_tf, complete_gt_tf, complete_gen_tf, complete_dec_tf, ssc_tf, scores_tf = depvox_gan_model.build_model()
+    part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, ssc_tf, scores_tf = depvox_gan_model.build_model()
     if discriminative is True:
-        Z_tf_sample, comp_tf_sample, surf_tf_sample, full_tf_sample, part_tf_sample, scores_tf_sample = depvox_gan_model.samples_generator(
+        Z_tf_samp, comp_tf_samp, surf_tf_samp, full_tf_samp, part_tf_samp, scores_tf_samp = depvox_gan_model.samples_generator(
             visual_size=batch_size)
     sess = tf.InteractiveSession()
     saver = tf.train.Saver()
@@ -121,44 +123,38 @@ def evaluate(batch_size, checknum, mode, discriminative):
         from progressbar import ProgressBar
         pbar = ProgressBar()
         for i in pbar(np.arange(int(num / batch_size))):
-            batch_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
-            batch_surf = surf_test[i * batch_size:i * batch_size + batch_size]
-            batch_voxel = voxel_test[i * batch_size:i * batch_size +
-                                     batch_size]
+            bth_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
+            bth_surf = surf_test[i * batch_size:i * batch_size + batch_size]
+            bth_voxel = voxel_test[i * batch_size:i * batch_size + batch_size]
 
-            batch_pred_surf, batch_pred_full, batch_pred_part, batch_part_enc_Z, batch_complete_gt, batch_pred_complete, batch_ssc = sess.run(
+            bth_pd_surf, bth_pd_full, bth_pd_part, bth_part_enc_Z, bth_comp_gt, bth_pd_comp, bth_ssc = sess.run(
                 [
                     surf_dec_tf, full_dec_tf, part_dec_tf, z_enc_tf,
-                    complete_gt_tf, complete_dec_tf, ssc_tf
+                    comp_gt_tf, comp_dec_tf, ssc_tf
                 ],
                 feed_dict={
-                    part_tf: batch_tsdf,
-                    surf_tf: batch_surf,
-                    full_tf: batch_voxel
+                    part_tf: bth_tsdf,
+                    surf_tf: bth_surf,
+                    full_tf: bth_voxel
                 })
 
             if i == 0:
-                pred_part = batch_pred_part
-                pred_surf = batch_pred_surf
-                pred_full = batch_pred_full
-                pred_ssc = batch_ssc
-                part_enc_Z = batch_part_enc_Z
-                complete_gt = batch_complete_gt
-                pred_complete = batch_pred_complete
+                pd_part = bth_pd_part
+                pd_surf = bth_pd_surf
+                pd_full = bth_pd_full
+                pd_ssc = bth_ssc
+                part_enc_Z = bth_part_enc_Z
+                comp_gt = bth_comp_gt
+                pd_comp = bth_pd_comp
             else:
-                pred_part = np.concatenate((pred_part, batch_pred_part),
-                                           axis=0)
-                pred_surf = np.concatenate((pred_surf, batch_pred_surf),
-                                           axis=0)
-                pred_full = np.concatenate((pred_full, batch_pred_full),
-                                           axis=0)
-                pred_ssc = np.concatenate((pred_ssc, batch_ssc), axis=0)
-                part_enc_Z = np.concatenate((part_enc_Z, batch_part_enc_Z),
+                pd_part = np.concatenate((pd_part, bth_pd_part), axis=0)
+                pd_surf = np.concatenate((pd_surf, bth_pd_surf), axis=0)
+                pd_full = np.concatenate((pd_full, bth_pd_full), axis=0)
+                pd_ssc = np.concatenate((pd_ssc, bth_ssc), axis=0)
+                part_enc_Z = np.concatenate((part_enc_Z, bth_part_enc_Z),
                                             axis=0)
-                complete_gt = np.concatenate((complete_gt, batch_complete_gt),
-                                             axis=0)
-                pred_complete = np.concatenate(
-                    (pred_complete, batch_pred_complete), axis=0)
+                comp_gt = np.concatenate((comp_gt, bth_comp_gt), axis=0)
+                pd_comp = np.concatenate((pd_comp, bth_pd_comp), axis=0)
 
         print("forwarded")
 
@@ -173,14 +169,14 @@ def evaluate(batch_size, checknum, mode, discriminative):
             observed *= 10
             observed -= 7
             observed = np.round(observed)
-            pred_part = np.abs(pred_part)
-            pred_part *= 10
-            pred_part -= 7
+            pd_part = np.abs(pd_part)
+            pd_part *= 10
+            pd_part -= 7
         elif cfg.TYPE_TASK == 'object':
             observed = np.clip(observed, 0, 1)
-            pred_part = np.clip(pred_part, 0, 1)
+            pd_part = np.clip(pd_part, 0, 1)
         sdf_volume.astype('uint8').tofile(save_path + '/surface.bin')
-        pred_part.astype('uint8').tofile(save_path + '/dec_part.bin')
+        pd_part.astype('uint8').tofile(save_path + '/dec_part.bin')
 
         depsem_gt = np.multiply(voxel_test, np.clip(observed, 0, 1))
         if cfg.TYPE_TASK == 'scene':
@@ -190,7 +186,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
         # decoded
         do_save_pcd = True
         if do_save_pcd is True:
-            results_pcds = np.argmax(pred_ssc, axis=4)
+            results_pcds = np.argmax(pd_ssc, axis=4)
             for i in range(np.shape(results_pcds)[0]):
                 pcd_idx = np.where(results_pcds[i] > 0)
                 pts_coord = np.float32(np.transpose(pcd_idx)) / 80 - 0.5
@@ -203,31 +199,30 @@ def evaluate(batch_size, checknum, mode, discriminative):
                 save_pcd(output_name, output_pcds)
 
         np.argmax(
-            pred_ssc,
-            axis=4).astype('uint8').tofile(save_path + '/dec_ssc.bin')
+            pd_ssc, axis=4).astype('uint8').tofile(save_path + '/dec_ssc.bin')
         error = np.array(
-            np.clip(np.argmax(pred_ssc, axis=4), 0, 1) +
-            np.argmax(complete_gt, axis=4) * 2)
+            np.clip(np.argmax(pd_ssc, axis=4), 0, 1) +
+            np.argmax(comp_gt, axis=4) * 2)
         error.astype('uint8').tofile(save_path + '/dec_ssc_error.bin')
         np.argmax(
-            pred_surf,
+            pd_surf,
             axis=4).astype('uint8').tofile(save_path + '/dec_surf.bin')
         error = np.array(
-            np.clip(np.argmax(pred_surf, axis=4), 0, 1) +
-            np.argmax(complete_gt, axis=4) * 2)
+            np.clip(np.argmax(pd_surf, axis=4), 0, 1) +
+            np.argmax(comp_gt, axis=4) * 2)
         error.astype('uint8').tofile(save_path + '/dec_surf_error.bin')
         np.argmax(
-            pred_full,
+            pd_full,
             axis=4).astype('uint8').tofile(save_path + '/dec_full.bin')
         error = np.array(
-            np.clip(np.argmax(pred_full, axis=4), 0, 1) +
-            np.argmax(complete_gt, axis=4) * 2)
+            np.clip(np.argmax(pd_full, axis=4), 0, 1) +
+            np.argmax(comp_gt, axis=4) * 2)
         error.astype('uint8').tofile(save_path + '/dec_full_error.bin')
         np.argmax(
-            pred_complete,
+            pd_comp,
             axis=4).astype('uint8').tofile(save_path + '/dec_complete.bin')
         np.argmax(
-            complete_gt,
+            comp_gt,
             axis=4).astype('uint8').tofile(save_path + '/complete_gt.bin')
 
         # reconstruction and generation from normal distribution evaluation
@@ -236,72 +231,71 @@ def evaluate(batch_size, checknum, mode, discriminative):
             np.save(save_path + '/decode_z.npy', part_enc_Z)
             sample_times = 10
             for j in np.arange(sample_times):
-                gaussian_sample = np.random.normal(
+                gaussian_samp = np.random.normal(
                     size=(batch_size, start_vox_size[0], start_vox_size[1],
                           start_vox_size[2], dim_z)).astype(np.float32)
 
-                z_comp_rand, z_surf_rand, z_full_rand, z_part_rand, scores_sample = sess.run(
+                z_comp_rnd, z_surf_rnd, z_full_rnd, z_part_rnd, scores_samp = sess.run(
                     [
-                        comp_tf_sample, surf_tf_sample, full_tf_sample,
-                        part_tf_sample, scores_tf_sample
+                        comp_tf_samp, surf_tf_samp, full_tf_samp, part_tf_samp,
+                        scores_tf_samp
                     ],
-                    feed_dict={Z_tf_sample: gaussian_sample})
+                    feed_dict={Z_tf_samp: gaussian_samp})
                 if j == 0:
-                    z_comp_rand_all = z_comp_rand
-                    z_part_rand_all = z_part_rand
-                    z_surf_rand_all = z_surf_rand
-                    z_full_rand_all = z_full_rand
+                    z_comp_rnd_all = z_comp_rnd
+                    z_part_rnd_all = z_part_rnd
+                    z_surf_rnd_all = z_surf_rnd
+                    z_full_rnd_all = z_full_rnd
                 else:
-                    z_comp_rand_all = np.concatenate(
-                        [z_comp_rand_all, z_comp_rand], axis=0)
-                    z_part_rand_all = np.concatenate(
-                        [z_part_rand_all, z_part_rand], axis=0)
-                    z_surf_rand_all = np.concatenate(
-                        [z_surf_rand_all, z_surf_rand], axis=0)
-                    z_full_rand_all = np.concatenate(
-                        [z_full_rand_all, z_full_rand], axis=0)
-                    print('Average a', np.mean(scores_sample))
-            gaussian_sample.astype('float32').tofile(save_path +
-                                                     '/sample_z.bin')
+                    z_comp_rnd_all = np.concatenate(
+                        [z_comp_rnd_all, z_comp_rnd], axis=0)
+                    z_part_rnd_all = np.concatenate(
+                        [z_part_rnd_all, z_part_rnd], axis=0)
+                    z_surf_rnd_all = np.concatenate(
+                        [z_surf_rnd_all, z_surf_rnd], axis=0)
+                    z_full_rnd_all = np.concatenate(
+                        [z_full_rnd_all, z_full_rnd], axis=0)
+                    print('Average a', np.mean(scores_samp))
+            gaussian_samp.astype('float32').tofile(save_path + '/sample_z.bin')
             np.argmax(
-                z_comp_rand_all,
+                z_comp_rnd_all,
                 axis=4).astype('uint8').tofile(save_path + '/gen_comp.bin')
             np.argmax(
-                z_surf_rand_all,
+                z_surf_rnd_all,
                 axis=4).astype('uint8').tofile(save_path + '/gen_surf.bin')
             np.argmax(
-                z_full_rand_all,
+                z_full_rnd_all,
                 axis=4).astype('uint8').tofile(save_path + '/gen_full.bin')
             if cfg.TYPE_TASK == 'scene':
-                z_part_rand_all = np.abs(z_part_rand_all)
-                z_part_rand_all *= 10
-                z_part_rand_all -= 7
+                z_part_rnd_all = np.abs(z_part_rnd_all)
+                z_part_rnd_all *= 10
+                z_part_rnd_all -= 7
             elif cfg.TYPE_TASK == 'object':
-                z_part_rand_all[z_part_rand_all <= 0.4] = 0
-                z_part_rand_all[z_part_rand_all > 0.4] = 1
-                z_part_rand = np.squeeze(z_part_rand)
-            z_part_rand_all.astype('uint8').tofile(save_path + '/gen_part.bin')
+                z_part_rnd_all[z_part_rnd_all <= 0.4] = 0
+                z_part_rnd_all[z_part_rnd_all > 0.4] = 1
+                z_part_rnd = np.squeeze(z_part_rnd)
+            z_part_rnd_all.astype('uint8').tofile(save_path + '/gen_part.bin')
 
         print("voxels saved")
 
         # numerical evalutation
-        iou_eval = False
+        iou_eval = True
         if iou_eval is True:
             # calc_IoU
             # completion
-            on_complete_gt = complete_gt
-            complete_gen = np.argmax(pred_complete, axis=4)
-            on_complete_gen = onehot(complete_gen, 2)
+            on_comp_gt = comp_gt
+            comp_gen = np.argmax(pd_comp, axis=4)
+            on_comp_gen = onehot(comp_gen, 2)
             IoU_comp = np.zeros([2 + 1])
             AP_comp = np.zeros([2 + 1])
             print(colored("Completion", 'cyan'))
-            IoU_comp = IoU(on_complete_gt, on_complete_gen, IoU_comp,
+            IoU_comp = IoU(on_comp_gt, on_comp_gen, IoU_comp,
                            [vox_shape[0], vox_shape[1], vox_shape[2], 2])
 
             # depth segmentation
             on_depsem_gt = onehot(depsem_gt, vox_shape[3])
             on_depsem_ssc = np.multiply(
-                onehot(np.argmax(pred_ssc, axis=4), vox_shape[3]),
+                onehot(np.argmax(pd_ssc, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
             print(colored("Geometric segmentation", 'cyan'))
             IoU_class = np.zeros([vox_shape[3] + 1])
@@ -309,7 +303,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
             IoU_all = np.expand_dims(IoU_temp, axis=1)
 
             on_depsem_dec = np.multiply(
-                onehot(np.argmax(pred_full, axis=4), vox_shape[3]),
+                onehot(np.argmax(pd_full, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
             print(colored("Generative segmentation", 'cyan'))
             IoU_temp = IoU(on_depsem_gt, on_depsem_dec, IoU_class, vox_shape)
@@ -320,17 +314,17 @@ def evaluate(batch_size, checknum, mode, discriminative):
             on_surf_gt = onehot(surf_test, vox_shape[3])
             on_full_gt = onehot(voxel_test, vox_shape[3])
             print(colored("Geometric semantic completion", 'cyan'))
-            on_pred = onehot(np.argmax(pred_ssc, axis=4), vox_shape[3])
+            on_pred = onehot(np.argmax(pd_ssc, axis=4), vox_shape[3])
             IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
             print(colored("Generative semantic completion", 'cyan'))
-            on_pred = onehot(np.argmax(pred_surf, axis=4), vox_shape[3])
+            on_pred = onehot(np.argmax(pd_surf, axis=4), vox_shape[3])
             IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
             print(colored("Solid generative semantic completion", 'cyan'))
-            on_pred = onehot(np.argmax(pred_full, axis=4), vox_shape[3])
+            on_pred = onehot(np.argmax(pd_full, axis=4), vox_shape[3])
             IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
@@ -364,25 +358,25 @@ def evaluate(batch_size, checknum, mode, discriminative):
                     ])
 
                     duration = (right - left) / (interpolate_num - 1)
-                    # left is the reference sample and Z_np_sample is the remaining samples
+                    # left is the reference sample and Z_np_samp is the remaining samples
                     if base_num_left == 0:
-                        Z_np_sample = decode_z[1:]
+                        Z_np_samp = decode_z[1:]
                     elif base_num_left == batch_size - 1:
-                        Z_np_sample = decode_z[:batch_size - 1]
+                        Z_np_samp = decode_z[:batch_size - 1]
                     else:
-                        Z_np_sample_before = np.reshape(
+                        Z_np_samp_before = np.reshape(
                             decode_z[:base_num_left], [
                                 base_num_left, start_vox_size[0],
                                 start_vox_size[1], start_vox_size[2], dim_z
                             ])
-                        Z_np_sample_after = np.reshape(
+                        Z_np_samp_after = np.reshape(
                             decode_z[base_num_left + 1:], [
                                 batch_size - base_num_left - 1,
                                 start_vox_size[0], start_vox_size[1],
                                 start_vox_size[2], dim_z
                             ])
-                        Z_np_sample = np.concatenate(
-                            [Z_np_sample_before, Z_np_sample_after], axis=0)
+                        Z_np_samp = np.concatenate(
+                            [Z_np_samp_before, Z_np_samp_after], axis=0)
                     for i in np.arange(interpolate_num):
                         if i == 0:
                             Z = copy.copy(left)
@@ -392,44 +386,43 @@ def evaluate(batch_size, checknum, mode, discriminative):
                             interpolate_z = np.concatenate([interpolate_z, Z],
                                                            axis=0)
 
-                        # Z_np_sample is used to fill up the batch
-                        gaussian_sample = np.concatenate([Z, Z_np_sample],
-                                                         axis=0)
-                        pred_full_rand, pred_part_rand = sess.run(
-                            [full_tf_sample, part_tf_sample],
-                            feed_dict={Z_tf_sample: gaussian_sample})
-                        interpolate_vox = np.reshape(pred_full_rand[0], [
+                        # Z_np_samp is used to fill up the batch
+                        gaussian_samp = np.concatenate([Z, Z_np_samp], axis=0)
+                        pd_full_rnd, pd_part_rnd = sess.run(
+                            [full_tf_samp, part_tf_samp],
+                            feed_dict={Z_tf_samp: gaussian_samp})
+                        interpolate_vox = np.reshape(pd_full_rnd[0], [
                             1, vox_shape[0], vox_shape[1], vox_shape[2],
                             vox_shape[3]
                         ])
-                        interpolate_part = np.reshape(pred_part_rand[0], [
+                        interpolate_part = np.reshape(pd_part_rnd[0], [
                             1, vox_shape[0], vox_shape[1], vox_shape[2],
                             com_shape[3]
                         ])
 
                         if i == 0:
-                            pred_full = interpolate_vox
-                            pred_part = interpolate_part
+                            pd_full = interpolate_vox
+                            pd_part = interpolate_part
                         else:
-                            pred_full = np.concatenate(
-                                [pred_full, interpolate_vox], axis=0)
-                            pred_part = np.concatenate(
-                                [pred_part, interpolate_part], axis=0)
+                            pd_full = np.concatenate(
+                                [pd_full, interpolate_vox], axis=0)
+                            pd_part = np.concatenate(
+                                [pd_part, interpolate_part], axis=0)
                     interpolate_z.astype('uint8').tofile(
                         save_path + '/interpolate/interpolation_z' + str(l) +
                         '-' + str(r) + '.bin')
 
-                    full_models_cat = np.argmax(pred_full, axis=4)
+                    full_models_cat = np.argmax(pd_full, axis=4)
                     full_models_cat.astype('uint8').tofile(
                         save_path + '/interpolate/interpolation_f' + str(l) +
                         '-' + str(r) + '.bin')
                     if cfg.TYPE_TASK == 'scene':
-                        pred_part = np.abs(pred_part)
-                        pred_part *= 10
-                        pred_part -= 7
+                        pd_part = np.abs(pd_part)
+                        pd_part *= 10
+                        pd_part -= 7
                     elif cfg.TYPE_TASK == 'object':
-                        pred_part = np.argmax(pred_part, axis=4)
-                    pred_part.astype('uint8').tofile(
+                        pd_part = np.argmax(pd_part, axis=4)
+                    pd_part.astype('uint8').tofile(
                         save_path + '/interpolate/interpolation_p' + str(l) +
                         '-' + str(r) + '.bin')
         print("voxels saved")
@@ -449,20 +442,20 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                          dim_z)).astype(np.float32)
 
             if base_num == 0:
-                Z_np_sample = decode_z[1:]
+                Z_np_samp = decode_z[1:]
             elif base_num == batch_size - 1:
-                Z_np_sample = decode_z[:batch_size - 1]
+                Z_np_samp = decode_z[:batch_size - 1]
             else:
-                Z_np_sample_before = np.reshape(decode_z[:base_num], [
+                Z_np_samp_before = np.reshape(decode_z[:base_num], [
                     base_num, start_vox_size[0], start_vox_size[1],
                     start_vox_size[2], dim_z
                 ])
-                Z_np_sample_after = np.reshape(decode_z[base_num + 1:], [
+                Z_np_samp_after = np.reshape(decode_z[base_num + 1:], [
                     batch_size - base_num - 1, start_vox_size[0],
                     start_vox_size[1], start_vox_size[2], dim_z
                 ])
-                Z_np_sample = np.concatenate(
-                    [Z_np_sample_before, Z_np_sample_after], axis=0)
+                Z_np_samp = np.concatenate([Z_np_samp_before, Z_np_samp_after],
+                                           axis=0)
 
             for c in np.arange(start_vox_size[0]):
                 for l in np.arange(start_vox_size[1]):
@@ -476,33 +469,33 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                 Z = copy.copy(base)
                                 Z[0, c, l, d, :] += eps[i - 1]
                                 noise_z = np.concatenate([noise_z, Z], axis=0)
-                            gaussian_sample = np.concatenate([Z, Z_np_sample],
-                                                             axis=0)
-                            pred_full_rand = sess.run(
-                                full_tf_sample,
-                                feed_dict={Z_tf_sample: gaussian_sample})
+                            gaussian_samp = np.concatenate([Z, Z_np_samp],
+                                                           axis=0)
+                            pd_full_rnd = sess.run(
+                                full_tf_samp,
+                                feed_dict={Z_tf_samp: gaussian_samp})
                             """
-                            refined_voxs_rand = sess.run(
+                            refined_voxs_rnd = sess.run(
                                 sample_refine_full_tf,
                                 feed_dict={
-                                    sample_full_tf: pred_full_rand
+                                    sample_full_tf: pd_full_rnd
                                 })
                             """
-                            noise_vox = np.reshape(pred_full_rand[0], [
+                            noise_vox = np.reshape(pd_full_rnd[0], [
                                 1, vox_shape[0], vox_shape[1], vox_shape[2],
                                 vox_shape[3]
                             ])
                             if i == 0:
-                                pred_full = noise_vox
+                                pd_full = noise_vox
                             else:
-                                pred_full = np.concatenate(
-                                    [pred_full, noise_vox], axis=0)
+                                pd_full = np.concatenate([pd_full, noise_vox],
+                                                         axis=0)
 
                         np.save(
                             save_path + '/noise_z' + str(base_num) + '_' +
                             str(c) + str(l) + str(d) + '.npy', noise_z)
 
-                        full_models_cat = np.argmax(pred_full, axis=4)
+                        full_models_cat = np.argmax(pd_full, axis=4)
                         np.save(
                             save_path + '/noise' + str(base_num) + '_' + str(c)
                             + str(l) + str(d) + '.npy', full_models_cat)
