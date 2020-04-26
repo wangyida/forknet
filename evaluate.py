@@ -18,7 +18,7 @@ from io_util import read_pcd, save_pcd
 init()
 
 
-def IoU(on_gt, on_pred, IoU_class, vox_shape):
+def IoU(on_gt, on_pd, IoU_class, vox_shape):
     # calc_IoU
     if vox_shape[3] == 12:
         name_list = [
@@ -32,7 +32,7 @@ def IoU(on_gt, on_pred, IoU_class, vox_shape):
     for class_n in np.arange(vox_shape[3]):
         IoU_calc = 0
         for sample_n in np.arange(on_gt.shape[0]):
-            on_pd_ = on_pred[sample_n, :, :, :, class_n]
+            on_pd_ = on_pd[sample_n, :, :, :, class_n]
             on_gt_ = on_gt[sample_n, :, :, :, class_n]
             mother = np.sum(np.clip(np.add(on_pd_, on_gt_), 0, 1), (0, 1, 2))
             child = np.sum(np.multiply(on_pd_, on_gt_), (0, 1, 2))
@@ -282,49 +282,49 @@ def evaluate(batch_size, checknum, mode, discriminative):
         if iou_eval is True:
             # calc_IoU
             # completion
-            on_comp_gt = comp_gt
-            comp_gen = np.argmax(pd_comp, axis=4)
-            on_comp_gen = onehot(comp_gen, 2)
+            on_gt = comp_gt
+            pd_max = np.argmax(pd_comp, axis=4)
+            on_pd_max = onehot(pd_max, 2)
             IoU_comp = np.zeros([2 + 1])
             AP_comp = np.zeros([2 + 1])
             print(colored("Completion", 'cyan'))
-            IoU_comp = IoU(on_comp_gt, on_comp_gen, IoU_comp,
+            IoU_comp = IoU(on_gt, on_pd_max, IoU_comp,
                            [vox_shape[0], vox_shape[1], vox_shape[2], 2])
 
             # depth segmentation
-            on_depsem_gt = onehot(depsem_gt, vox_shape[3])
-            on_depsem_ssc = np.multiply(
+            on_gt = onehot(depsem_gt, vox_shape[3])
+            on_pd_max = np.multiply(
                 onehot(np.argmax(pd_ssc, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
             print(colored("Geometric segmentation", 'cyan'))
             IoU_class = np.zeros([vox_shape[3] + 1])
-            IoU_temp = IoU(on_depsem_gt, on_depsem_ssc, IoU_class, vox_shape)
+            IoU_temp = IoU(on_gt, on_pd_max, IoU_class, vox_shape)
             IoU_all = np.expand_dims(IoU_temp, axis=1)
 
-            on_depsem_dec = np.multiply(
+            on_pd_max = np.multiply(
                 onehot(np.argmax(pd_full, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
             print(colored("Generative segmentation", 'cyan'))
-            IoU_temp = IoU(on_depsem_gt, on_depsem_dec, IoU_class, vox_shape)
+            IoU_temp = IoU(on_gt, on_pd_max, IoU_class, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 
             # volume segmentation
             on_surf_gt = onehot(surf_test, vox_shape[3])
-            on_full_gt = onehot(voxel_test, vox_shape[3])
+            on_gt = onehot(voxel_test, vox_shape[3])
             print(colored("Geometric semantic completion", 'cyan'))
-            on_pred = onehot(np.argmax(pd_ssc, axis=4), vox_shape[3])
-            IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
+            on_pd = onehot(np.argmax(pd_ssc, axis=4), vox_shape[3])
+            IoU_temp = IoU(on_gt, on_pd, IoU_class, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
             print(colored("Generative semantic completion", 'cyan'))
-            on_pred = onehot(np.argmax(pd_surf, axis=4), vox_shape[3])
-            IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
+            on_pd = onehot(np.argmax(pd_surf, axis=4), vox_shape[3])
+            IoU_temp = IoU(on_gt, on_pd, IoU_class, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
             print(colored("Solid generative semantic completion", 'cyan'))
-            on_pred = onehot(np.argmax(pd_full, axis=4), vox_shape[3])
-            IoU_temp = IoU(on_full_gt, on_pred, IoU_class, vox_shape)
+            on_pd = onehot(np.argmax(pd_full, axis=4), vox_shape[3])
+            IoU_temp = IoU(on_gt, on_pd, IoU_class, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 

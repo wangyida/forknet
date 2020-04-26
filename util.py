@@ -160,7 +160,6 @@ def scene_model_id_pair_test(dataset_portion=[]):
 
 
 def onehot(voxel, class_num):
-    # import ipdb; ipdb.set_trace()
     return np.eye(class_num)[voxel.astype(int)]
     """
     onehot_voxels = np.zeros((voxel.shape[0], voxel.shape[1], voxel.shape[2],
