@@ -185,7 +185,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
         # decoded
         do_save_pcd = True
         if do_save_pcd is True:
-            results_pcds = np.argmax(pd_ssc, axis=4)
+            results_pcds = np.argmax(pd_surf, axis=4)
             for i in range(np.shape(results_pcds)[0]):
                 pcd_idx = np.where(results_pcds[i] > 0)
                 pts_coord = np.float32(np.transpose(pcd_idx)) / 80 - 0.5
@@ -287,16 +287,17 @@ def evaluate(batch_size, checknum, mode, discriminative):
             on_pd_max = onehot(pd_max, 2)
             IoU_comp = np.zeros([2 + 1])
             AP_comp = np.zeros([2 + 1])
-            print(colored("Completion", 'cyan'))
+            print(colored("Completion:", 'red'))
             IoU_comp = IoU(on_gt, on_pd_max, IoU_comp,
                            [vox_shape[0], vox_shape[1], vox_shape[2], 2])
 
             # depth segmentation
+            print(colored("Segmentation:", 'red'))
             on_gt = onehot(depsem_gt, vox_shape[3])
             on_pd_max = np.multiply(
                 onehot(np.argmax(pd_ssc, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
-            print(colored("Geometric segmentation", 'cyan'))
+            print(colored("encoded", 'cyan'))
             IoU_class = np.zeros([vox_shape[3] + 1])
             IoU_temp = IoU(on_gt, on_pd_max, IoU_class, vox_shape)
             IoU_all = np.expand_dims(IoU_temp, axis=1)
@@ -304,25 +305,26 @@ def evaluate(batch_size, checknum, mode, discriminative):
             on_pd_max = np.multiply(
                 onehot(np.argmax(pd_full, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
-            print(colored("Generative segmentation", 'cyan'))
+            print(colored("decoded", 'cyan'))
             IoU_temp = IoU(on_gt, on_pd_max, IoU_class, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 
             # volume segmentation
+            print(colored("Semantic Completion:", 'red'))
             on_surf_gt = onehot(surf_test, vox_shape[3])
             on_gt = onehot(voxel_test, vox_shape[3])
-            print(colored("Geometric semantic completion", 'cyan'))
+            print(colored("encoded", 'cyan'))
             on_pd = onehot(np.argmax(pd_ssc, axis=4), vox_shape[3])
             IoU_temp = IoU(on_gt, on_pd, IoU_class, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
-            print(colored("Generative semantic completion", 'cyan'))
+            print(colored("decoded", 'cyan'))
             on_pd = onehot(np.argmax(pd_surf, axis=4), vox_shape[3])
             IoU_temp = IoU(on_gt, on_pd, IoU_class, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
-            print(colored("Solid generative semantic completion", 'cyan'))
+            print(colored("solidly decoded", 'cyan'))
             on_pd = onehot(np.argmax(pd_full, axis=4), vox_shape[3])
             IoU_temp = IoU(on_gt, on_pd, IoU_class, vox_shape)
             IoU_all = np.concatenate(
