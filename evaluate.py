@@ -11,6 +11,7 @@ import copy
 
 from colorama import init
 from termcolor import colored
+import colorama
 from pca import pca
 from io_util import read_pcd, save_pcd
 
@@ -18,17 +19,19 @@ from io_util import read_pcd, save_pcd
 init()
 
 
-def IoU(on_gt, on_pd, IoU_class, vox_shape):
+def IoU(on_gt, on_pd, vox_shape, IoU_compared=None):
     # calc_IoU
+    epsilon = 0.1
     if vox_shape[3] == 12:
         name_list = [
-            'empty', 'ceili', 'floor', ' wall', 'windo', 'chair', '  bed',
-            ' sofa', 'table', '  tvs', 'furni', 'objec'
+            'emp', 'ceil', 'floor', 'wall', 'wind', 'chair', 'bed',
+            'sofa', 'table', 'tvs', 'furn', 'obj'
         ]
     elif vox_shape[3] == 5:
         name_list = ['empty', 'bench', 'chair', 'couch', 'table']
     elif vox_shape[3] == 2:
         name_list = ['empty', 'objec']
+    IoUs = np.zeros([vox_shape[3] + 1])
     for class_n in np.arange(vox_shape[3]):
         IoU_calc = 0
         for sample_n in np.arange(on_gt.shape[0]):
@@ -36,18 +39,23 @@ def IoU(on_gt, on_pd, IoU_class, vox_shape):
             on_gt_ = on_gt[sample_n, :, :, :, class_n]
             mother = np.sum(np.clip(np.add(on_pd_, on_gt_), 0, 1), (0, 1, 2))
             child = np.sum(np.multiply(on_pd_, on_gt_), (0, 1, 2))
-            IoU_calc += (child + 0.1) / (mother + 0.1)
+            IoU_calc += (child + epsilon) / (mother + epsilon)
 
-        IoU_class[class_n] = np.round(IoU_calc / on_gt.shape[0], 3)
-        print 'IoU of ' + name_list[class_n] + ':' + str(IoU_class[class_n])
+        IoUs[class_n] = np.round(IoU_calc*100 / on_gt.shape[0], 1)
+        if IoU_compared is not None:
+            IoU_diff = np.round(IoUs[class_n]-IoU_compared[class_n], 3)
+            text_diff = ' +' + colored(IoU_diff, 'green') if IoU_diff>=0 else ' ' + colored(IoU_diff, 'red')
+            print('IoU of ' + name_list[class_n] + ': ' + str(IoUs[class_n]) + text_diff)
+        else:
+            print('IoU of ' + name_list[class_n] + ': ' + str(IoUs[class_n]))
     if vox_shape[3] != 2:
-        IoU_class[vox_shape[3]] = np.round(
-            np.sum(IoU_class[1:vox_shape[3]]) / (vox_shape[3] - 1), 3)
+        IoUs[vox_shape[3]] = np.round(
+            np.sum(IoUs[1:vox_shape[3]]) / (vox_shape[3] - 1), 1)
     elif vox_shape[3] == 2:
-        IoU_class[vox_shape[3]] = np.round(np.sum(IoU_class) / vox_shape[3], 3)
-    print 'IoU average: ' + str(IoU_class[vox_shape[3]])
+        IoUs[vox_shape[3]] = np.round(np.sum(IoUs) / vox_shape[3], 1)
+    print 'IoU average: ' + str(IoUs[vox_shape[3]])
     print ''
-    return IoU_class
+    return IoUs
 
 
 def evaluate(batch_size, checknum, mode, discriminative):
@@ -254,7 +262,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                         [z_surf_rnd_all, z_surf_rnd], axis=0)
                     z_full_rnd_all = np.concatenate(
                         [z_full_rnd_all, z_full_rnd], axis=0)
-                    print('Average a', np.mean(scores_samp))
+                    print('Discrim score: ' + colored(np.mean(scores_samp), 'blue'))
             gaussian_samp.astype('float32').tofile(save_path + '/sample_z.bin')
             np.argmax(
                 z_comp_rnd_all,
@@ -280,33 +288,39 @@ def evaluate(batch_size, checknum, mode, discriminative):
         # numerical evalutation
         iou_eval = True
         if iou_eval is True:
-            # calc_IoU
             # completion
+            print(colored("Completion:", 'red'))
             on_gt = comp_gt
             pd_max = np.argmax(pd_comp, axis=4)
-            on_pd_max = onehot(pd_max, 2)
+            on_pd = onehot(pd_max, 2)
             IoU_comp = np.zeros([2 + 1])
             AP_comp = np.zeros([2 + 1])
-            print(colored("Completion:", 'red'))
-            IoU_comp = IoU(on_gt, on_pd_max, IoU_comp,
-                           [vox_shape[0], vox_shape[1], vox_shape[2], 2])
+            IoU_comp = IoU(on_gt, on_pd, [vox_shape[0], vox_shape[1], vox_shape[2], 2])
 
             # depth segmentation
             print(colored("Segmentation:", 'red'))
+            print(colored("encoded", 'cyan'))
             on_gt = onehot(depsem_gt, vox_shape[3])
-            on_pd_max = np.multiply(
+            on_pd = np.multiply(
                 onehot(np.argmax(pd_ssc, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
-            print(colored("encoded", 'cyan'))
-            IoU_class = np.zeros([vox_shape[3] + 1])
-            IoU_temp = IoU(on_gt, on_pd_max, IoU_class, vox_shape)
+            # IoUs = np.zeros([vox_shape[3] + 1])
+            IoU_temp = IoU(on_gt, on_pd, vox_shape)
             IoU_all = np.expand_dims(IoU_temp, axis=1)
 
-            on_pd_max = np.multiply(
+            print(colored("decoded", 'cyan'))
+            on_pd = np.multiply(
+                onehot(np.argmax(pd_surf, axis=4), vox_shape[3]),
+                np.expand_dims(np.clip(observed, 0, 1), -1))
+            IoU_temp = IoU(on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:,-1])
+            IoU_all = np.concatenate(
+                (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
+
+            print(colored("solidly decoded", 'cyan'))
+            on_pd = np.multiply(
                 onehot(np.argmax(pd_full, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
-            print(colored("decoded", 'cyan'))
-            IoU_temp = IoU(on_gt, on_pd_max, IoU_class, vox_shape)
+            IoU_temp = IoU(on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:,-1])
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 
@@ -316,17 +330,19 @@ def evaluate(batch_size, checknum, mode, discriminative):
             on_gt = onehot(voxel_test, vox_shape[3])
             print(colored("encoded", 'cyan'))
             on_pd = onehot(np.argmax(pd_ssc, axis=4), vox_shape[3])
-            IoU_temp = IoU(on_gt, on_pd, IoU_class, vox_shape)
+            IoU_temp = IoU(on_gt, on_pd, vox_shape)
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
+
             print(colored("decoded", 'cyan'))
             on_pd = onehot(np.argmax(pd_surf, axis=4), vox_shape[3])
-            IoU_temp = IoU(on_gt, on_pd, IoU_class, vox_shape)
+            IoU_temp = IoU(on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:,-1])
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
+
             print(colored("solidly decoded", 'cyan'))
             on_pd = onehot(np.argmax(pd_full, axis=4), vox_shape[3])
-            IoU_temp = IoU(on_gt, on_pd, IoU_class, vox_shape)
+            IoU_temp = IoU(on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:,-1])
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 

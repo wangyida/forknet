@@ -117,8 +117,8 @@ def scene_model_id_pair_test(dataset_portion=[]):
     random.shuffle(data_paths_test)
     print('---the first sample is:', data_paths_test[0][1])
 
-    # data_paths = data_paths_test[:amount_of_test_sample]
     data_paths = data_paths_test
+    # data_paths = data_paths_test[:amount_of_test_sample]
 
     num_models = len(data_paths)
     print('---amount of test data:', str(num_models))
