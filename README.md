@@ -75,6 +75,6 @@ CUDA_VISIBLE_DEVICES=1 python main.py --mode evaluate_recons --conf_epoch 0
 ```
 Otherwise
 ```shell
-CUDA_VISIBLE_DEVICES=1 python main.py --mode evaluate_recons --conf_epoch 30 --discriminative True
+CUDA_VISIBLE_DEVICES=1 python main.py --mode evaluate_recons --conf_epoch 47 --discriminative True
 ```
 where '--conf_epoch' indicates the index of the pretrained model
