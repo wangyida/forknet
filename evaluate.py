@@ -302,7 +302,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
             print(colored("encoded", 'cyan'))
             on_gt = onehot(depsem_gt, vox_shape[3])
             on_pd = np.multiply(
-                onehot(np.argmax(pd_ssc, axis=4), vox_shape[3]),
+                onehot(np.argmax(pd_comp, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
             # IoUs = np.zeros([vox_shape[3] + 1])
             IoU_temp = IoU(on_gt, on_pd, vox_shape)
