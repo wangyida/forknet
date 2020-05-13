@@ -99,13 +99,14 @@ __C.TRAIN.DATASET_PORTION = [0, 1.0]
 __C.TRAIN.NUM_EPOCH = 50000  # maximum number of training epochs
 
 # Learning
-__C.LEARNING_RATE_G = 0.0001
+__C.LEARNING_RATE_G = 0.00001
 __C.LEARNING_RATE_D = 0.0001
-__C.LEARNING_RATE_V = [0.001, 1000, 0.0001]
+__C.LEARNING_RATE_V = [0.001, 1000, 0.00001]
 __C.TRAIN.ADAM_BETA_G = 0.5
 __C.TRAIN.ADAM_BETA_D = 0.5
 __C.LAMDA_RECONS = 1
-__C.LAMDA_GAMMA = 0.97
+# LAmbda_gamma says that this voxel is xxxx, (1-lambda_gamma says that this voxel is not xxxx,xxxx,xxxx...)
+__C.LAMDA_GAMMA = 0.7
 
 
 def cfg_from_file(filename):
