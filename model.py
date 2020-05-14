@@ -434,7 +434,7 @@ class depvox_gan():
 
         comp_dec_1, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
         comp_dec = tf.clip_by_value(
-            comp_dec_1 + (tf.cast(tf.one_hot(tf.dtypes.cast(
+            0 + (tf.cast(tf.one_hot(tf.dtypes.cast(
                 tf.math.round(tf.abs(part_gt_) - 0.4), tf.int32), 2), tf.float32)*[0,1]),
             clip_value_min=0,
             clip_value_max=1)
