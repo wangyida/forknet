@@ -398,7 +398,7 @@ class depvox_gan():
 
         comp_gt_ = tf.clip_by_value(
             full_gt_ + tf.dtypes.cast(
-                tf.math.round(tf.abs(part_gt_) - 0.3), tf.int32),
+                tf.math.round(tf.abs(part_gt_) - 0.4), tf.int32),
             clip_value_min=0,
             clip_value_max=1)
         comp_gt = tf.one_hot(comp_gt_, 2)
@@ -434,8 +434,8 @@ class depvox_gan():
 
         comp_dec_1, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
         comp_dec = tf.clip_by_value(
-            comp_dec_1 + tf.cast(tf.one_hot(tf.dtypes.cast(
-                tf.math.round(tf.abs(part_gt_) - 0.3), tf.int32), 2), tf.float32)*[0,1],
+            comp_dec_1 + (tf.cast(tf.one_hot(tf.dtypes.cast(
+                tf.math.round(tf.abs(part_gt_) - 0.4), tf.int32), 2), tf.float32)*[0,1]),
             clip_value_min=0,
             clip_value_max=1)
         surf_dec, full_dec = self.generate_full(Z_encode, h3_t, h4_t, h5_t)
