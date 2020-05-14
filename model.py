@@ -432,7 +432,8 @@ class depvox_gan():
                 2.0 * Z_log_sigma), [1, 2, 3, 4])
         dim_code = Z_mu.get_shape().as_list()
 
-        comp_dec, comp_dec_ref, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
+        comp_dec_1, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
+        comp_dec = tf.clip_by_value(tf.add(comp_dec_1, part_gt), 0, 1)
         surf_dec, full_dec = self.generate_full(Z_encode, h3_t, h4_t, h5_t)
 
         # complete = self.complete(full_dec)
@@ -515,12 +516,14 @@ class depvox_gan():
                 (1 - self.lamda_gamma) *
                 (1 - comp_gt) * tf.log(1e-6 + 1 - comp_dec), [1, 2, 3]) *
             weight_complete, 1)
+        """
         recons_com_loss += tf.reduce_sum(
             -tf.reduce_sum(
                 self.lamda_gamma * comp_gt * tf.log(1e-6 + comp_dec_ref) +
                 (1 - self.lamda_gamma) *
                 (1 - comp_gt) * tf.log(1e-6 + 1 - comp_dec_ref), [1, 2, 3]) *
             weight_complete, 1)
+        """
         # geometric semantic scene completion (sscnet ops)
         recons_ssc_loss = tf.reduce_sum(
             -tf.reduce_sum(
@@ -563,7 +566,7 @@ class depvox_gan():
         if self.discriminative is True:
             part_dec = self.generate_part(Z_encode)
             part_gen = self.generate_part(Z)
-            comp_gen, comp_gen_ref, h3_z, h4_z, h5_t = self.generate_comp(Z)
+            comp_gen, h3_z, h4_z, h5_t = self.generate_comp(Z)
             full_gen, full_gen_ref = self.generate_full(Z, h3_z, h4_z, h5_t)
 
             recons_sdf_loss = tf.reduce_mean(
@@ -1169,13 +1172,13 @@ class depvox_gan():
             self.batch_size, vox_size_l5[0], vox_size_l5[1], vox_size_l5[2],
             self.com_shape[-1]
         ]
-        h5 = tf.nn.conv3d_transpose(
+        stage1 = tf.nn.conv3d_transpose(
             h4,
             self.gen_x_W5,
             output_shape=output_shape_l5,
             strides=self.stride)
 
-        stage1 = softmax(h5, self.batch_size, self.com_shape)
+        stage1 = softmax(stage1, self.batch_size, self.com_shape)
 
         # start to refine
         base = tf.nn.relu(
@@ -1207,7 +1210,7 @@ class depvox_gan():
 
         res1 = tf.nn.relu(tf.add(base, res1_2))
 
-        res_1_post = tf.layers.conv3d(
+        h5 = tf.layers.conv3d(
             res1,
             filters=self.com_shape[-1],
             kernel_size=3,
@@ -1215,8 +1218,8 @@ class depvox_gan():
             name='gen_x_res_1_post',
             reuse=tf.AUTO_REUSE)
 
-        stage2 = softmax(res_1_post, self.batch_size, self.com_shape)
-        return stage1, stage2, h3, h4, h5
+        stage2 = softmax(h5, self.batch_size, self.com_shape)
+        return stage2, h3, h4, h5
 
     def generate_part(self, Z):
 
@@ -1627,7 +1630,7 @@ class depvox_gan():
         ])
 
         part = self.generate_part(Z)
-        comp, comp_ref, h3_t, h4_t, h5_t = self.generate_comp(Z)
+        comp, h3_t, h4_t, h5_t = self.generate_comp(Z)
         surf, full = self.generate_full(Z, h3_t, h4_t, h5_t)
         scores = tf.concat([
             tf.math.sigmoid(self.discriminate_part(part)),
