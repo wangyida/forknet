@@ -433,9 +433,9 @@ class depvox_gan():
         dim_code = Z_mu.get_shape().as_list()
 
         if self.is_train is True:
-            comp_dec, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
+            comp_dec, h3_t, h4_t = self.generate_comp(Z_encode)
         else:
-            comp_dec_woinput, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
+            comp_dec_woinput, h3_t, h4_t = self.generate_comp(Z_encode)
             comp_dec = tf.clip_by_value(
                 comp_dec_woinput + (tf.cast(
                     tf.one_hot(
@@ -444,7 +444,7 @@ class depvox_gan():
                         2), tf.float32) * [0, 1]),
                 clip_value_min=0,
                 clip_value_max=1)
-        surf_dec, full_dec = self.generate_full(Z_encode, h3_t, h4_t, h5_t)
+        surf_dec, full_dec = self.generate_full(Z_encode, h3_t, h4_t, comp_dec)
 
         # complete = self.complete(full_dec)
         # encode again from loops
@@ -576,8 +576,8 @@ class depvox_gan():
         if self.discriminative is True:
             part_dec = self.generate_part(Z_encode)
             part_gen = self.generate_part(Z)
-            comp_gen, h3_z, h4_z, h5_t = self.generate_comp(Z)
-            full_gen, full_gen_ref = self.generate_full(Z, h3_z, h4_z, h5_t)
+            comp_gen, h3_z, h4_z = self.generate_comp(Z)
+            full_gen, full_gen_ref = self.generate_full(Z, h3_z, h4_z, comp_gen)
 
             recons_sdf_loss = tf.reduce_mean(
                 tf.reduce_sum(
@@ -1229,7 +1229,7 @@ class depvox_gan():
             reuse=tf.AUTO_REUSE)
 
         stage2 = softmax(h5, self.batch_size, self.com_shape)
-        return stage2, h3, h4, h5
+        return stage2, h3, h4
 
     def generate_part(self, Z):
 
@@ -1640,8 +1640,8 @@ class depvox_gan():
         ])
 
         part = self.generate_part(Z)
-        comp, h3_t, h4_t, h5_t = self.generate_comp(Z)
-        surf, full = self.generate_full(Z, h3_t, h4_t, h5_t)
+        comp, h3_t, h4_t = self.generate_comp(Z)
+        surf, full = self.generate_full(Z, h3_t, h4_t, comp)
         scores = tf.concat([
             tf.math.sigmoid(self.discriminate_part(part)),
             tf.math.sigmoid(
