@@ -24,8 +24,8 @@ def IoU(on_gt, on_pd, vox_shape, IoU_compared=None):
     epsilon = 0.1
     if vox_shape[3] == 12:
         name_list = [
-            'emp', 'ceil', 'floor', 'wall', 'wind', 'chair', 'bed',
-            'sofa', 'table', 'tvs', 'furn', 'obj'
+            'emp', 'ceil', 'floor', 'wall', 'wind', 'chair', 'bed', 'sofa',
+            'table', 'tvs', 'furn', 'obj'
         ]
     elif vox_shape[3] == 5:
         name_list = ['empty', 'bench', 'chair', 'couch', 'table']
@@ -41,11 +41,14 @@ def IoU(on_gt, on_pd, vox_shape, IoU_compared=None):
             child = np.sum(np.multiply(on_pd_, on_gt_), (0, 1, 2))
             IoU_calc += (child + epsilon) / (mother + epsilon)
 
-        IoUs[class_n] = np.round(IoU_calc*100 / on_gt.shape[0], 1)
+        IoUs[class_n] = np.round(IoU_calc * 100 / on_gt.shape[0], 1)
         if IoU_compared is not None:
-            IoU_diff = np.round(IoUs[class_n]-IoU_compared[class_n], 3)
-            text_diff = ' +' + colored(IoU_diff, 'green') if IoU_diff>=0 else ' ' + colored(IoU_diff, 'red')
-            print('IoU of ' + name_list[class_n] + ': ' + str(IoUs[class_n]) + text_diff)
+            IoU_diff = np.round(IoUs[class_n] - IoU_compared[class_n], 3)
+            text_diff = ' +' + colored(
+                IoU_diff, 'green') if IoU_diff >= 0 else ' ' + colored(
+                    IoU_diff, 'red')
+            print('IoU of ' + name_list[class_n] + ': ' + str(IoUs[class_n]) +
+                  text_diff)
         else:
             print('IoU of ' + name_list[class_n] + ': ' + str(IoUs[class_n]))
     if vox_shape[3] != 2:
@@ -262,7 +265,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
                         [z_surf_rnd_all, z_surf_rnd], axis=0)
                     z_full_rnd_all = np.concatenate(
                         [z_full_rnd_all, z_full_rnd], axis=0)
-                    print('Discrim score: ' + colored(np.mean(scores_samp), 'blue'))
+                    print('Discrim score: ' + colored(
+                        np.mean(scores_samp), 'blue'))
             gaussian_samp.astype('float32').tofile(save_path + '/sample_z.bin')
             np.argmax(
                 z_comp_rnd_all,
@@ -295,7 +299,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
             on_pd = onehot(pd_max, 2)
             IoU_comp = np.zeros([2 + 1])
             AP_comp = np.zeros([2 + 1])
-            IoU_comp = IoU(on_gt, on_pd, [vox_shape[0], vox_shape[1], vox_shape[2], 2])
+            IoU_comp = IoU(on_gt, on_pd,
+                           [vox_shape[0], vox_shape[1], vox_shape[2], 2])
 
             # depth segmentation
             print(colored("Segmentation:", 'red'))
@@ -312,7 +317,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
             on_pd = np.multiply(
                 onehot(np.argmax(pd_surf, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
-            IoU_temp = IoU(on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:,-1])
+            IoU_temp = IoU(
+                on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:, -1])
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 
@@ -320,7 +326,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
             on_pd = np.multiply(
                 onehot(np.argmax(pd_full, axis=4), vox_shape[3]),
                 np.expand_dims(np.clip(observed, 0, 1), -1))
-            IoU_temp = IoU(on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:,-1])
+            IoU_temp = IoU(
+                on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:, -1])
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 
@@ -336,13 +343,15 @@ def evaluate(batch_size, checknum, mode, discriminative):
 
             print(colored("decoded", 'cyan'))
             on_pd = onehot(np.argmax(pd_surf, axis=4), vox_shape[3])
-            IoU_temp = IoU(on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:,-1])
+            IoU_temp = IoU(
+                on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:, -1])
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 
             print(colored("solidly decoded", 'cyan'))
             on_pd = onehot(np.argmax(pd_full, axis=4), vox_shape[3])
-            IoU_temp = IoU(on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:,-1])
+            IoU_temp = IoU(
+                on_gt, on_pd, vox_shape, IoU_compared=IoU_all[:, -1])
             IoU_all = np.concatenate(
                 (IoU_all, np.expand_dims(IoU_temp, axis=1)), axis=1)
 

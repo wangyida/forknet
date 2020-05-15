@@ -432,12 +432,18 @@ class depvox_gan():
                 2.0 * Z_log_sigma), [1, 2, 3, 4])
         dim_code = Z_mu.get_shape().as_list()
 
-        comp_dec_1, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
-        comp_dec = tf.clip_by_value(
-            comp_dec_1 + (tf.cast(tf.one_hot(tf.dtypes.cast(
-                tf.math.round(tf.abs(part_gt_) - 0.4), tf.int32), 2), tf.float32)*[0,1]),
-            clip_value_min=0,
-            clip_value_max=1)
+        if self.is_train is True:
+            comp_dec, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
+        else:
+            comp_dec_woinput, h3_t, h4_t, h5_t = self.generate_comp(Z_encode)
+            comp_dec = tf.clip_by_value(
+                comp_dec_woinput + (tf.cast(
+                    tf.one_hot(
+                        tf.dtypes.cast(
+                            tf.math.round(tf.abs(part_gt_) - 0.4), tf.int32),
+                        2), tf.float32) * [0, 1]),
+                clip_value_min=0,
+                clip_value_max=1)
         surf_dec, full_dec = self.generate_full(Z_encode, h3_t, h4_t, h5_t)
 
         # complete = self.complete(full_dec)
