@@ -221,7 +221,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         full_tf: bth_voxel,
                     },
                 )
-                if scores_discrim[0] - scores_discrim[1] > 0.2:
+                if np.abs(scores_discrim[0]-1) < 0.2 and np.abs(scores_discrim[1]-0) < 0.2:
                     _ = sess.run(
                         train_op_gen_sdf,
                         feed_dict={
@@ -232,7 +232,18 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             lr_VAE: lr
                         },
                     )
-                if scores_discrim[2] - scores_discrim[3] > 0.2:
+                # else:
+                _ = sess.run(
+                    train_op_dis_sdf,
+                    feed_dict={
+                        Z_tf: bth_z_var,
+                        part_tf: bth_tsdf,
+                        surf_tf: bth_surf,
+                        full_tf: bth_voxel,
+                    },
+                )
+
+                if np.abs(scores_discrim[2]-1) < 0.2 and np.abs(scores_discrim[3]-0) < 0.2:
                     _ = sess.run(
                         train_op_gen_com,
                         feed_dict={
@@ -243,7 +254,18 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             lr_VAE: lr
                         },
                     )
-                if scores_discrim[4] - scores_discrim[5] > 0.2:
+                # else:
+                _ = sess.run(
+                    train_op_dis_com,
+                    feed_dict={
+                        Z_tf: bth_z_var,
+                        part_tf: bth_tsdf,
+                        surf_tf: bth_surf,
+                        full_tf: bth_voxel,
+                    },
+                )
+
+                if np.abs(scores_discrim[4]-1) < 0.2 and np.abs(scores_discrim[5]-0) < 0.2:
                     _ = sess.run(
                         train_op_gen_sem,
                         feed_dict={
@@ -254,24 +276,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                             lr_VAE: lr
                         },
                     )
-                _ = sess.run(
-                    train_op_dis_sdf,
-                    feed_dict={
-                        Z_tf: bth_z_var,
-                        part_tf: bth_tsdf,
-                        surf_tf: bth_surf,
-                        full_tf: bth_voxel,
-                    },
-                )
-                _ = sess.run(
-                    train_op_dis_com,
-                    feed_dict={
-                        Z_tf: bth_z_var,
-                        part_tf: bth_tsdf,
-                        surf_tf: bth_surf,
-                        full_tf: bth_voxel,
-                    },
-                )
+                # else:
                 _ = sess.run(
                     train_op_dis_sem,
                     feed_dict={

@@ -584,21 +584,21 @@ class depvox_gan():
                     tf.squared_difference(part_gt, part_dec), [1, 2, 3, 4]))
 
             h_part_gt = self.discriminate_part(part_gt)
-            h_part_gen = self.discriminate_part(part_gen)
+            h_part_gen = self.discriminate_part(part_dec)
 
             h_comp_gt = self.discriminate_comp(comp_gt)
-            h_comp_gen = self.discriminate_comp(comp_gen)
+            h_comp_gen = self.discriminate_comp(comp_dec)
 
             h_full_gt = self.discriminate_full(full_gt)
-            h_full_gen = self.discriminate_full(full_gen)
+            h_full_gen = self.discriminate_full(full_dec)
 
             scores = tf.squeeze([
-                tf.reduce_mean(tf.sigmoid(h_part_gt)),
-                tf.reduce_mean(tf.sigmoid(h_part_gen)),
-                tf.reduce_mean(tf.sigmoid(h_comp_gt)),
-                tf.reduce_mean(tf.sigmoid(h_comp_gen)),
-                tf.reduce_mean(tf.sigmoid(h_full_gt)),
-                tf.reduce_mean(tf.sigmoid(h_full_gen)),
+                tf.reduce_mean(h_part_gt),
+                tf.reduce_mean(h_part_gen),
+                tf.reduce_mean(h_comp_gt),
+                tf.reduce_mean(h_comp_gen),
+                tf.reduce_mean(h_full_gt),
+                tf.reduce_mean(h_full_gen),
             ])
 
             # Standard_GAN_Loss
@@ -1438,7 +1438,7 @@ class depvox_gan():
             reuse=tf.AUTO_REUSE)
         # h4 = tf.reshape(h4, [self.batch_size, -1])
         # h5 = tf.matmul(h4, self.dis_y_W5)
-        y = tf.nn.sigmoid(h5)
+        h5 = tf.nn.leaky_relu(h5)
 
         return h5
 
@@ -1584,7 +1584,7 @@ class depvox_gan():
             reuse=tf.AUTO_REUSE)
         # h4 = tf.reshape(h4, [self.batch_size, -1])
         # h5 = tf.matmul(h4, self.dis_g_W5)
-        y = tf.nn.sigmoid(h5)
+        h5 = tf.nn.leaky_relu(h5)
 
         return h5
 
@@ -1629,7 +1629,8 @@ class depvox_gan():
                 b=self.dis_x_bn_b4))
         h4 = tf.reshape(h4, [self.batch_size, -1])
         h5 = tf.matmul(h4, self.dis_x_W5)
-        y = tf.nn.sigmoid(h5)
+        # y = tf.nn.sigmoid(h5)
+        h5 = tf.nn.leaky_relu(h5)
 
         return h5
 
