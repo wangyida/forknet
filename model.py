@@ -1044,7 +1044,8 @@ class depvox_gan():
         if self.is_train is True:
             stage1 = softmax(res_1_post, self.batch_size, self.vox_shape)
         else:
-            mask = tf.repeat(h5_, repeats=[1, self.vox_shape[-1]-1], axis=-1)
+            mask = tf.one_hot(tf.math.argmax(h5_, axis=-1), 2)
+            mask = tf.repeat(mask, repeats=[1, self.vox_shape[-1]-1], axis=-1)
             stage1 = softmax(res_1_post*mask, self.batch_size, self.vox_shape)
 
         # start to refine
