@@ -8,7 +8,7 @@ from metric import sparse_ml
 
 def layernormalize(X, eps=1e-5, g=None, b=None):
     if X.get_shape().ndims == 5:
-        mean, std = tf.nn.moments(X, [1, 2, 3, 4], keep_dims=True)
+        mean, std = tf.nn.moments(X, [1, 2, 3, 4], keepdims=True)
         X = (X - mean) / tf.sqrt(std + eps)
 
         if g is not None and b is not None:
@@ -40,7 +40,7 @@ def softmax(X, batch_size, vox_shape):
     expsum = tf.reduce_sum(exp, 4)
     expsum = tf.reshape(
         expsum, [batch_size, vox_shape[0], vox_shape[1], vox_shape[2], 1])
-    soft = tf.div(exp, expsum)
+    soft = tf.math.divide(exp, expsum)
 
     return soft
 
@@ -90,11 +90,11 @@ class depvox_gan():
 
         # parameters of generator y
         self.gen_y_W1 = tf.Variable(
-            tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
+            tf.random.normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
             name='gen_y_W1')
 
         self.gen_y_W2 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
                 self.dim_W1
             ],
@@ -102,7 +102,7 @@ class depvox_gan():
             name='gen_y_W2')
 
         self.gen_y_W3 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
                 self.dim_W2
             ],
@@ -110,7 +110,7 @@ class depvox_gan():
             name='gen_y_W3')
 
         self.gen_y_W4 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
                 self.dim_W3 * 2
             ],
@@ -118,7 +118,7 @@ class depvox_gan():
             name='gen_y_W4')
 
         self.gen_y_W5 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2], self.dim_W5,
                 self.dim_W4 * 2
             ],
@@ -126,57 +126,57 @@ class depvox_gan():
             name='gen_y_W5')
 
         self.dis_y_W1 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2], self.dim_W5,
                 self.dim_W4
             ],
                              stddev=0.02),
             name='dis_y_vox_W1')
         self.dis_y_bn_g1 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_y_vox_bn_g1')
         self.dis_y_bn_b1 = tf.Variable(tf.zeros([1]), name='dis_y_vox_bn_b1')
 
         # parameters of discriminator
         self.dis_y_W2 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
                 self.dim_W3
             ],
                              stddev=0.02),
             name='dis_y_vox_W2')
         self.dis_y_bn_g2 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_y_vox_bn_g2')
         self.dis_y_bn_b2 = tf.Variable(tf.zeros([1]), name='dis_y_vox_bn_b2')
 
         self.dis_y_W3 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
                 self.dim_W2
             ],
                              stddev=0.02),
             name='dis_y_vox_W3')
         self.dis_y_bn_g3 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_y_vox_bn_g3')
         self.dis_y_bn_b3 = tf.Variable(tf.zeros([1]), name='dis_y_vox_bn_b3')
 
         self.dis_y_W4 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
                 self.dim_W1
             ],
                              stddev=0.02),
             name='dis_y_vox_W4')
         self.dis_y_bn_g4 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_y_vox_bn_g4')
         self.dis_y_bn_b4 = tf.Variable(tf.zeros([1]), name='dis_y_vox_bn_b4')
 
         # patch GAN
         self.dis_y_W5 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.start_vox_size[0] * self.start_vox_size[1] *
                 self.start_vox_size[2] * self.dim_W1, 1
             ],
@@ -184,57 +184,57 @@ class depvox_gan():
             name='dis_y_vox_W5')
 
         self.dis_g_W1 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2],
                 self.com_shape[3], self.dim_W4
             ],
                              stddev=0.02),
             name='dis_g_vox_W1')
         self.dis_g_bn_g1 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_g_vox_bn_g1')
         self.dis_g_bn_b1 = tf.Variable(tf.zeros([1]), name='dis_g_vox_bn_b1')
 
         # parameters of discriminator
         self.dis_g_W2 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
                 self.dim_W3
             ],
                              stddev=0.02),
             name='dis_g_vox_W2')
         self.dis_g_bn_g2 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_g_vox_bn_g2')
         self.dis_g_bn_b2 = tf.Variable(tf.zeros([1]), name='dis_g_vox_bn_b2')
 
         self.dis_g_W3 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
                 self.dim_W2
             ],
                              stddev=0.02),
             name='dis_g_vox_W3')
         self.dis_g_bn_g3 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_g_vox_bn_g3')
         self.dis_g_bn_b3 = tf.Variable(tf.zeros([1]), name='dis_g_vox_bn_b3')
 
         self.dis_g_W4 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
                 self.dim_W1
             ],
                              stddev=0.02),
             name='dis_g_vox_W4')
         self.dis_g_bn_g4 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_g_vox_bn_g4')
         self.dis_g_bn_b4 = tf.Variable(tf.zeros([1]), name='dis_g_vox_bn_b4')
 
         # patch GAN
         self.dis_g_W5 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.start_vox_size[0] * self.start_vox_size[1] *
                 self.start_vox_size[2] * self.dim_W1, 1
             ],
@@ -243,11 +243,11 @@ class depvox_gan():
 
         # parameters of generator x
         self.gen_x_W1 = tf.Variable(
-            tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
+            tf.random.normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
             name='gen_x_W1')
 
         self.gen_x_W2 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
                 self.dim_W1
             ],
@@ -255,7 +255,7 @@ class depvox_gan():
             name='gen_x_W2')
 
         self.gen_x_W3 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
                 self.dim_W2
             ],
@@ -263,7 +263,7 @@ class depvox_gan():
             name='gen_x_W3')
 
         self.gen_x_W4 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
                 self.dim_W3
             ],
@@ -271,7 +271,7 @@ class depvox_gan():
             name='gen_x_W4')
 
         self.gen_x_W5 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2],
                 self.com_shape[-1], self.dim_W4
             ],
@@ -280,11 +280,11 @@ class depvox_gan():
 
         # parameters of generator sdf
         self.gen_z_W1 = tf.Variable(
-            tf.random_normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
+            tf.random.normal([1, 1, 1, self.dim_W1, self.dim_z], stddev=0.02),
             name='gen_z_W1')
 
         self.gen_z_W2 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
                 self.dim_W1
             ],
@@ -292,7 +292,7 @@ class depvox_gan():
             name='gen_z_W2')
 
         self.gen_z_W3 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
                 self.dim_W2
             ],
@@ -300,7 +300,7 @@ class depvox_gan():
             name='gen_z_W3')
 
         self.gen_z_W4 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
                 self.dim_W3
             ],
@@ -308,7 +308,7 @@ class depvox_gan():
             name='gen_z_W4')
 
         self.gen_z_W5 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2], 1,
                 self.dim_W4
             ],
@@ -317,77 +317,77 @@ class depvox_gan():
 
         # parameters of discriminator
         self.dis_x_W1 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel5[0], self.kernel5[1], self.kernel5[2], 1,
                 self.dim_W4
             ],
                              stddev=0.02),
             name='dis_x_vox_W1')
         self.dis_x_bn_g1 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_x_vox_bn_g1')
         self.dis_x_bn_b1 = tf.Variable(tf.zeros([1]), name='dis_x_vox_bn_b1')
 
         self.dis_x_W2 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel4[0], self.kernel4[1], self.kernel4[2], self.dim_W4,
                 self.dim_W3
             ],
                              stddev=0.02),
             name='dis_x_vox_W2')
         self.dis_x_bn_g2 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_x_vox_bn_g2')
         self.dis_x_bn_b2 = tf.Variable(tf.zeros([1]), name='dis_x_vox_bn_b2')
 
         self.dis_x_W3 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel3[0], self.kernel3[1], self.kernel3[2], self.dim_W3,
                 self.dim_W2
             ],
                              stddev=0.02),
             name='dis_x_vox_W3')
         self.dis_x_bn_g3 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_x_vox_bn_g3')
         self.dis_x_bn_b3 = tf.Variable(tf.zeros([1]), name='dis_x_vox_bn_b3')
 
         self.dis_x_W4 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.kernel2[0], self.kernel2[1], self.kernel2[2], self.dim_W2,
                 self.dim_W1
             ],
                              stddev=0.02),
             name='dis_x_vox_W4')
         self.dis_x_bn_g4 = tf.Variable(
-            tf.random_normal([1], mean=1.0, stddev=0.02),
+            tf.random.normal([1], mean=1.0, stddev=0.02),
             name='dis_x_vox_bn_g4')
         self.dis_x_bn_b4 = tf.Variable(tf.zeros([1]), name='dis_x_vox_bn_b4')
 
         # patch GAN
         self.dis_x_W5 = tf.Variable(
-            tf.random_normal([
+            tf.random.normal([
                 self.start_vox_size[0] * self.start_vox_size[1] *
                 self.start_vox_size[2] * self.dim_W1, 1
             ],
                              stddev=0.02),
             name='dis_x_vox_W5')
 
-        self.saver = tf.train.Saver()
+        # self.saver = tf.compat.v1.train.Saver()
 
     def build_model(self):
 
-        part_gt_ = tf.placeholder(
+        part_gt_ = tf.compat.v1.placeholder(
             tf.float32,
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
         part_gt = tf.expand_dims(part_gt_, -1)
 
-        full_gt_ = tf.placeholder(
+        full_gt_ = tf.compat.v1.placeholder(
             tf.int32,
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
         full_gt = tf.cast(tf.one_hot(full_gt_, self.n_class), tf.float32)
 
-        surf_gt_ = tf.placeholder(
+        surf_gt_ = tf.compat.v1.placeholder(
             tf.int32,
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
         surf_gt_tmp = tf.cast(tf.one_hot(surf_gt_, self.n_class), tf.float32)
@@ -404,7 +404,7 @@ class depvox_gan():
         comp_gt = tf.one_hot(comp_gt_, 2)
         comp_gt = tf.cast(comp_gt, tf.float32)
 
-        Z = tf.placeholder(tf.float32, [
+        Z = tf.compat.v1.placeholder(tf.float32, [
             None, self.start_vox_size[0], self.start_vox_size[1],
             self.start_vox_size[2], self.dim_z
         ])
@@ -412,18 +412,18 @@ class depvox_gan():
         # weights for balancing training
         batch_mean_full_gt = tf.reduce_mean(full_gt, [0, 1, 2, 3])
         ones = tf.ones_like(batch_mean_full_gt)
-        inverse = tf.div(ones, tf.add(batch_mean_full_gt, ones))
-        weight_full = inverse * tf.div(1., tf.reduce_sum(inverse))
+        inverse = tf.math.divide(ones, tf.add(batch_mean_full_gt, ones))
+        weight_full = inverse * tf.math.divide(1., tf.reduce_sum(inverse))
 
         batch_mean_surf_gt = tf.reduce_mean(surf_gt, [0, 1, 2, 3])
         ones = tf.ones_like(batch_mean_surf_gt)
-        inverse = tf.div(ones, tf.add(batch_mean_surf_gt, ones))
-        weight_surf = inverse * tf.div(1., tf.reduce_sum(inverse))
+        inverse = tf.math.divide(ones, tf.add(batch_mean_surf_gt, ones))
+        weight_surf = inverse * tf.math.divide(1., tf.reduce_sum(inverse))
 
         batch_mean_comp_gt = tf.reduce_mean(comp_gt, [0, 1, 2, 3])
         ones = tf.ones_like(batch_mean_comp_gt)
-        inverse = tf.div(ones, tf.add(batch_mean_comp_gt, ones))
-        weight_complete = inverse * tf.div(1., tf.reduce_sum(inverse))
+        inverse = tf.math.divide(ones, tf.add(batch_mean_comp_gt, ones))
+        weight_complete = inverse * tf.math.divide(1., tf.reduce_sum(inverse))
 
         # encode from tsdf and vox
         Z_encode, Z_mu, Z_log_sigma, sscnet = self.encoder(part_gt)
@@ -466,32 +466,32 @@ class depvox_gan():
         recons_vae_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * full_gt * tf.log(1e-6 + full_vae_dec) +
+                    self.lamda_gamma * full_gt * tf.math.log(1e-6 + full_vae_dec) +
                     (1 - self.lamda_gamma) *
-                    (1 - full_gt) * tf.log(1e-6 + 1 - full_vae_dec), [1, 2, 3])
+                    (1 - full_gt) * tf.math.log(1e-6 + 1 - full_vae_dec), [1, 2, 3])
                 * weight_full, 1))
         recons_vae_loss = tf.reduce_mean(
             -tf.reduce_sum(
-                self.lamda_gamma * part_gt * tf.log(1e-6 + part_vae_dec) +
-                (1 - self.lamda_gamma) * (1 - part_gt) * tf.log(1e-6 + 1 - part_vae_dec), [1, 2, 3, 4]))
+                self.lamda_gamma * part_gt * tf.math.log(1e-6 + part_vae_dec) +
+                (1 - self.lamda_gamma) * (1 - part_gt) * tf.math.log(1e-6 + 1 - part_vae_dec), [1, 2, 3, 4]))
         """
         # latent consistency
         """
         recons_vae_loss += tf.reduce_mean(
             tf.reduce_sum(
-                tf.squared_difference(Z_encode, Z_encode_full_part),
+                tf.math.squared_difference(Z_encode, Z_encode_full_part),
                 [1, 2, 3, 4]))
         recons_vae_loss += tf.reduce_mean(
             tf.reduce_sum(
-                tf.squared_difference(Z_encode, Z_encode_full),
+                tf.math.squared_difference(Z_encode, Z_encode_full),
                 [1, 2, 3, 4]))
         recons_vae_loss += tf.reduce_mean(
             tf.reduce_sum(
-                tf.squared_difference(Z_encode_full, Z_encode_full),
+                tf.math.squared_difference(Z_encode_full, Z_encode_full),
                 [1, 2, 3, 4]))
         recons_vae_loss += tf.reduce_mean(
             tf.reduce_sum(
-                tf.squared_difference(Z_encode_full, Z_encode_full_part),
+                tf.math.squared_difference(Z_encode_full, Z_encode_full_part),
                 [1, 2, 3, 4]))
         """
         # latent consistency
@@ -501,20 +501,20 @@ class depvox_gan():
         recons_cc_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * full_gt * tf.log(1e-6 + full_cc_dec) +
+                    self.lamda_gamma * full_gt * tf.math.log(1e-6 + full_cc_dec) +
                     (1 - self.lamda_gamma) *
-                    (1 - full_gt) * tf.log(1e-6 + 1 - full_cc_dec), [1, 2, 3])
+                    (1 - full_gt) * tf.math.log(1e-6 + 1 - full_cc_dec), [1, 2, 3])
                 * weight_full, 1))
         recons_cc_loss += tf.reduce_mean(
             tf.reduce_sum(
-                tf.squared_difference(part_gt, part_cc_dec), [1, 2, 3, 4]))
+                tf.math.squared_difference(part_gt, part_cc_dec), [1, 2, 3, 4]))
         """
 
         # latent consistency
         """
         recons_cc_loss += tf.reduce_mean(
             tf.reduce_sum(
-                tf.squared_difference(Z_encode_full, Z_encode_full_part),
+                tf.math.squared_difference(Z_encode_full, Z_encode_full_part),
                 [1, 2, 3, 4]))
         """
         # latent consistency
@@ -522,52 +522,52 @@ class depvox_gan():
         # complete
         recons_com_loss = tf.reduce_sum(
             -tf.reduce_sum(
-                self.lamda_gamma * comp_gt * tf.log(1e-6 + comp_dec) +
+                self.lamda_gamma * comp_gt * tf.math.log(1e-6 + comp_dec) +
                 (1 - self.lamda_gamma) *
-                (1 - comp_gt) * tf.log(1e-6 + 1 - comp_dec), [1, 2, 3]) *
+                (1 - comp_gt) * tf.math.log(1e-6 + 1 - comp_dec), [1, 2, 3]) *
             weight_complete, 1)
         """
         recons_com_loss += tf.reduce_sum(
             -tf.reduce_sum(
-                self.lamda_gamma * comp_gt * tf.log(1e-6 + comp_dec_ref) +
+                self.lamda_gamma * comp_gt * tf.math.log(1e-6 + comp_dec_ref) +
                 (1 - self.lamda_gamma) *
-                (1 - comp_gt) * tf.log(1e-6 + 1 - comp_dec_ref), [1, 2, 3]) *
+                (1 - comp_gt) * tf.math.log(1e-6 + 1 - comp_dec_ref), [1, 2, 3]) *
             weight_complete, 1)
         """
         # geometric semantic scene completion (sscnet ops)
         recons_ssc_loss = tf.reduce_sum(
             -tf.reduce_sum(
-                self.lamda_gamma * full_gt * tf.log(1e-6 + sscnet) +
-                self.lamda_gamma * surf_gt * tf.log(1e-6 + sscnet) +
+                self.lamda_gamma * full_gt * tf.math.log(1e-6 + sscnet) +
+                self.lamda_gamma * surf_gt * tf.math.log(1e-6 + sscnet) +
                 (1 - self.lamda_gamma) *
-                (1 - full_gt) * tf.log(1e-6 + 1 - sscnet), [1, 2, 3]) *
+                (1 - full_gt) * tf.math.log(1e-6 + 1 - sscnet), [1, 2, 3]) *
             weight_full, 1)
         # generative semantic scene completion (from latent features)
         recons_sem_loss = tf.reduce_sum(
             -tf.reduce_sum(
-                self.lamda_gamma * full_gt * tf.log(1e-6 + surf_dec) +
-                self.lamda_gamma * surf_gt * tf.log(1e-6 + surf_dec) +
+                self.lamda_gamma * full_gt * tf.math.log(1e-6 + surf_dec) +
+                self.lamda_gamma * surf_gt * tf.math.log(1e-6 + surf_dec) +
                 (1 - self.lamda_gamma) *
-                (1 - surf_gt) * tf.log(1e-6 + 1 - surf_dec), [1, 2, 3]) *
+                (1 - surf_gt) * tf.math.log(1e-6 + 1 - surf_dec), [1, 2, 3]) *
             weight_surf, 1)
         # refine for segmentation
         refine_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * full_gt * tf.log(1e-6 + full_dec) +
-                    self.lamda_gamma * surf_gt * tf.log(1e-6 + full_dec) +
+                    self.lamda_gamma * full_gt * tf.math.log(1e-6 + full_dec) +
+                    self.lamda_gamma * surf_gt * tf.math.log(1e-6 + full_dec) +
                     (1 - self.lamda_gamma) *
-                    (1 - full_gt) * tf.log(1e-6 + 1 - full_dec), [1, 2, 3]) *
+                    (1 - full_gt) * tf.math.log(1e-6 + 1 - full_dec), [1, 2, 3]) *
                 weight_full, 1))
         """
         recons_loss += tf.reduce_sum(
-                tf.squared_difference(part_gt, part_gen_dec), [1, 2, 3, 4])
+                tf.math.squared_difference(part_gt, part_gen_dec), [1, 2, 3, 4])
         """
         # from scene, the observed surface can also be produced
         # latent consistency
         """
         recons_loss += tf.reduce_sum(
-                tf.squared_difference(Z_encode, Z_encode_full),
+                tf.math.squared_difference(Z_encode, Z_encode_full),
                 [1, 2, 3, 4])
         """
         # latent consistency
@@ -581,7 +581,7 @@ class depvox_gan():
 
             recons_sdf_loss = tf.reduce_mean(
                 tf.reduce_sum(
-                    tf.squared_difference(part_gt, part_dec), [1, 2, 3, 4]))
+                    tf.math.squared_difference(part_gt, part_dec), [1, 2, 3, 4]))
 
             h_part_gt = self.discriminate_part(part_gt)
             h_part_gen = self.discriminate_part(part_dec)
@@ -684,7 +684,7 @@ class depvox_gan():
             recons_sem_loss = self.lamda_recons * tf.reduce_mean(
                 recons_sem_loss)
 
-        summary_op = tf.summary.merge_all()
+        summary_op = tf.compat.v1.summary.merge_all()
 
         return Z, Z_encode, surf_gt_, full_gt_, full_gen, surf_dec, full_dec,\
         gen_loss, dis_loss, recons_ssc_loss, recons_com_loss, recons_sem_loss, variation_loss, refine_loss, summary_op,\
@@ -693,44 +693,44 @@ class depvox_gan():
     def encoder(self, sdf):
 
         h1_base = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 sdf,
                 filters=16,
                 kernel_size=(7, 7, 7),
                 strides=(2, 2, 2),
                 padding='same',
                 name='enc_ssc_1_base',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         h1_0 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h1_base,
                 filters=32,
                 kernel_size=(1, 1, 1),
                 strides=(1, 1, 1),
                 padding='same',
                 name='enc_ssc_1_0',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         h1_1 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h1_base,
                 filters=32,
                 kernel_size=(3, 3, 3),
                 strides=(1, 1, 1),
                 padding='same',
                 name='enc_ssc_1_1',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         h1_2 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h1_1,
                 filters=32,
                 kernel_size=(3, 3, 3),
                 strides=(1, 1, 1),
                 padding='same',
                 name='enc_ssc_1_2',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         h2_0 = h1_0 + h1_2
-        h2_1 = tf.layers.conv3d(
+        h2_1 = tf.compat.v1.layers.conv3d(
             h2_0,
             filters=32,
             kernel_size=(3, 3, 3),
@@ -738,9 +738,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_2_1',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h2_2 = tf.layers.conv3d(
+        h2_2 = tf.compat.v1.layers.conv3d(
             h2_1,
             filters=32,
             kernel_size=(3, 3, 3),
@@ -748,9 +748,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_2_2',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h3_0 = h2_2 + tf.layers.conv3d(
+        h3_0 = h2_2 + tf.compat.v1.layers.conv3d(
             h2_1,
             filters=32,
             kernel_size=(3, 3, 3),
@@ -758,9 +758,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_3_0',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h3_1 = tf.layers.conv3d(
+        h3_1 = tf.compat.v1.layers.conv3d(
             h3_0,
             filters=32,
             kernel_size=(3, 3, 3),
@@ -768,9 +768,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_3_1',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h4_0 = h3_1 + tf.layers.conv3d(
+        h4_0 = h3_1 + tf.compat.v1.layers.conv3d(
             h3_1,
             filters=32,
             kernel_size=(3, 3, 3),
@@ -778,9 +778,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_4_0',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h4_1 = tf.layers.conv3d(
+        h4_1 = tf.compat.v1.layers.conv3d(
             h4_0,
             filters=32,
             kernel_size=(3, 3, 3),
@@ -788,9 +788,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='enc_ssc_4_1',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h5_0 = h4_1 + tf.layers.conv3d(
+        h5_0 = h4_1 + tf.compat.v1.layers.conv3d(
             h4_1,
             filters=32,
             kernel_size=(3, 3, 3),
@@ -798,9 +798,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='enc_ssc_5_0',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h5_1 = tf.layers.conv3d(
+        h5_1 = tf.compat.v1.layers.conv3d(
             h5_0,
             filters=32,
             kernel_size=(3, 3, 3),
@@ -808,9 +808,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='enc_ssc_5_1',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h6_0 = h5_1 + tf.layers.conv3d(
+        h6_0 = h5_1 + tf.compat.v1.layers.conv3d(
             h5_1,
             filters=32,
             kernel_size=(3, 3, 3),
@@ -818,19 +818,19 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='enc_ssc_6_0',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
         h7_0 = tf.concat([h4_0, h5_0, h6_0], -1)
 
-        h7_1 = tf.layers.conv3d_transpose(
+        h7_1 = tf.compat.v1.layers.conv3d_transpose(
             h7_0,
             filters=32,
             kernel_size=(4, 4, 4),
             strides=(2, 2, 2),
             padding='same',
             name='enc_ssc_7_1',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h7_2 = tf.layers.conv3d(
+        h7_2 = tf.compat.v1.layers.conv3d(
             tf.concat([h7_1, sdf], -1),
             filters=64,
             kernel_size=(1, 1, 1),
@@ -838,8 +838,8 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_7_2',
-            reuse=tf.AUTO_REUSE)
-        h7_3 = tf.layers.conv3d(
+            reuse=tf.compat.v1.AUTO_REUSE)
+        h7_3 = tf.compat.v1.layers.conv3d(
             h7_2,
             filters=64,
             kernel_size=(1, 1, 1),
@@ -847,8 +847,8 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_7_3',
-            reuse=tf.AUTO_REUSE)
-        h7_4 = tf.layers.conv3d(
+            reuse=tf.compat.v1.AUTO_REUSE)
+        h7_4 = tf.compat.v1.layers.conv3d(
             h7_3,
             filters=self.vox_shape[-1],
             kernel_size=(1, 1, 1),
@@ -856,21 +856,21 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_7_4',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
         ssc = softmax(h7_4, self.batch_size, self.vox_shape)
 
-        h1 = tf.layers.conv3d(
+        h1 = tf.compat.v1.layers.conv3d(
             ssc,
             filters=self.dim_W4,
             kernel_size=(self.kernel5[0], self.kernel5[1], self.kernel5[2]),
             strides=(self.stride[1], self.stride[2], self.stride[3]),
             padding='same',
             name='enc_x_1',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
         h2 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h1,
                 filters=self.dim_W3,
                 kernel_size=(self.kernel4[0], self.kernel4[1],
@@ -878,10 +878,10 @@ class depvox_gan():
                 strides=(self.stride[1], self.stride[2], self.stride[3]),
                 padding='same',
                 name='enc_x_2',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         h3 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h2,
                 filters=self.dim_W2,
                 kernel_size=(self.kernel3[0], self.kernel3[1],
@@ -889,11 +889,11 @@ class depvox_gan():
                 strides=(self.stride[1], self.stride[2], self.stride[3]),
                 padding='same',
                 name='enc_x_3',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         if self.discriminative is True:
             h4 = lrelu(
-                tf.layers.conv3d(
+                tf.compat.v1.layers.conv3d(
                     h3,
                     filters=self.dim_W1,
                     kernel_size=(self.kernel2[0], self.kernel2[1],
@@ -901,40 +901,40 @@ class depvox_gan():
                     strides=(self.stride[1], self.stride[2], self.stride[3]),
                     padding='same',
                     name='enc_x_4',
-                    reuse=tf.AUTO_REUSE))
+                    reuse=tf.compat.v1.AUTO_REUSE))
 
-            h5 = tf.layers.conv3d(
+            h5 = tf.compat.v1.layers.conv3d(
                 h4,
                 filters=self.dim_z,
                 kernel_size=(1, 1, 1),
                 strides=(1, 1, 1),
                 padding='same',
                 name='enc_x_5',
-                reuse=tf.AUTO_REUSE)
+                reuse=tf.compat.v1.AUTO_REUSE)
 
             # start to add hidden layers
             dims = h5.get_shape().as_list()
             n_code = dims[1] * dims[2] * dims[3] * dims[4]
             # flattened = tf.contrib.layers.flatten(h5)
-            # epsilon = tf.random_normal(tf.stack([tf.shape(h5)[0], n_code]))
-            epsilon = tf.random_normal(
+            # epsilon = tf.random.normal(tf.stack([tf.shape(h5)[0], n_code]))
+            epsilon = tf.random.normal(
                 [self.batch_size, dims[1], dims[2], dims[3], dims[4]])
-            z_mu = tf.layers.conv3d(
+            z_mu = tf.compat.v1.layers.conv3d(
                 h5,
                 filters=self.dim_z,
                 kernel_size=(1, 1, 1),
                 strides=(1, 1, 1),
                 padding='same',
                 name='enc_x_mu',
-                reuse=tf.AUTO_REUSE)
-            z_log_sigma = 0.5 * tf.layers.conv3d(
+                reuse=tf.compat.v1.AUTO_REUSE)
+            z_log_sigma = 0.5 * tf.compat.v1.layers.conv3d(
                 h5,
                 filters=self.dim_z,
                 kernel_size=(1, 1, 1),
                 strides=(1, 1, 1),
                 padding='same',
                 name='enc_x_log_sigma',
-                reuse=tf.AUTO_REUSE)
+                reuse=tf.compat.v1.AUTO_REUSE)
             if self.is_train is True:
                 z = tf.add(
                     z_mu,
@@ -1015,111 +1015,115 @@ class depvox_gan():
 
         #res1
         res1_1 = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 tf.concat([h5, h5_], -1),
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_y_res_1_1',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         res1_2 = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 res1_1,
                 filters=output_shape_l5[-1],
                 kernel_size=3,
                 padding='same',
                 name='gen_y_res_1_2',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         res1 = tf.nn.relu(tf.add(h5, res1_2))
 
-        res_1_post = tf.layers.conv3d(
+        res_1_post = tf.compat.v1.layers.conv3d(
             res1,
             filters=self.vox_shape[-1],
             kernel_size=3,
             padding='same',
             name='gen_y_res_1_post',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        stage1 = softmax(res_1_post, self.batch_size, self.vox_shape)
+        if self.is_train is True:
+            stage1 = softmax(res_1_post, self.batch_size, self.vox_shape)
+        else:
+            mask = tf.repeat(h5_, repeats=[1, self.vox_shape[-1]-1], axis=-1)
+            stage1 = softmax(res_1_post*mask, self.batch_size, self.vox_shape)
 
         # start to refine
         base = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 stage1,
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_y_ref_base',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         #res2
         res2_1 = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 base,
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_y_ref_2_1',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         res2_2 = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 res2_1,
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_y_ref_2_2',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         res2 = tf.nn.relu(tf.add(base, res2_2))
 
         #res3
         res3_1 = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 res2,
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_y_ref_3_1',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         res3_2 = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 res3_1,
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_y_ref_3_2',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         res3 = tf.nn.relu(tf.add(res2, res3_2))
 
         #res4
         res4_1 = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 res3,
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_y_ref_4_1',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         res4_2 = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 res4_1,
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_y_ref_4_2',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         res4 = tf.nn.relu(tf.add(res3, res4_2))
 
-        res_4_post = tf.layers.conv3d(
+        res_4_post = tf.compat.v1.layers.conv3d(
             res4,
             filters=self.vox_shape[-1],
             kernel_size=3,
             padding='same',
             name='gen_y_ref_4_post',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
         stage2 = softmax(res_4_post, self.batch_size, self.vox_shape)
 
         return stage1, stage2
@@ -1192,41 +1196,41 @@ class depvox_gan():
 
         # start to refine
         base = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 stage1,
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_x_res_base',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         #res1
         res1_1 = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 base,
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_x_res_1_1',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         res1_2 = tf.nn.relu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 res1_1,
                 filters=16,
                 kernel_size=3,
                 padding='same',
                 name='gen_x_res_1_2',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         res1 = tf.nn.relu(tf.add(base, res1_2))
 
-        h5 = tf.layers.conv3d(
+        h5 = tf.compat.v1.layers.conv3d(
             res1,
             filters=self.com_shape[-1],
             kernel_size=3,
             padding='same',
             name='gen_x_res_1_post',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
         stage2 = softmax(h5, self.batch_size, self.com_shape)
         return stage2, h3, h4
@@ -1299,44 +1303,44 @@ class depvox_gan():
     def discriminate_full(self, vox):
 
         h1 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 vox,
                 filters=16,
                 kernel_size=(7, 7, 7),
                 strides=(2, 2, 2),
                 padding='same',
                 name='dis_y_ssc_0',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         h1_0 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h1,
                 filters=32,
                 kernel_size=(1, 1, 1),
                 strides=(1, 1, 1),
                 padding='same',
                 name='dis_y_ssc_0_0',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         h1_1 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h1,
                 filters=32,
                 kernel_size=(3, 3, 3),
                 strides=(1, 1, 1),
                 padding='same',
                 name='dis_y_ssc_0_1',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         h1_2 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h1_1,
                 filters=32,
                 kernel_size=(3, 3, 3),
                 strides=(1, 1, 1),
                 padding='same',
                 name='dis_y_ssc_0_2',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         base_4 = h1_0 + h1_2
-        base_5 = tf.layers.conv3d(
+        base_5 = tf.compat.v1.layers.conv3d(
             base_4,
             filters=64,
             kernel_size=(3, 3, 3),
@@ -1344,9 +1348,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='dis_y_ssc_1',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        base_6 = base_5 + tf.layers.conv3d(
+        base_6 = base_5 + tf.compat.v1.layers.conv3d(
             base_5,
             filters=64,
             kernel_size=(3, 3, 3),
@@ -1354,9 +1358,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='dis_y_ssc_2',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        base_7 = tf.layers.conv3d(
+        base_7 = tf.compat.v1.layers.conv3d(
             base_6,
             filters=64,
             kernel_size=(3, 3, 3),
@@ -1364,9 +1368,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='dis_y_ssc_3',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        base_8 = base_7 + tf.layers.conv3d(
+        base_8 = base_7 + tf.compat.v1.layers.conv3d(
             base_7,
             filters=64,
             kernel_size=(3, 3, 3),
@@ -1374,10 +1378,10 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='dis_y_ssc_4',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
         base_9 = tf.concat([base_4, base_6, base_8], -1)
 
-        h1_1 = tf.layers.conv3d(
+        h1_1 = tf.compat.v1.layers.conv3d(
             base_9,
             filters=128,
             kernel_size=(1, 1, 1),
@@ -1385,8 +1389,8 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='dis_y_ssc_5',
-            reuse=tf.AUTO_REUSE)
-        h1_2 = tf.layers.conv3d(
+            reuse=tf.compat.v1.AUTO_REUSE)
+        h1_2 = tf.compat.v1.layers.conv3d(
             h1_1,
             filters=16,
             kernel_size=(1, 1, 1),
@@ -1394,7 +1398,7 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='dis_y_ssc_6',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
         h2 = lrelu(
             layernormalize(
@@ -1427,7 +1431,7 @@ class depvox_gan():
                 g=self.dis_y_bn_g4,
                 b=self.dis_y_bn_b4))
 
-        h5 = tf.layers.conv3d(
+        h5 = tf.compat.v1.layers.conv3d(
             h4,
             filters=1,
             kernel_size=(1, 1, 1),
@@ -1435,7 +1439,7 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='dis_y_final',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
         # h4 = tf.reshape(h4, [self.batch_size, -1])
         # h5 = tf.matmul(h4, self.dis_y_W5)
         h5 = tf.nn.leaky_relu(h5)
@@ -1445,44 +1449,44 @@ class depvox_gan():
     def discriminate_comp(self, vox):
 
         h1 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 vox,
                 filters=16,
                 kernel_size=(7, 7, 7),
                 strides=(2, 2, 2),
                 padding='same',
                 name='dis_g_ssc_0',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         h1_0 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h1,
                 filters=32,
                 kernel_size=(1, 1, 1),
                 strides=(1, 1, 1),
                 padding='same',
                 name='dis_g_ssc_0_0',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         h1_1 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h1,
                 filters=32,
                 kernel_size=(3, 3, 3),
                 strides=(1, 1, 1),
                 padding='same',
                 name='dis_g_ssc_0_1',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
         h1_2 = lrelu(
-            tf.layers.conv3d(
+            tf.compat.v1.layers.conv3d(
                 h1_1,
                 filters=32,
                 kernel_size=(3, 3, 3),
                 strides=(1, 1, 1),
                 padding='same',
                 name='dis_g_ssc_0_2',
-                reuse=tf.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE))
 
         base_4 = h1_0 + h1_2
-        base_5 = tf.layers.conv3d(
+        base_5 = tf.compat.v1.layers.conv3d(
             base_4,
             filters=64,
             kernel_size=(3, 3, 3),
@@ -1490,9 +1494,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='dis_g_ssc_1',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        base_6 = base_5 + tf.layers.conv3d(
+        base_6 = base_5 + tf.compat.v1.layers.conv3d(
             base_5,
             filters=64,
             kernel_size=(3, 3, 3),
@@ -1500,9 +1504,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='dis_g_ssc_2',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        base_7 = tf.layers.conv3d(
+        base_7 = tf.compat.v1.layers.conv3d(
             base_6,
             filters=64,
             kernel_size=(3, 3, 3),
@@ -1510,9 +1514,9 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='dis_g_ssc_3',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        base_8 = base_7 + tf.layers.conv3d(
+        base_8 = base_7 + tf.compat.v1.layers.conv3d(
             base_7,
             filters=64,
             kernel_size=(3, 3, 3),
@@ -1520,10 +1524,10 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='dis_g_ssc_4',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
         base_9 = tf.concat([base_4, base_6, base_8], -1)
 
-        h1_1 = tf.layers.conv3d(
+        h1_1 = tf.compat.v1.layers.conv3d(
             base_9,
             filters=128,
             kernel_size=(1, 1, 1),
@@ -1531,8 +1535,8 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='dis_g_ssc_5',
-            reuse=tf.AUTO_REUSE)
-        h1_2 = tf.layers.conv3d(
+            reuse=tf.compat.v1.AUTO_REUSE)
+        h1_2 = tf.compat.v1.layers.conv3d(
             h1_1,
             filters=16,
             kernel_size=(1, 1, 1),
@@ -1540,7 +1544,7 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='dis_g_ssc_6',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
 
         h2 = lrelu(
             layernormalize(
@@ -1573,7 +1577,7 @@ class depvox_gan():
                 g=self.dis_g_bn_g4,
                 b=self.dis_g_bn_b4))
 
-        h5 = tf.layers.conv3d(
+        h5 = tf.compat.v1.layers.conv3d(
             h4,
             filters=1,
             kernel_size=(1, 1, 1),
@@ -1581,7 +1585,7 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='dis_g_final',
-            reuse=tf.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE)
         # h4 = tf.reshape(h4, [self.batch_size, -1])
         # h5 = tf.matmul(h4, self.dis_g_W5)
         h5 = tf.nn.leaky_relu(h5)
@@ -1635,7 +1639,7 @@ class depvox_gan():
         return h5
 
     def samples_generator(self, visual_size):
-        Z = tf.placeholder(tf.float32, [
+        Z = tf.compat.v1.placeholder(tf.float32, [
             None, self.start_vox_size[0], self.start_vox_size[1],
             self.start_vox_size[2], self.dim_z
         ])

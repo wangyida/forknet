@@ -5,7 +5,7 @@ from train import train
 from config import cfg
 import tensorflow as tf
 
-flags = tf.app.flags
+flags = tf.compat.v1.flags
 flags.DEFINE_integer("epoch", cfg.TRAIN.NUM_EPOCH,
                      "Epoch to train [15]")  #n_epochs = cfg.TRAIN.NUM_EPOCH
 flags.DEFINE_float("learning_rate_G", cfg.LEARNING_RATE_G,

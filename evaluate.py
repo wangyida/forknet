@@ -17,6 +17,7 @@ from io_util import read_pcd, save_pcd
 
 # use Colorama to make Termcolor work on Windows too
 init()
+tf.compat.v1.disable_eager_execution()
 
 
 def IoU(on_gt, on_pd, vox_shape, IoU_compared=None):
@@ -101,8 +102,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
     if discriminative is True:
         Z_tf_samp, comp_tf_samp, surf_tf_samp, full_tf_samp, part_tf_samp, scores_tf_samp = depvox_gan_model.samples_generator(
             visual_size=batch_size)
-    sess = tf.InteractiveSession()
-    saver = tf.train.Saver()
+    sess = tf.compat.v1.InteractiveSession()
+    saver = tf.compat.v1.train.Saver()
 
     # Restore variables from disk.
     saver.restore(sess, chckpt_path)
