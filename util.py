@@ -101,7 +101,7 @@ def scene_model_id_pair(dataset_portion=[]):
 
 def scene_model_id_pair_test(dataset_portion=[]):
 
-    amount_of_test_sample = 200
+    amount_of_test_sample = 20
 
     scene_name_pair = []  # full path of the objs files
 
@@ -118,7 +118,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
     print('---the first sample is:', data_paths_test[0][1])
 
     data_paths = data_paths_test
-    # data_paths = data_paths_test[:amount_of_test_sample]
+    data_paths = data_paths_test[:amount_of_test_sample]
 
     num_models = len(data_paths)
     print('---amount of test data:', str(num_models))
