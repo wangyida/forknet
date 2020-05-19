@@ -1,8 +1,8 @@
 import numpy as np
 import os
 import random
+import imageio
 import matplotlib.image as mpimg
-from scipy.misc import imsave
 
 from config import cfg
 
@@ -118,7 +118,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
     print('---the first sample is:', data_paths_test[0][1])
 
     data_paths = data_paths_test
-    data_paths = data_paths_test[:amount_of_test_sample]
+    # data_paths = data_paths_test[:amount_of_test_sample]
 
     num_models = len(data_paths)
     print('---amount of test data:', str(num_models))
@@ -141,7 +141,9 @@ def scene_model_id_pair_test(dataset_portion=[]):
                                        ".npy", ".png")
         if os.path.isfile(depth_fn):
             img = mpimg.imread(depth_fn)
-            imsave('results_depth/' + data_paths_test[i][1][:-4] + '.png', img)
+            img_uint8 = img.astype(np.uint8)
+            imageio.imwrite(
+                'results_depth/' + data_paths_test[i][1][:-4] + '.png', img_uint8)
 
         tsdf_fn = cfg.DIR.TSDF_PATH + model_id
         tsdf_data = np.load(tsdf_fn)

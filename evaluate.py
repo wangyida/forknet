@@ -102,7 +102,9 @@ def evaluate(batch_size, checknum, mode, discriminative):
     if discriminative is True:
         Z_tf_samp, comp_tf_samp, surf_tf_samp, full_tf_samp, part_tf_samp, scores_tf_samp = depvox_gan_model.samples_generator(
             visual_size=batch_size)
-    sess = tf.compat.v1.InteractiveSession()
+    config_gpu = tf.compat.v1.ConfigProto()
+    config_gpu.gpu_options.allow_growth = True
+    sess = tf.compat.v1.InteractiveSession(config=config_gpu)
     saver = tf.compat.v1.train.Saver()
 
     # Restore variables from disk.

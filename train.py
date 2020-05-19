@@ -9,6 +9,7 @@ from colorama import init
 from termcolor import colored
 
 init()
+tf.compat.v1.disable_eager_execution()
 
 
 def learning_rate(rate, step):
@@ -52,10 +53,10 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
     part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
-    config_gpu = tf.ConfigProto()
+    config_gpu = tf.compat.v1.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
-    sess = tf.Session(config=config_gpu)
-    saver = tf.train.Saver(max_to_keep=cfg.SAVER_MAX)
+    sess = tf.compat.v1.Session(config=config_gpu)
+    saver = tf.compat.v1.train.Saver(max_to_keep=cfg.SAVER_MAX)
 
     data_paths = scene_model_id_pair(dataset_portion=cfg.TRAIN.DATASET_PORTION)
     print('---amount of data:', str(len(data_paths)))
@@ -63,62 +64,69 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
     enc_sscnet_vars = list(
         filter(lambda x: x.name.startswith('enc_ssc'),
-               tf.trainable_variables()))
+               tf.compat.v1.trainable_variables()))
     enc_sdf_vars = list(
-        filter(lambda x: x.name.startswith('enc_x'), tf.trainable_variables()))
+        filter(lambda x: x.name.startswith('enc_x'),
+               tf.compat.v1.trainable_variables()))
     dis_sdf_vars = list(
-        filter(lambda x: x.name.startswith('dis_x'), tf.trainable_variables()))
+        filter(lambda x: x.name.startswith('dis_x'),
+               tf.compat.v1.trainable_variables()))
     dis_com_vars = list(
-        filter(lambda x: x.name.startswith('dis_g'), tf.trainable_variables()))
+        filter(lambda x: x.name.startswith('dis_g'),
+               tf.compat.v1.trainable_variables()))
     dis_sem_vars = list(
-        filter(lambda x: x.name.startswith('dis_y'), tf.trainable_variables()))
+        filter(lambda x: x.name.startswith('dis_y'),
+               tf.compat.v1.trainable_variables()))
     gen_com_vars = list(
-        filter(lambda x: x.name.startswith('gen_x'), tf.trainable_variables()))
+        filter(lambda x: x.name.startswith('gen_x'),
+               tf.compat.v1.trainable_variables()))
     gen_sem_vars = list(
-        filter(lambda x: x.name.startswith('gen_y'), tf.trainable_variables()))
+        filter(lambda x: x.name.startswith('gen_y'),
+               tf.compat.v1.trainable_variables()))
     gen_sdf_vars = list(
-        filter(lambda x: x.name.startswith('gen_z'), tf.trainable_variables()))
+        filter(lambda x: x.name.startswith('gen_z'),
+               tf.compat.v1.trainable_variables()))
     refine_vars = list(
         filter(lambda x: x.name.startswith('gen_y_ref'),
-               tf.trainable_variables()))
+               tf.compat.v1.trainable_variables()))
 
-    lr_VAE = tf.placeholder(tf.float32, shape=[])
+    lr_VAE = tf.compat.v1.placeholder(tf.float32, shape=[])
 
     # main optimiser
-    train_op_pd_sscnet = tf.train.AdamOptimizer(
+    train_op_pd_sscnet = tf.compat.v1.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             recons_ssc_loss_tf, var_list=enc_sscnet_vars)
-    train_op_pd_com = tf.train.AdamOptimizer(
+    train_op_pd_com = tf.compat.v1.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             recons_com_loss_tf,
             var_list=enc_sdf_vars + gen_com_vars + gen_sdf_vars)
-    train_op_pd_sem = tf.train.AdamOptimizer(
+    train_op_pd_sem = tf.compat.v1.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             recons_sem_loss_tf,
             var_list=enc_sdf_vars + gen_sem_vars + gen_sdf_vars)
 
     # refine optimiser
-    train_op_refine = tf.train.AdamOptimizer(
+    train_op_refine = tf.compat.v1.train.AdamOptimizer(
         learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
             refine_loss_tf, var_list=refine_vars)
 
     if discriminative is True:
-        train_op_gen_sdf = tf.train.AdamOptimizer(
+        train_op_gen_sdf = tf.compat.v1.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
                 gen_loss_tf, var_list=gen_sdf_vars)
-        train_op_gen_com = tf.train.AdamOptimizer(
+        train_op_gen_com = tf.compat.v1.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
                 gen_loss_tf, var_list=gen_com_vars)
-        train_op_gen_sem = tf.train.AdamOptimizer(
+        train_op_gen_sem = tf.compat.v1.train.AdamOptimizer(
             learning_rate_G, beta1=beta_G, beta2=0.9).minimize(
                 gen_loss_tf, var_list=gen_sem_vars + gen_com_vars)
-        train_op_dis_sdf = tf.train.AdamOptimizer(
+        train_op_dis_sdf = tf.compat.v1.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf, var_list=dis_sdf_vars)
-        train_op_dis_com = tf.train.AdamOptimizer(
+        train_op_dis_com = tf.compat.v1.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf, var_list=dis_com_vars)
-        train_op_dis_sem = tf.train.AdamOptimizer(
+        train_op_dis_sem = tf.compat.v1.train.AdamOptimizer(
             learning_rate_D, beta1=beta_D, beta2=0.9).minimize(
                 discrim_loss_tf,
                 var_list=dis_sem_vars,
@@ -131,8 +139,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     else:
         model_path = cfg.DIR.CHECK_POINT_PATH
 
-    writer = tf.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
-    tf.initialize_all_variables().run(session=sess)
+    writer = tf.compat.v1.summary.FileWriter(cfg.DIR.LOG_PATH, sess.graph_def)
+    tf.compat.v1.initialize_all_variables().run(session=sess)
 
     if mid_flag:
         chckpt_path = model_path + '/checkpoint' + str(check_num)
@@ -221,7 +229,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         full_tf: bth_voxel,
                     },
                 )
-                if np.abs(scores_discrim[0]-1) < 0.2 and np.abs(scores_discrim[1]-0) < 0.2:
+                if np.abs(scores_discrim[0] -
+                          1) < 0.2 and np.abs(scores_discrim[1] - 0) < 0.2:
                     _ = sess.run(
                         train_op_gen_sdf,
                         feed_dict={
@@ -243,7 +252,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     },
                 )
 
-                if np.abs(scores_discrim[2]-1) < 0.2 and np.abs(scores_discrim[3]-0) < 0.2:
+                if np.abs(scores_discrim[2] -
+                          1) < 0.2 and np.abs(scores_discrim[3] - 0) < 0.2:
                     _ = sess.run(
                         train_op_gen_com,
                         feed_dict={
@@ -265,7 +275,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     },
                 )
 
-                if np.abs(scores_discrim[4]-1) < 0.2 and np.abs(scores_discrim[5]-0) < 0.2:
+                if np.abs(scores_discrim[4] -
+                          1) < 0.2 and np.abs(scores_discrim[5] - 0) < 0.2:
                     _ = sess.run(
                         train_op_gen_sem,
                         feed_dict={

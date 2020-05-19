@@ -557,8 +557,8 @@ class depvox_gan():
                     self.lamda_gamma * full_gt * tf.math.log(1e-6 + full_dec) +
                     self.lamda_gamma * surf_gt * tf.math.log(1e-6 + full_dec) +
                     (1 - self.lamda_gamma) *
-                    (1 - full_gt) * tf.math.log(1e-6 + 1 - full_dec), [1, 2, 3]) *
-                weight_full, 1))
+                    (1 - full_gt) * tf.math.log(1e-6 + 1 - full_dec),
+                    [1, 2, 3]) * weight_full, 1))
         """
         recons_loss += tf.reduce_sum(
                 tf.math.squared_difference(part_gt, part_gen_dec), [1, 2, 3, 4])
@@ -577,11 +577,13 @@ class depvox_gan():
             part_dec = self.generate_part(Z_encode)
             part_gen = self.generate_part(Z)
             comp_gen, h3_z, h4_z = self.generate_comp(Z)
-            full_gen, full_gen_ref = self.generate_full(Z, h3_z, h4_z, comp_gen)
+            full_gen, full_gen_ref = self.generate_full(
+                Z, h3_z, h4_z, comp_gen)
 
             recons_sdf_loss = tf.reduce_mean(
                 tf.reduce_sum(
-                    tf.math.squared_difference(part_gt, part_dec), [1, 2, 3, 4]))
+                    tf.math.squared_difference(part_gt, part_dec),
+                    [1, 2, 3, 4]))
 
             h_part_gt = self.discriminate_part(part_gt)
             h_part_gen = self.discriminate_part(part_dec)
@@ -1040,13 +1042,14 @@ class depvox_gan():
             padding='same',
             name='gen_y_res_1_post',
             reuse=tf.compat.v1.AUTO_REUSE)
-
+        """
         if self.is_train is True:
             stage1 = softmax(res_1_post, self.batch_size, self.vox_shape)
         else:
-            mask = tf.stack([h5_[:,:,:,:,0], h5_[:,:,:,:,1]], axis=-1)
-            mask = tf.repeat(mask, repeats=[1, self.vox_shape[-1]-1], axis=-1)
-            stage1 = softmax(res_1_post*mask, self.batch_size, self.vox_shape)
+        """
+        mask = tf.stack([h5_[:, :, :, :, 0], h5_[:, :, :, :, 1]], axis=-1)
+        mask = tf.repeat(mask, repeats=[1, self.vox_shape[-1] - 1], axis=-1)
+        stage1 = softmax(res_1_post * mask, self.batch_size, self.vox_shape)
 
         # start to refine
         base = tf.nn.relu(
