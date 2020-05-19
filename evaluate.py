@@ -199,7 +199,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
         # decoded
         do_save_pcd = True
         if do_save_pcd is True:
-            results_pcds = np.argmax(pd_full, axis=4)
+            results_pcds = np.argmax(pd_surf, axis=4)
             for i in range(np.shape(results_pcds)[0]):
                 pcd_idx = np.where(results_pcds[i] > 0)
                 pts_coord = np.float32(np.transpose(pcd_idx)) / 80 - 0.5

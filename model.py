@@ -1043,7 +1043,7 @@ class depvox_gan():
             name='gen_y_res_1_post',
             reuse=tf.compat.v1.AUTO_REUSE)
         # stage1 = softmax(res_1_post, self.batch_size, self.vox_shape)
-        mask = tf.stack([h5_[:, :, :, :, 0], tf.ones_like(h5_[:, :, :, :, 1])], axis=-1)
+        mask = tf.stack([h5_[:, :, :, :, 0], h5_[:, :, :, :, 1]], axis=-1)
         mask = tf.repeat(mask, repeats=[1, self.vox_shape[-1] - 1], axis=-1)
         stage1 = softmax(res_1_post * mask, self.batch_size, self.vox_shape)
 
