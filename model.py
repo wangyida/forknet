@@ -1042,12 +1042,10 @@ class depvox_gan():
             padding='same',
             name='gen_y_res_1_post',
             reuse=tf.compat.v1.AUTO_REUSE)
-        if self.is_train is False:
-            stage1 = softmax(res_1_post, self.batch_size, self.vox_shape)
-        else:
-            mask = tf.stack([h5_[:, :, :, :, 0], h5_[:, :, :, :, 1]], axis=-1)
-            mask = tf.repeat(mask, repeats=[1, self.vox_shape[-1] - 1], axis=-1)
-            stage1 = softmax(res_1_post * mask, self.batch_size, self.vox_shape)
+        # stage1 = softmax(res_1_post, self.batch_size, self.vox_shape)
+        mask = tf.stack([h5_[:, :, :, :, 0], tf.ones_like(h5_[:, :, :, :, 1])], axis=-1)
+        mask = tf.repeat(mask, repeats=[1, self.vox_shape[-1] - 1], axis=-1)
+        stage1 = softmax(res_1_post * mask, self.batch_size, self.vox_shape)
 
         # start to refine
         base = tf.nn.relu(
