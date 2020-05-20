@@ -1045,7 +1045,7 @@ class depvox_gan():
         # stage1 = softmax(res_1_post, self.batch_size, self.vox_shape)
         mask = tf.stack([h5_[:, :, :, :, 0], h5_[:, :, :, :, 1]], axis=-1)
         mask = tf.repeat(mask, repeats=[1, self.vox_shape[-1] - 1], axis=-1)
-        stage1 = softmax(res_1_post * mask, self.batch_size, self.vox_shape)
+        stage1 = softmax(res_1_post, self.batch_size, self.vox_shape)
 
         # start to refine
         base = tf.nn.relu(
