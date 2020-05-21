@@ -143,7 +143,8 @@ def scene_model_id_pair_test(dataset_portion=[]):
             img = mpimg.imread(depth_fn)
             img_uint8 = img.astype(np.uint8)
             imageio.imwrite(
-                'results_depth/' + data_paths_test[i][1][:-4] + '.png', img_uint8)
+                'results_depth/' + data_paths_test[i][1][:-4] + '.png',
+                img_uint8)
 
         tsdf_fn = cfg.DIR.TSDF_PATH + model_id
         tsdf_data = np.load(tsdf_fn)
