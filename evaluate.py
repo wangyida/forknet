@@ -125,8 +125,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
                 part_test > -1, 1, 0)
             voxel_test *= space_effective
             part_test *= space_effective
-            """
             # occluded region
+            """
             part_test[part_test < -1] = 0
             surf_test[surf_test < 0] = 0
             voxel_test[voxel_test < 0] = 0

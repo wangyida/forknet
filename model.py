@@ -694,15 +694,26 @@ class depvox_gan():
 
     def encoder(self, sdf):
 
-        h1_base = lrelu(
-            tf.compat.v1.layers.conv3d(
-                sdf,
-                filters=16,
-                kernel_size=(7, 7, 7),
-                strides=(2, 2, 2),
-                padding='same',
-                name='enc_ssc_1_base',
-                reuse=tf.compat.v1.AUTO_REUSE))
+        if self.discriminative is True:
+            h1_base = lrelu(
+                tf.compat.v1.layers.conv3d(
+                    sdf,
+                    filters=16,
+                    kernel_size=(7, 7, 7),
+                    strides=(2, 2, 2),
+                    padding='same',
+                    name='enc_ssc_1_base',
+                    reuse=tf.compat.v1.AUTO_REUSE))
+        else:
+            h1_base = lrelu(
+                tf.compat.v1.layers.conv3d(
+                    sdf,
+                    filters=16,
+                    kernel_size=(5, 5, 5),
+                    strides=(2, 2, 2),
+                    padding='same',
+                    name='enc_ssc_1_base',
+                    reuse=tf.compat.v1.AUTO_REUSE))
         h1_0 = lrelu(
             tf.compat.v1.layers.conv3d(
                 h1_base,

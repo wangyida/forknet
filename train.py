@@ -188,20 +188,12 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             # updating for the main network
             is_supervised = True
             if is_supervised is True:
-                _ = sess.run(
-                    train_op_pd_sscnet,
+                _, _, _, _ = sess.run(
+                    [
+                        train_op_pd_sscnet, train_op_pd_com, train_op_pd_sem,
+                        train_op_refine
+                    ],
                     feed_dict={
-                        Z_tf: bth_z_var,
-                        part_tf: bth_tsdf,
-                        surf_tf: bth_surf,
-                        full_tf: bth_voxel,
-                        lr_VAE: lr
-                    },
-                )
-                _, _, _ = sess.run(
-                    [train_op_pd_com, train_op_pd_sem, train_op_refine],
-                    feed_dict={
-                        Z_tf: bth_z_var,
                         part_tf: bth_tsdf,
                         surf_tf: bth_surf,
                         full_tf: bth_voxel,
