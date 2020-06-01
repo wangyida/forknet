@@ -69,9 +69,9 @@ CUDA_VISIBLE_DEVICES=0 python3 main.py --mode train --discriminative True
 ```
 ### Testing
 We provide a compact version of ForkNet which is only 25 MB in the pretrained_model folder
-If the model is not discriminative 
+If the model is not discriminative, notice that this model is sparser 
 ```shell
-CUDA_VISIBLE_DEVICES=1 python main.py --mode evaluate_recons --conf_epoch 0
+CUDA_VISIBLE_DEVICES=1 python main.py --mode evaluate_recons --conf_epoch 34
 ```
 Otherwise
 ```shell
