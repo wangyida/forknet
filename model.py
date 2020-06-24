@@ -382,6 +382,11 @@ class depvox_gan():
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
         part_gt = tf.expand_dims(part_gt_, -1)
 
+        space_effective_ = tf.compat.v1.placeholder(
+            tf.float32,
+            [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
+        space_effective = tf.expand_dims(space_effective_, -1)
+
         full_gt_ = tf.compat.v1.placeholder(
             tf.int32,
             [None, self.vox_shape[0], self.vox_shape[1], self.vox_shape[2]])
@@ -426,7 +431,7 @@ class depvox_gan():
         weight_complete = inverse * tf.math.divide(1., tf.reduce_sum(inverse))
 
         # encode from tsdf and vox
-        Z_encode, Z_mu, Z_log_sigma, sscnet = self.encoder(part_gt)
+        Z_encode, Z_mu, Z_log_sigma, sscnet = self.encoder(part_gt, space_effective)
         variation_loss = -0.5 * tf.reduce_sum(
             1.0 + 2.0 * Z_log_sigma - tf.square(Z_mu) - tf.exp(
                 2.0 * Z_log_sigma), [1, 2, 3, 4])
@@ -453,7 +458,7 @@ class depvox_gan():
             tf.argmax(full_dec, axis=4, output_type=tf.int32),
             self.n_class)
         full_dec_o = tf.cast(full_dec_o, tf.float32)
-        Z_encode_full_part = self.encoder(part_gen_dec)
+        Z_encode_full_part = self.encoder(part_gen_dec, space_effective)
 
         part_cc_dec, _, _, _ = self.generate_comp(Z_encode_full)
         _, h2_vt, h3_vt, h4_vt = self.generate_comp(Z_encode_full_part)
@@ -692,8 +697,9 @@ class depvox_gan():
         gen_loss, dis_loss, recons_ssc_loss, recons_com_loss, recons_sem_loss, variation_loss, refine_loss, summary_op,\
         part_gt_, part_dec, comp_gt, comp_gen, comp_dec, sscnet, scores
 
-    def encoder(self, sdf):
+    def encoder(self, sdf, space_effective):
 
+        sdf *= space_effective
         if self.discriminative is True:
             h1_base = lrelu(
                 tf.compat.v1.layers.conv3d(
@@ -714,6 +720,17 @@ class depvox_gan():
                     padding='same',
                     name='enc_ssc_1_base',
                     reuse=tf.compat.v1.AUTO_REUSE))
+        space_effective = lrelu(
+            tf.compat.v1.layers.conv3d(
+                space_effective,
+                filters=1,
+                kernel_size=(2, 2, 2),
+                strides=(2, 2, 2),
+                padding='same',
+                name='space_effective_1',
+                reuse=tf.compat.v1.AUTO_REUSE))
+        h1_base *= space_effective
+        
         h1_0 = lrelu(
             tf.compat.v1.layers.conv3d(
                 h1_base,
@@ -842,6 +859,16 @@ class depvox_gan():
             padding='same',
             name='enc_ssc_7_1',
             reuse=tf.compat.v1.AUTO_REUSE)
+        space_effective = lrelu(
+            tf.compat.v1.layers.conv3d(
+                space_effective,
+                filters=1,
+                kernel_size=(2, 2, 2),
+                strides=(2, 2, 2),
+                padding='same',
+                name='space_effective_2',
+                reuse=tf.compat.v1.AUTO_REUSE))
+        h7_1 *= space_effective
 
         h7_2 = tf.compat.v1.layers.conv3d(
             tf.concat([h7_1, sdf], -1),
