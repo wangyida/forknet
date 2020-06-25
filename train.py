@@ -51,7 +51,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
     Z_tf, z_part_enc_tf, surf_tf, full_tf, full_gen_tf, surf_dec_tf, full_dec_tf,\
     gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
+    space_effective_tf, part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.compat.v1.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -59,7 +59,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     saver = tf.compat.v1.train.Saver(max_to_keep=cfg.SAVER_MAX)
 
     data_paths = scene_model_id_pair(dataset_portion=cfg.TRAIN.DATASET_PORTION)
-    print('---amount of data:', str(len(data_paths)))
+    print(colored('The amount of data: %d' %len(data_paths), 'green'))
     data_process = DataProcess(data_paths, batch_size, repeat=True)
 
     enc_sscnet_vars = list(
@@ -159,7 +159,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     for epoch in np.arange(cur_epochs, n_epochs):
         epoch_flag = True
         while epoch_flag:
-            print(colored('---Iteration:%d, epoch:%d', 'blue') % (ite, epoch))
+            print(colored('---Iteration:%d, epoch:%d' % (ite, epoch), 'blue'))
             db_inds, epoch_flag = data_process.get_next_minibatch()
             bth_tsdf = data_process.get_tsdf(db_inds)
             bth_surf = data_process.get_surf(db_inds)
@@ -194,6 +194,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         train_op_refine
                     ],
                     feed_dict={
+                        space_effective_tf: space_effective,
                         part_tf: bth_tsdf,
                         surf_tf: bth_surf,
                         full_tf: bth_voxel,
@@ -204,6 +205,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 [recons_com_loss_tf, recons_sem_loss_tf, z_part_enc_tf],
                 feed_dict={
                     Z_tf: bth_z_var,
+                    space_effective_tf: space_effective,
                     part_tf: bth_tsdf,
                     surf_tf: bth_surf,
                     full_tf: bth_voxel,
@@ -216,6 +218,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     [discrim_loss_tf, gen_loss_tf, scores_tf],
                     feed_dict={
                         Z_tf: bth_z_var,
+                        space_effective_tf: space_effective,
                         part_tf: bth_tsdf,
                         surf_tf: bth_surf,
                         full_tf: bth_voxel,
@@ -227,6 +230,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         train_op_gen_sdf,
                         feed_dict={
                             Z_tf: bth_z_var,
+                            space_effective_tf: space_effective,
                             part_tf: bth_tsdf,
                             surf_tf: bth_surf,
                             full_tf: bth_voxel,
@@ -238,6 +242,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     train_op_dis_sdf,
                     feed_dict={
                         Z_tf: bth_z_var,
+                        space_effective_tf: space_effective,
                         part_tf: bth_tsdf,
                         surf_tf: bth_surf,
                         full_tf: bth_voxel,
@@ -250,6 +255,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         train_op_gen_com,
                         feed_dict={
                             Z_tf: bth_z_var,
+                            space_effective_tf: space_effective,
                             part_tf: bth_tsdf,
                             surf_tf: bth_surf,
                             full_tf: bth_voxel,
@@ -261,6 +267,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     train_op_dis_com,
                     feed_dict={
                         Z_tf: bth_z_var,
+                        space_effective_tf: space_effective,
                         part_tf: bth_tsdf,
                         surf_tf: bth_surf,
                         full_tf: bth_voxel,
@@ -273,6 +280,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                         train_op_gen_sem,
                         feed_dict={
                             Z_tf: bth_z_var,
+                            space_effective_tf: space_effective,
                             part_tf: bth_tsdf,
                             surf_tf: bth_surf,
                             full_tf: bth_voxel,
@@ -284,6 +292,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     train_op_dis_sem,
                     feed_dict={
                         Z_tf: bth_z_var,
+                        space_effective_tf: space_effective,
                         part_tf: bth_tsdf,
                         surf_tf: bth_surf,
                         full_tf: bth_voxel,
@@ -292,21 +301,22 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             print('GAN')
             np.set_printoptions(precision=2)
-            print('reconstruct-com loss:', gen_com_loss_val)
+            print('reconstruct-com loss: %d' % gen_com_loss_val)
 
-            print('reconstruct-sem loss:', gen_sem_loss_val)
+            print('reconstruct-sem loss: %d' % gen_sem_loss_val)
 
             if discriminative is True:
                 print(
-                    '            gen loss:', "%.2f" % gen_loss_val if
+                    '            gen loss: %.2f' % gen_loss_val if
                     ('gen_loss_val' in locals()) else 'None')
 
                 print(
-                    '      output discrim:', "%.2f" % discrim_loss_val if
+                    '      output discrim: %.2f' % discrim_loss_val if
                     ('discrim_loss_val' in locals()) else 'None')
 
+                """
                 print(
-                    '      scores discrim:',
+                    '      scores discrim:'
                     colored("%.2f" % scores_discrim[0], 'green'),
                     colored("%.2f" % scores_discrim[1], 'magenta'),
                     colored("%.2f" % scores_discrim[2], 'green'),
@@ -314,14 +324,15 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     colored("%.2f" % scores_discrim[4], 'green'),
                     colored("%.2f" % scores_discrim[5], 'magenta') if
                     ('scores_discrim' in locals()) else 'None')
+                """
 
             print(
-                '     avarage of code:',
+                '     avarage of code: %.2f' %
                 np.mean(np.mean(z_part_enc_val, 4)) if
                 ('z_part_enc_val' in locals()) else 'None')
 
             print(
-                '         std of code:',
+                '         std of code: %.2f' %
                 np.mean(np.std(z_part_enc_val, 4)) if
                 ('z_part_enc_val' in locals()) else 'None')
 

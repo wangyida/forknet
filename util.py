@@ -5,6 +5,8 @@ import imageio
 import matplotlib.image as mpimg
 
 from config import cfg
+from colorama import init
+from termcolor import colored
 
 
 class DataProcess():
@@ -115,13 +117,13 @@ def scene_model_id_pair_test(dataset_portion=[]):
                                       0:]
     random.seed(1)
     random.shuffle(data_paths_test)
-    print('---the first sample is:', data_paths_test[0][1])
+    # print('The first sample is:', data_paths_test[0][1])
 
     data_paths = data_paths_test
     # data_paths = data_paths_test[:amount_of_test_sample]
 
     num_models = len(data_paths)
-    print('---amount of test data:', str(num_models))
+    print('The amount of test data: %d' % num_models)
 
     n_vox = cfg.CONST.N_VOX
 
