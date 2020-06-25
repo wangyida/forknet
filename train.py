@@ -59,7 +59,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     saver = tf.compat.v1.train.Saver(max_to_keep=cfg.SAVER_MAX)
 
     data_paths = scene_model_id_pair(dataset_portion=cfg.TRAIN.DATASET_PORTION)
-    print(colored('The amount of data: %d' %len(data_paths), 'green'))
+    print(colored('The amount of data: %d' % len(data_paths), 'green'))
     data_process = DataProcess(data_paths, batch_size, repeat=True)
 
     enc_sscnet_vars = list(
@@ -169,7 +169,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             # NOTICE that the target should never have negative values,
             # otherwise the one-hot coding never works for that region
             if cfg.TYPE_TASK == 'scene':
-                space_effective = np.where(bth_voxel > -1, 1, 0) * np.where(bth_tsdf > -1, 1, 0)
+                space_effective = np.where(bth_voxel > -1, 1, 0) * np.where(
+                    bth_tsdf > -1, 1, 0)
                 """
                 bth_voxel *= space_effective
                 bth_tsdf *= space_effective
@@ -306,14 +307,11 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             print('reconstruct-sem loss: %d' % gen_sem_loss_val)
 
             if discriminative is True:
-                print(
-                    '            gen loss: %.2f' % gen_loss_val if
-                    ('gen_loss_val' in locals()) else 'None')
+                print('            gen loss: %.2f' % gen_loss_val if (
+                    'gen_loss_val' in locals()) else 'None')
 
-                print(
-                    '      output discrim: %.2f' % discrim_loss_val if
-                    ('discrim_loss_val' in locals()) else 'None')
-
+                print('      output discrim: %.2f' % discrim_loss_val if (
+                    'discrim_loss_val' in locals()) else 'None')
                 """
                 print(
                     '      scores discrim:'
@@ -326,15 +324,13 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                     ('scores_discrim' in locals()) else 'None')
                 """
 
-            print(
-                '     avarage of code: %.2f' %
-                np.mean(np.mean(z_part_enc_val, 4)) if
-                ('z_part_enc_val' in locals()) else 'None')
+            print('     avarage of code: %.2f' %
+                  np.mean(np.mean(z_part_enc_val, 4)) if (
+                      'z_part_enc_val' in locals()) else 'None')
 
-            print(
-                '         std of code: %.2f' %
-                np.mean(np.std(z_part_enc_val, 4)) if
-                ('z_part_enc_val' in locals()) else 'None')
+            print('         std of code: %.2f' %
+                  np.mean(np.std(z_part_enc_val, 4)) if (
+                      'z_part_enc_val' in locals()) else 'None')
 
             if np.mod(ite, freq) == 0:
                 if discriminative is True:

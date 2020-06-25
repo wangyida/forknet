@@ -431,7 +431,8 @@ class depvox_gan():
         weight_complete = inverse * tf.math.divide(1., tf.reduce_sum(inverse))
 
         # encode from tsdf and vox
-        Z_encode, Z_mu, Z_log_sigma, sscnet = self.encoder(part_gt, space_effective)
+        Z_encode, Z_mu, Z_log_sigma, sscnet = self.encoder(
+            part_gt, space_effective)
         variation_loss = -0.5 * tf.reduce_sum(
             1.0 + 2.0 * Z_log_sigma - tf.square(Z_mu) - tf.exp(
                 2.0 * Z_log_sigma), [1, 2, 3, 4])
@@ -729,7 +730,7 @@ class depvox_gan():
                     padding='same',
                     name='enc_ssc_1_base',
                     reuse=tf.compat.v1.AUTO_REUSE)) * space_effective
-        
+
         h1_0 = lrelu(
             tf.compat.v1.layers.conv3d(
                 h1_base,
