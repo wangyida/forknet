@@ -98,7 +98,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
 
     Z_tf, z_enc_tf, surf_tf, full_tf, full_gen_tf, surf_dec_tf, full_dec_tf,\
     gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, ssc_tf, scores_tf = depvox_gan_model.build_model()
+    space_effective_tf, part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, ssc_tf, scores_tf = depvox_gan_model.build_model()
     if discriminative is True:
         Z_tf_samp, comp_tf_samp, surf_tf_samp, full_tf_samp, part_tf_samp, scores_tf_samp = depvox_gan_model.samples_generator(
             visual_size=batch_size)
@@ -120,9 +120,9 @@ def evaluate(batch_size, checknum, mode, discriminative):
         # Evaluation masks
         if cfg.TYPE_TASK == 'scene':
             # occluded region
-            """
             space_effective = np.where(voxel_test > -1, 1, 0) * np.where(
                 part_test > -1, 1, 0)
+            """
             voxel_test *= space_effective
             part_test *= space_effective
             # occluded region
@@ -136,6 +136,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
         from progressbar import ProgressBar
         pbar = ProgressBar()
         for i in pbar(np.arange(int(num / batch_size))):
+            bth_space = space_effective[i * batch_size:i * batch_size + batch_size]
             bth_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
             bth_surf = surf_test[i * batch_size:i * batch_size + batch_size]
             bth_voxel = voxel_test[i * batch_size:i * batch_size + batch_size]
@@ -146,6 +147,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
                     comp_gt_tf, comp_dec_tf, ssc_tf
                 ],
                 feed_dict={
+                    space_effective_tf: bth_space,
                     part_tf: bth_tsdf,
                     surf_tf: bth_surf,
                     full_tf: bth_voxel

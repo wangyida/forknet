@@ -895,7 +895,7 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_7_4',
-            reuse=tf.compat.v1.AUTO_REUSE) * space_effective
+            reuse=tf.compat.v1.AUTO_REUSE)
 
         ssc = softmax(h7_4, self.batch_size, self.vox_shape)
 
