@@ -302,9 +302,9 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
             print('GAN')
             np.set_printoptions(precision=2)
-            print('reconstruct-com loss: %d' % gen_com_loss_val)
+            print('reconstruct-com loss: %.1f' % gen_com_loss_val)
 
-            print('reconstruct-sem loss: %d' % gen_sem_loss_val)
+            print('reconstruct-sem loss: %.1f' % gen_sem_loss_val)
 
             if discriminative is True:
                 print('            gen loss: %.2f' % gen_loss_val if (
