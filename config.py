@@ -7,7 +7,7 @@ cfg = __C
 #
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'test'
+__C.TYPE_DATA = 'train'
 
 __C.SUB_CONFIG_FILE = []
 
@@ -99,9 +99,9 @@ __C.TRAIN.DATASET_PORTION = [0, 1.0]
 __C.TRAIN.NUM_EPOCH = 50000  # maximum number of training epochs
 
 # Learning
-__C.LEARNING_RATE_G = 0.0001
+__C.LEARNING_RATE_G = 0.00001
 __C.LEARNING_RATE_D = 0.0001
-__C.LEARNING_RATE_V = [0.001, 1000, 0.00001]
+__C.LEARNING_RATE_V = [0.001, 1000, 0.0001]
 __C.TRAIN.ADAM_BETA_G = 0.5
 __C.TRAIN.ADAM_BETA_D = 0.5
 __C.LAMDA_RECONS = 1
