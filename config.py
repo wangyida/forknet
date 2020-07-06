@@ -7,7 +7,7 @@ cfg = __C
 #
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'test'
+__C.TYPE_DATA = 'train'
 
 __C.SUB_CONFIG_FILE = []
 
@@ -106,7 +106,7 @@ __C.TRAIN.ADAM_BETA_G = 0.5
 __C.TRAIN.ADAM_BETA_D = 0.5
 __C.LAMDA_RECONS = 1
 # LAmbda_gamma says that this voxel is xxxx, (1-lambda_gamma says that this voxel is not xxxx,xxxx,xxxx...)
-__C.LAMDA_GAMMA = 0.7
+__C.LAMDA_GAMMA = 0.1
 
 
 def cfg_from_file(filename):
