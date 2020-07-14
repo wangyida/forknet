@@ -136,7 +136,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
         from progressbar import ProgressBar
         pbar = ProgressBar()
         for i in pbar(np.arange(int(num / batch_size))):
-            bth_space = space_effective[i * batch_size:i * batch_size + batch_size]
+            bth_space = space_effective[i * batch_size:i * batch_size +
+                                        batch_size]
             bth_tsdf = part_test[i * batch_size:i * batch_size + batch_size]
             bth_surf = surf_test[i * batch_size:i * batch_size + batch_size]
             bth_voxel = voxel_test[i * batch_size:i * batch_size + batch_size]

@@ -700,95 +700,78 @@ class depvox_gan():
 
     def encoder(self, sdf, space_effective):
 
-        sdf *= space_effective
-        space_effective = lrelu(
+        space_effective0 = tf.nn.max_pool(
+            space_effective, ksize=2, strides=2, padding='SAME')
+        h0 = lrelu(
             tf.compat.v1.layers.conv3d(
-                space_effective,
-                filters=1,
-                kernel_size=(3, 3, 3),
+                sdf,
+                filters=16,
+                kernel_size=(5, 5, 5),
                 strides=(2, 2, 2),
                 padding='same',
-                name='space_effective_1',
-                reuse=tf.compat.v1.AUTO_REUSE))
-        if self.discriminative is True:
-            h1_base = lrelu(
-                tf.compat.v1.layers.conv3d(
-                    sdf,
-                    filters=16,
-                    kernel_size=(7, 7, 7),
-                    strides=(2, 2, 2),
-                    padding='same',
-                    name='enc_ssc_1_base',
-                    reuse=tf.compat.v1.AUTO_REUSE)) * space_effective
-        else:
-            h1_base = lrelu(
-                tf.compat.v1.layers.conv3d(
-                    sdf,
-                    filters=16,
-                    kernel_size=(5, 5, 5),
-                    strides=(2, 2, 2),
-                    padding='same',
-                    name='enc_ssc_1_base',
-                    reuse=tf.compat.v1.AUTO_REUSE)) * space_effective
+                name='enc_ssc_0',
+                reuse=tf.compat.v1.AUTO_REUSE)) * space_effective0
 
         h1_0 = lrelu(
             tf.compat.v1.layers.conv3d(
-                h1_base,
+                h0,
                 filters=32,
                 kernel_size=(1, 1, 1),
                 strides=(1, 1, 1),
                 padding='same',
                 name='enc_ssc_1_0',
-                reuse=tf.compat.v1.AUTO_REUSE)) * space_effective
+                reuse=tf.compat.v1.AUTO_REUSE))
+        h1_1_0 = lrelu(
+            tf.compat.v1.layers.conv3d(
+                h0,
+                filters=32,
+                kernel_size=(3, 3, 3),
+                strides=(1, 1, 1),
+                padding='same',
+                name='enc_ssc_1_1_0',
+                reuse=tf.compat.v1.AUTO_REUSE))
         h1_1 = lrelu(
             tf.compat.v1.layers.conv3d(
-                h1_base,
+                h1_1_0,
                 filters=32,
                 kernel_size=(3, 3, 3),
                 strides=(1, 1, 1),
                 padding='same',
                 name='enc_ssc_1_1',
-                reuse=tf.compat.v1.AUTO_REUSE)) * space_effective
-        h1_2 = lrelu(
-            tf.compat.v1.layers.conv3d(
-                h1_1,
-                filters=32,
-                kernel_size=(3, 3, 3),
-                strides=(1, 1, 1),
-                padding='same',
-                name='enc_ssc_1_2',
-                reuse=tf.compat.v1.AUTO_REUSE)) * space_effective
+                reuse=tf.compat.v1.AUTO_REUSE))
 
-        h2_0 = h1_0 + h1_2
-        h2_1 = tf.compat.v1.layers.conv3d(
+        h2_0 = (h1_0 + h1_1) * space_effective0
+
+        h2_1_0 = tf.compat.v1.layers.conv3d(
             h2_0,
             filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(1, 1, 1),
+            name='enc_ssc_2_1_0',
+            reuse=tf.compat.v1.AUTO_REUSE)
+        h2_1 = tf.compat.v1.layers.conv3d(
+            h2_1_0,
+            filters=32,
+            kernel_size=(3, 3, 3),
+            strides=(1, 1, 1),
+            padding='same',
+            dilation_rate=(1, 1, 1),
             name='enc_ssc_2_1',
-            reuse=tf.compat.v1.AUTO_REUSE) * space_effective
+            reuse=tf.compat.v1.AUTO_REUSE)
 
         h2_2 = tf.compat.v1.layers.conv3d(
-            h2_1,
+            h2_0,
             filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_2_2',
-            reuse=tf.compat.v1.AUTO_REUSE) * space_effective
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h3_0 = h2_2 + tf.compat.v1.layers.conv3d(
-            h2_1,
-            filters=32,
-            kernel_size=(3, 3, 3),
-            strides=(1, 1, 1),
-            padding='same',
-            dilation_rate=(1, 1, 1),
-            name='enc_ssc_3_0',
-            reuse=tf.compat.v1.AUTO_REUSE) * space_effective
+        h3_0 = (h2_1 + h2_2) * space_effective0
 
         h3_1 = tf.compat.v1.layers.conv3d(
             h3_0,
@@ -798,17 +781,19 @@ class depvox_gan():
             padding='same',
             dilation_rate=(1, 1, 1),
             name='enc_ssc_3_1',
-            reuse=tf.compat.v1.AUTO_REUSE) * space_effective
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h4_0 = h3_1 + tf.compat.v1.layers.conv3d(
+        h3_2 = tf.compat.v1.layers.conv3d(
             h3_1,
             filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(1, 1, 1),
-            name='enc_ssc_4_0',
-            reuse=tf.compat.v1.AUTO_REUSE) * space_effective
+            name='enc_ssc_3_2',
+            reuse=tf.compat.v1.AUTO_REUSE)
+
+        h4_0 = (h3_1 + h3_2) * space_effective0
 
         h4_1 = tf.compat.v1.layers.conv3d(
             h4_0,
@@ -818,17 +803,19 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='enc_ssc_4_1',
-            reuse=tf.compat.v1.AUTO_REUSE) * space_effective
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h5_0 = h4_1 + tf.compat.v1.layers.conv3d(
+        h4_2 = tf.compat.v1.layers.conv3d(
             h4_1,
             filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(2, 2, 2),
-            name='enc_ssc_5_0',
-            reuse=tf.compat.v1.AUTO_REUSE) * space_effective
+            name='enc_ssc_4_2',
+            reuse=tf.compat.v1.AUTO_REUSE)
+
+        h5_0 = (h4_1 + h4_2) * space_effective0
 
         h5_1 = tf.compat.v1.layers.conv3d(
             h5_0,
@@ -838,28 +825,21 @@ class depvox_gan():
             padding='same',
             dilation_rate=(2, 2, 2),
             name='enc_ssc_5_1',
-            reuse=tf.compat.v1.AUTO_REUSE) * space_effective
+            reuse=tf.compat.v1.AUTO_REUSE)
 
-        h6_0 = h5_1 + tf.compat.v1.layers.conv3d(
+        h5_2 = tf.compat.v1.layers.conv3d(
             h5_1,
             filters=32,
             kernel_size=(3, 3, 3),
             strides=(1, 1, 1),
             padding='same',
             dilation_rate=(2, 2, 2),
-            name='enc_ssc_6_0',
-            reuse=tf.compat.v1.AUTO_REUSE) * space_effective
+            name='enc_ssc_5_2',
+            reuse=tf.compat.v1.AUTO_REUSE)
+
+        h6_0 = (h5_1 + h5_2) * space_effective0
         h7_0 = tf.concat([h4_0, h5_0, h6_0], -1)
 
-        space_effective = lrelu(
-            tf.compat.v1.layers.conv3d_transpose(
-                space_effective,
-                filters=1,
-                kernel_size=(4, 4, 4),
-                strides=(2, 2, 2),
-                padding='same',
-                name='space_effective_2',
-                reuse=tf.compat.v1.AUTO_REUSE))
         h7_1 = tf.compat.v1.layers.conv3d_transpose(
             h7_0,
             filters=32,
@@ -906,8 +886,10 @@ class depvox_gan():
             strides=(self.stride[1], self.stride[2], self.stride[3]),
             padding='same',
             name='enc_x_1',
-            reuse=tf.compat.v1.AUTO_REUSE)
+            reuse=tf.compat.v1.AUTO_REUSE) * space_effective0
 
+        space_effective2 = tf.nn.max_pool(
+            space_effective0, ksize=2, strides=2, padding='SAME')
         h2 = lrelu(
             tf.compat.v1.layers.conv3d(
                 h1,
@@ -917,8 +899,10 @@ class depvox_gan():
                 strides=(self.stride[1], self.stride[2], self.stride[3]),
                 padding='same',
                 name='enc_x_2',
-                reuse=tf.compat.v1.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE)) * space_effective2
 
+        space_effective2 = tf.nn.max_pool(
+            space_effective2, ksize=2, strides=2, padding='SAME')
         h3 = lrelu(
             tf.compat.v1.layers.conv3d(
                 h2,
@@ -928,7 +912,7 @@ class depvox_gan():
                 strides=(self.stride[1], self.stride[2], self.stride[3]),
                 padding='same',
                 name='enc_x_3',
-                reuse=tf.compat.v1.AUTO_REUSE))
+                reuse=tf.compat.v1.AUTO_REUSE)) * space_effective2
 
         if self.discriminative is True:
             h4 = lrelu(
