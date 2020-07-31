@@ -7,7 +7,7 @@ cfg = __C
 #
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'test'
+__C.TYPE_DATA = 'train'
 
 __C.SUB_CONFIG_FILE = []
 

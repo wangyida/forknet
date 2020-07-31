@@ -149,6 +149,7 @@ if __name__ == "__main__":
     # save voxel as npy files
     pbar = ProgressBar()
     # parallel processing for samples
+    """
     from joblib import Parallel, delayed
     import multiprocessing
     num_cores = multiprocessing.cpu_count()
@@ -159,4 +160,3 @@ if __name__ == "__main__":
     """
     for file_depth in pbar(files_png):
         process_data(file_depth, dir_voxel, dir_pcd)
-    """
