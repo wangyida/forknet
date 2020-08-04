@@ -7,7 +7,7 @@ cfg = __C
 #
 __C.TYPE_TASK = 'scene'
 __C.TYPE_EVAL = 'synthetic'
-__C.TYPE_DATA = 'train'
+__C.TYPE_DATA = 'test'
 
 __C.SUB_CONFIG_FILE = []
 
@@ -46,45 +46,32 @@ path_hdd = '/media/wangyida/HDD/database/'
 if __C.TYPE_TASK is 'scene':
     if __C.TYPE_EVAL == 'real':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-r'
-        if __C.TYPE_DATA == 'test':
-            __C.DIR.VOXEL_PATH = path_hdd + 'NYU_Yida/test/voxel_semantic_npy/'
-            __C.DIR.SURF_PATH = path_hdd + 'NYU_Yida/test/surface_semantic_npy/'
-            __C.DIR.TSDF_PATH = path_hdd + 'NYU_Yida/test/depth_tsdf_camera_npy/'
-        elif __C.TYPE_DATA == 'train':
-            __C.DIR.VOXEL_PATH = path_ssd + 'NYU_Yida/train/voxel_semantic_npy/'
-            __C.DIR.SURF_PATH = path_ssd + 'NYU_Yida/train/surface_semantic_npy/'
-            __C.DIR.TSDF_PATH = path_ssd + 'NYU_Yida/train/depth_tsdf_camera_npy/'
+        
+        __C.DIR.VOXEL_PATH = path_hdd + 'NYU_Yida/' + __C.TYPE_DATA + '/voxel_semantic_npy/'
+        __C.DIR.SURF_PATH = path_hdd + 'NYU_Yida/' + __C.TYPE_DATA + '/surface_semantic_npy/'
+        __C.DIR.TSDF_PATH = path_hdd + 'NYU_Yida/' + __C.TYPE_DATA + '/depth_tsdf_camera_npy/'
     elif __C.TYPE_EVAL == 'synthetic':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-s'
-        if __C.TYPE_DATA == 'test':
-            __C.DIR.VOXEL_PATH = path_ssd + 'SUNCG_Yida/test/voxel_semantic_npy/'
-            __C.DIR.SURF_PATH = path_ssd + 'SUNCG_Yida/test/surface_semantic_npy/'
-            __C.DIR.TSDF_PATH = path_ssd + 'SUNCG_Yida/test/depth_tsdf_camera_npy/'
-        elif __C.TYPE_DATA == 'train':
-            __C.DIR.VOXEL_PATH = path_ssd + 'SUNCG_Yida/train/voxel_semantic_npy/'
-            __C.DIR.SURF_PATH = path_ssd + 'SUNCG_Yida/train/surface_semantic_npy/'
-            __C.DIR.TSDF_PATH = path_ssd + 'SUNCG_Yida/train/depth_tsdf_camera_npy/'
+
+        __C.DIR.VOXEL_PATH = path_ssd + 'SUNCG_Yida/' + __C.TYPE_DATA + '/voxel_semantic_npy/'
+        __C.DIR.SURF_PATH = path_ssd + 'SUNCG_Yida/' + __C.TYPE_DATA + '/surface_semantic_npy/'
+        __C.DIR.TSDF_PATH = path_ssd + 'SUNCG_Yida/' + __C.TYPE_DATA + '/depth_tsdf_camera_npy/'
 elif __C.TYPE_TASK is 'object':
     if __C.TYPE_EVAL == 'real':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-object-r'
-        if __C.TYPE_DATA == 'test':
-            __C.DIR.VOXEL_PATH = path_hdd + 'RecGAN_Yida/test/voxel_semantic_npy/'
-            __C.DIR.TSDF_PATH = path_hdd + 'RecGAN_Yida/test/depth_tsdf_npy/'
-        elif __C.TYPE_DATA == 'train':
-            __C.DIR.VOXEL_PATH = path_hdd + 'RecGAN_Yida/train/voxel_semantic_npy/'
-            __C.DIR.TSDF_PATH = path_hdd + 'RecGAN_Yida/train/depth_tsdf_npy/'
+
+        __C.DIR.VOXEL_PATH = path_hdd + 'RecGAN_Yida/' + __C.TYPE_DATA + '/voxel_semantic_npy/'
+        __C.DIR.TSDF_PATH = path_hdd + 'RecGAN_Yida/' + __C.TYPE_DATA + '/depth_tsdf_npy/'
     elif __C.TYPE_EVAL == 'synthetic':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-object-s'
-        if __C.TYPE_DATA == 'test':
-            __C.DIR.VOXEL_PATH = path_hdd + 'Shapenet_Yida/test/voxel_semantic_npy/'
-            __C.DIR.TSDF_PATH = path_hdd + 'Shapenet_Yida/test/depth_tsdf_npy/'
-        elif __C.TYPE_DATA == 'train':
-            __C.DIR.VOXEL_PATH = path_hdd + 'Shapenet_Yida/train/voxel_semantic_npy/'
-            __C.DIR.TSDF_PATH = path_hdd + 'Shapenet_Yida/train/depth_tsdf_npy/'
-    elif __C.TYPE_EVAL == 'register':
-        __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-object-s'
-        __C.DIR.VOXEL_PATH = './data/object_registration/voxel_semantic_npy/'
-        __C.DIR.TSDF_PATH = './data/object_registration/depth_tsdf_npy/'
+
+        __C.DIR.VOXEL_PATH = path_hdd + 'Shapenet_Yida/' + __C.TYPE_DATA + '/voxel_semantic_npy/'
+        __C.DIR.TSDF_PATH = path_hdd + 'Shapenet_Yida/' + __C.TYPE_DATA + '/depth_tsdf_npy/'
+elif __C.TYPE_TASK is 'fusion':
+    __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-fusion'
+
+    __C.DIR.VOXEL_PATH = path_hdd + '050_200/' + __C.TYPE_DATA + '/gt/'
+    __C.DIR.TSDF_PATH = path_hdd + '050_200/' + __C.TYPE_DATA + '/train/'
 
 __C.DIR.TRAIN_OBJ_PATH = './train_vox'
 __C.DIR.EVAL_PATH = './eval'
