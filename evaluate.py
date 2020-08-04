@@ -120,8 +120,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
         # Evaluation masks
         if cfg.TYPE_TASK == 'scene':
             # occluded region
-            space_effective = np.where(voxel_test > -1, 1, 0) * np.where(
-                part_test > -1, 1, 0)
+            space_effective = np.where(part_test > -1, 1, 0)
             """
             voxel_test *= space_effective
             part_test *= space_effective
