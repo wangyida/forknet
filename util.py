@@ -90,7 +90,11 @@ def scene_model_id_pair(dataset_portion=[]):
     scene_name_pair = []  # full path of the objs files
 
     model_path = cfg.DIR.TSDF_PATH
+    """
     models = os.listdir(model_path)
+    """
+    with open('./train_fusion.list') as file:
+        models = file.read().splitlines()
 
     scene_name_pair.extend([(model_path, model_id) for model_id in models])
 
@@ -103,12 +107,16 @@ def scene_model_id_pair(dataset_portion=[]):
 
 def scene_model_id_pair_test(dataset_portion=[]):
 
-    amount_of_test_sample = 20
+    amount_of_test_sample = 50
 
     scene_name_pair = []  # full path of the objs files
 
     model_path = cfg.DIR.TSDF_PATH
+    """
     models = os.listdir(model_path)
+    """
+    with open('./test_fusion.list') as file:
+        models = file.read().splitlines()
 
     scene_name_pair.extend([(model_path, model_id) for model_id in models])
 
@@ -120,7 +128,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
     # print('The first sample is:', data_paths_test[0][1])
 
     data_paths = data_paths_test
-    # data_paths = data_paths_test[:amount_of_test_sample]
+    data_paths = data_paths_test[:amount_of_test_sample]
 
     num_models = len(data_paths)
     print('The amount of test data: %d' % num_models)

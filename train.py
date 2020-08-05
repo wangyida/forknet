@@ -168,7 +168,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             # Evaluation masks
             # NOTICE that the target should never have negative values,
             # otherwise the one-hot coding never works for that region
-            if cfg.TYPE_TASK == 'scene':
+            if cfg.TYPE_TASK == 'scene' or 'fusion':
                 space_effective = np.where( bth_tsdf > -1, 1, 0)
                 """
                 bth_voxel *= space_effective

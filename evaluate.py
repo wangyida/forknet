@@ -57,8 +57,8 @@ def IoU(on_gt, on_pd, vox_shape, IoU_compared=None):
             np.sum(IoUs[1:vox_shape[3]]) / (vox_shape[3] - 1), 1)
     elif vox_shape[3] == 2:
         IoUs[vox_shape[3]] = np.round(np.sum(IoUs) / vox_shape[3], 1)
-    print 'IoU average: ' + str(IoUs[vox_shape[3]])
-    print ''
+    print('IoU average: ', str(IoUs[vox_shape[3]]))
+    print('')
     return IoUs
 
 
@@ -118,7 +118,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
             dataset_portion=cfg.TRAIN.DATASET_PORTION)
 
         # Evaluation masks
-        if cfg.TYPE_TASK == 'scene':
+        if cfg.TYPE_TASK == 'scene' or 'fusion':
             # occluded region
             space_effective = np.where(part_test > -1, 1, 0)
             """
@@ -211,6 +211,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                            '%s.pcd' % data_paths[i][1][:-4])
                 output_pcds = np.concatenate((pts_coord, pts_color[:, 0:3]),
                                              -1)
+                synset_id, _ = data_paths[i][1][:-4].split('/')
+                os.makedirs(os.path.join('results_pcds', synset_id), exist_ok=True)
                 save_pcd(output_name, output_pcds)
 
         np.argmax(
@@ -376,7 +378,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
         for l in np.arange(batch_size):
             for r in np.arange(batch_size):
                 if l != r:
-                    print l, r
+                    print(l, r)
                     base_num_left = l
                     base_num_right = r
                     left = np.reshape(decode_z[base_num_left], [
@@ -464,7 +466,7 @@ def evaluate(batch_size, checknum, mode, discriminative):
         decode_z = decode_z[:batch_size]
         noise_num = 10
         for base_num in np.arange(batch_size):
-            print base_num
+            print(base_num)
             base = np.reshape(decode_z[base_num], [
                 1, start_vox_size[0], start_vox_size[1], start_vox_size[2],
                 dim_z

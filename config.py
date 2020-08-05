@@ -5,14 +5,14 @@ cfg = __C
 #
 # Common
 #
-__C.TYPE_TASK = 'scene'
+__C.TYPE_TASK = 'fusion'
 __C.TYPE_EVAL = 'synthetic'
 __C.TYPE_DATA = 'test'
 
 __C.SUB_CONFIG_FILE = []
 
 __C.CONST = edict()
-__C.CONST.BATCH_SIZE = 8
+__C.CONST.BATCH_SIZE = 4
 __C.CONST.BATCH_SIZE_TEST = 5
 __C.SAVER_MAX = 20000
 __C.CHECK_FREQ = 10000
@@ -35,6 +35,10 @@ elif __C.TYPE_TASK is 'object':
     __C.CONST.N_VOX = [64, 64, 64]
     __C.NET.START_VOX = [4, 4, 4]
     __C.NET.DIM = [512, 256, 128, 32, 5]
+elif __C.TYPE_TASK is 'fusion':
+    __C.CONST.N_VOX = [64, 64, 64]
+    __C.NET.START_VOX = [4, 4, 4]
+    __C.NET.DIM = [128, 64, 32, 16, 12]
 
 #
 # Directories
@@ -71,6 +75,7 @@ elif __C.TYPE_TASK is 'fusion':
     __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-fusion'
 
     __C.DIR.VOXEL_PATH = path_hdd + '050_200/' + __C.TYPE_DATA + '/gt/'
+    __C.DIR.SURF_PATH = path_hdd + '050_200/' + __C.TYPE_DATA + '/gt/'
     __C.DIR.TSDF_PATH = path_hdd + '050_200/' + __C.TYPE_DATA + '/train/'
 
 __C.DIR.TRAIN_OBJ_PATH = './train_vox'
