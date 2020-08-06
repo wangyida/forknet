@@ -90,11 +90,11 @@ def process_data(file_depth, dir_voxel, dir_pcd):
         """
         call([
             "cp", "./tsdf.ply",
-            dir_ply + img_path[name_start:name_end] + '.ply'
+            dir_pcd + img_path[name_start:name_end] + '.ply'
         ])
 
         pcd = read_point_cloud("./tsdf.ply")
-        write_point_cloud(dir_pcd + img_path[name_start:name_end] + '.pcd', pcd)
+        write_point_cloud(dir_pcd + img_path[name_start:name_end] + '.ply', pcd)
         """
         # call(["rm -rf", tsdf_bin_path])
     else:
