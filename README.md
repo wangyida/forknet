@@ -18,11 +18,6 @@ If you find this work useful in yourr research, please cite:
 
  <img src="iccv/PrasentationICCV.gif" alt="road condition" frameborder="0" style="border:0" >
 
-### Architecture
-
-The overall architecture is combined with 1 encoder with input of a TSDF volume and 3 decoders.
-![](iccv/architecture.png)
-
 ## Data preprocessing
 ### Depth image to TSDF volumes
 Firstly you need to go to depth-tsdf folder to compile the our depth converter. Then *camake* and *make* are suggested tools to compile our codes.
@@ -60,6 +55,7 @@ wait
 CUDA_VISIBLE_DEVICES=0 python3 main.py --mode train --discriminative True
 ```
 ### Testing
+#### Listing samples
 Firstly a list of name of the samples are needed, you can generate it easilly in Linux using `find`, assume that all the testing samples are located in `/media/wangyida/HDD/database/050_200/test/train`, a `test_fusion.list` would be generated
 ```shell
 find /media/wangyida/HDD/database/050_200/test/train -name '*.npy' > test_fusion.list
@@ -68,6 +64,7 @@ Then the path prefix of `/media/wangyida/HDD/database/050_200/test/train` should
 ```vim
 :%s/\/media\/wangyida\/HDD\/database\/050_200\/test\/train\///gc
 ```
+#### Inference
 We provide a compact version of ForkNet which is only 25 MB in the pretrained_model folder
 If the model is not discriminative, notice that this model is sparser 
 ```shell
@@ -78,6 +75,11 @@ Otherwise
 CUDA_VISIBLE_DEVICES=1 python main.py --mode evaluate_recons --conf_epoch 37 --discriminative True
 ```
 where '--conf_epoch' indicates the index of the pretrained model
+
+### Architecture
+
+The overall architecture is combined with 1 encoder with input of a TSDF volume and 3 decoders.
+![](iccv/architecture.png)
 
 ## Qualitatives
 ![](iccv/teaser.png)
