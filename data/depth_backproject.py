@@ -87,11 +87,11 @@ def process_data(file_depth, dir_voxel, dir_pcd):
         np.save(dir_voxel + img_path[name_start:name_end] + '.npy', voxel)
 
         # save pcd
-        """
         call([
             "cp", "./tsdf.ply",
             dir_pcd + img_path[name_start:name_end] + '.ply'
         ])
+        """
 
         pcd = read_point_cloud("./tsdf.ply")
         write_point_cloud(dir_pcd + img_path[name_start:name_end] + '.ply', pcd)
