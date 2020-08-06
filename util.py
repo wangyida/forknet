@@ -115,7 +115,7 @@ def scene_model_id_pair_test(dataset_portion=[]):
     """
     models = os.listdir(model_path)
     """
-    with open('./test_fusion.list') as file:
+    with open('./lists_infer/test_fusion.list') as file:
         models = file.read().splitlines()
 
     scene_name_pair.extend([(model_path, model_id) for model_id in models])

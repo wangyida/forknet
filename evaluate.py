@@ -211,8 +211,9 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                            '%s.pcd' % data_paths[i][1][:-4])
                 output_pcds = np.concatenate((pts_coord, pts_color[:, 0:3]),
                                              -1)
-                synset_id, _ = data_paths[i][1][:-4].split('/')
-                os.makedirs(os.path.join('results_pcds', synset_id), exist_ok=True)
+                if data_paths[i][1][:-4].find('/') > 0:
+                    synset_id, _ = data_paths[i][1][:-4].split('/')
+                    os.makedirs(os.path.join('results_pcds', synset_id), exist_ok=True)
                 save_pcd(output_name, output_pcds)
 
         np.argmax(

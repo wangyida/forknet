@@ -60,10 +60,18 @@ wait
 CUDA_VISIBLE_DEVICES=0 python3 main.py --mode train --discriminative True
 ```
 ### Testing
+Firstly a list of name of the samples are needed, you can generate it easilly in Linux using `find`, assume that all the testing samples are located in `/media/wangyida/HDD/database/050_200/test/train`, a `test_fusion.list` would be generated
+```shell
+find /media/wangyida/HDD/database/050_200/test/train -name '*.npy' > test_fusion.list
+```
+Then the path prefix of `/media/wangyida/HDD/database/050_200/test/train` should be removed in the `.list` file. It could be easilly dealt by VIM using
+```vim
+:%s/\/media\/wangyida\/HDD\/database\/050_200\/test\/train\///gc
+```
 We provide a compact version of ForkNet which is only 25 MB in the pretrained_model folder
 If the model is not discriminative, notice that this model is sparser 
 ```shell
-CUDA_VISIBLE_DEVICES=1 python main.py --mode evaluate_recons --conf_epoch 18
+CUDA_VISIBLE_DEVICES=1 python main.py --mode evaluate_recons --conf_epoch 59
 ```
 Otherwise
 ```shell
