@@ -204,7 +204,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
             results_pcds = np.argmax(pd_full, axis=4)
             for i in range(np.shape(results_pcds)[0]):
                 pcd_idx = np.where(results_pcds[i] > 0)
-                pts_coord = np.float32(np.transpose(pcd_idx)) / 80 - 0.5
+                # pts_coord = np.float32(np.transpose(pcd_idx)) / 80 - 0.5
+                pts_coord = np.float32(np.transpose(pcd_idx))
                 pts_color = matplotlib.cm.Paired(
                     np.float32(results_pcds[i][pcd_idx]) / 11 - 0.5 / 11)
                 output_name = os.path.join('results_pcds',
