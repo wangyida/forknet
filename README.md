@@ -15,10 +15,9 @@ If you find this work useful in yourr research, please cite:
 ```
 
 ## ForkNet
-### Semantic Scene Completion
+Based on a single encoder and three separate generators used to reconstruct different geometric and semantic representations of the original and completed scene, all sharing the same latent space.
  <img src="iccv/ForkNet_nyu.gif" alt="road condition" frameborder="0" style="border:0" >
 
-### Single Object Completion 
  <img src="iccv/ForkNet_shapenet.gif" alt="road condition" frameborder="0" style="border:0" >
 
 ## Data preprocessing
@@ -85,9 +84,11 @@ The overall architecture is combined with 1 encoder with input of a TSDF volume 
 ![](iccv/architecture.png)
 
 ## Qualitatives
+The [NYU](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html) dataset is composed of 1,449 indoor depth images captured with a Kinect depth sensor
 ![](iccv/teaser.png)
 ![](iccv/qualitative.png)
 
 ### Generated synthetic samples
+We build the new dataset by sampling the features directly from latent space which generates a pair of partial volumetric surface and completed volumetric semantic surface.
 Given 1 latent sample, we can use 2 decoders to generate a pair of TSDF volume and semantic scene separately.
 ![](iccv/learning_dataset.png)
