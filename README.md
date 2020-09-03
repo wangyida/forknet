@@ -15,8 +15,11 @@ If you find this work useful in yourr research, please cite:
 ```
 
 ## ForkNet
+### Semantic Scene Completion
+ <img src="iccv/ForkNet_nyu.gif" alt="road condition" frameborder="0" style="border:0" >
 
- <img src="iccv/PrasentationICCV.gif" alt="road condition" frameborder="0" style="border:0" >
+### Single Object Completion 
+ <img src="iccv/ForkNet_shapenet.gif" alt="road condition" frameborder="0" style="border:0" >
 
 ## Data preprocessing
 ### Depth image to TSDF volumes
