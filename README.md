@@ -1,18 +1,7 @@
 # ForkNet: Multi-branch Volumetric Semantic Completion from a Single Depth Image
 
-The implementation of our paper accepted in **ICCV** *2019* (*International Conference on Computer Vision*, IEEE)
+The implementation of our [paper](https://openaccess.thecvf.com/content_ICCV_2019/papers/Wang_ForkNet_Multi-Branch_Volumetric_Semantic_Completion_From_a_Single_Depth_Image_ICCV_2019_paper.pdf) accepted in **ICCV** *2019* (*International Conference on Computer Vision*, IEEE) with authors:
 **[Yida Wang](https://wangyida.github.io/#about), David Tan, [Nassir Navab](http://campar.in.tum.de/Main/NassirNavab) and [Federico Tombari](http://campar.in.tum.de/Main/FedericoTombari)**.
-If you find this work useful in yourr research, please cite:
-
-```bash
-@inproceedings{wang2019forknet,
-  title={ForkNet: Multi-branch Volumetric Semantic Completion from a Single Depth Image},
-  author={Wang, Yida and Tan, David Joseph and Navab, Nassir and Tombari, Federico},
-  booktitle={Proceedings of the IEEE International Conference on Computer Vision},
-  pages={8608--8617},
-  year={2019}
-}
-```
 
 ## ForkNet
 Based on a single encoder and three separate generators used to reconstruct different geometric and semantic representations of the original and completed scene, all sharing the same latent space.
@@ -92,3 +81,15 @@ The [NYU](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html) dataset is c
 We build the new dataset by sampling the features directly from latent space which generates a pair of partial volumetric surface and completed volumetric semantic surface.
 Given 1 latent sample, we can use 2 decoders to generate a pair of TSDF volume and semantic scene separately.
 ![](iccv/learning_dataset.png)
+
+If you find this work useful in yourr research, please cite:
+
+```bash
+@inproceedings{wang2019forknet,
+  title={ForkNet: Multi-branch Volumetric Semantic Completion from a Single Depth Image},
+  author={Wang, Yida and Tan, David Joseph and Navab, Nassir and Tombari, Federico},
+  booktitle={Proceedings of the IEEE International Conference on Computer Vision},
+  pages={8608--8617},
+  year={2019}
+}
+```
