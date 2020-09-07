@@ -10,9 +10,9 @@ Based on a single encoder and three separate generators used to reconstruct diff
  <img src="iccv/ForkNet_shapenet.gif" alt="road condition" frameborder="0" style="border:0" >
 
 Results of registration
- <img src="iccv/slow.gif" alt="road condition" frameborder="0" style="border:0" >
-
- <img src="iccv/fast.gif" alt="road condition" frameborder="0" style="border:0" >
+| Slow | Fast |
+:-------------------------:|:-------------------------:
+ <img src="iccv/slow.gif" alt="road condition" frameborder="0" style="border:0" > | <img src="iccv/fast.gif" alt="road condition" frameborder="0" style="border:0" >
 
 ## Data preprocessing
 ### Depth image to TSDF volumes
