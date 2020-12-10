@@ -1,7 +1,9 @@
 # ForkNet: Multi-branch Volumetric Semantic Completion from a Single Depth Image
 
-The implementation of our [paper](https://openaccess.thecvf.com/content_ICCV_2019/papers/Wang_ForkNet_Multi-Branch_Volumetric_Semantic_Completion_From_a_Single_Depth_Image_ICCV_2019_paper.pdf) accepted in **ICCV** *2019* (*International Conference on Computer Vision*, IEEE) with authors:
-**[Yida Wang](https://wangyida.github.io/#about), David Tan, [Nassir Navab](http://campar.in.tum.de/Main/NassirNavab) and [Federico Tombari](http://campar.in.tum.de/Main/FedericoTombari)**.
+The implementation of our [paper](https://openaccess.thecvf.com/content_ICCV_2019/papers/Wang_ForkNet_Multi-Branch_Volumetric_Semantic_Completion_From_a_Single_Depth_Image_ICCV_2019_paper.pdf) accepted in **ICCV** *2019* (*International Conference on Computer Vision*, IEEE) 
+
+Authors:
+[Yida Wang](https://wangyida.github.io), David Tan, [Nassir Navab](http://campar.in.tum.de/Main/NassirNavab) and [Federico Tombari](http://campar.in.tum.de/Main/FedericoTombari)
 
 ## ForkNet
 Based on a single encoder and three separate generators used to reconstruct different geometric and semantic representations of the original and completed scene, all sharing the same latent space.
