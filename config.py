@@ -5,7 +5,7 @@ cfg = __C
 #
 # Common
 #
-__C.TYPE_TASK = 'fusion'
+__C.TYPE_TASK = '3rscan'
 __C.TYPE_EVAL = 'synthetic'
 __C.TYPE_DATA = 'test'
 
@@ -39,6 +39,10 @@ elif __C.TYPE_TASK is 'fusion':
     __C.CONST.N_VOX = [64, 64, 64]
     __C.NET.START_VOX = [4, 4, 4]
     __C.NET.DIM = [128, 64, 32, 16, 12]
+elif __C.TYPE_TASK is '3rscan':
+    __C.CONST.N_VOX = [64, 64, 64]
+    __C.NET.START_VOX = [4, 4, 4]
+    __C.NET.DIM = [128, 64, 32, 16, 40]
 
 #
 # Directories
@@ -50,7 +54,7 @@ path_hdd = '/media/wangyida/HDD/database/'
 if __C.TYPE_TASK is 'scene':
     if __C.TYPE_EVAL == 'real':
         __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-scene-r'
-        
+
         __C.DIR.VOXEL_PATH = path_hdd + 'NYU_Yida/' + __C.TYPE_DATA + '/voxel_semantic_npy/'
         __C.DIR.SURF_PATH = path_hdd + 'NYU_Yida/' + __C.TYPE_DATA + '/surface_semantic_npy/'
         __C.DIR.TSDF_PATH = path_hdd + 'NYU_Yida/' + __C.TYPE_DATA + '/depth_tsdf_camera_npy/'
@@ -77,6 +81,12 @@ elif __C.TYPE_TASK is 'fusion':
     __C.DIR.VOXEL_PATH = path_hdd + '050_200/' + __C.TYPE_DATA + '/gt/'
     __C.DIR.SURF_PATH = path_hdd + '050_200/' + __C.TYPE_DATA + '/gt/'
     __C.DIR.TSDF_PATH = path_hdd + '050_200/' + __C.TYPE_DATA + '/train/'
+elif __C.TYPE_TASK is '3rscan':
+    __C.DIR.CHECK_POINT_PATH = '/media/wangyida/HDD/models/depvox-gan-3rscan'
+
+    __C.DIR.VOXEL_PATH = path_hdd + '3RSCAN/voxelized/' + __C.TYPE_DATA + '/complete/'
+    __C.DIR.SURF_PATH = path_hdd + '3RSCAN/voxelized/' + __C.TYPE_DATA + '/complete/'
+    __C.DIR.TSDF_PATH = path_hdd + '3RSCAN/voxelized/' + __C.TYPE_DATA + '/partial/'
 
 __C.DIR.TRAIN_OBJ_PATH = './train_vox'
 __C.DIR.EVAL_PATH = './eval'

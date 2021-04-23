@@ -5,7 +5,7 @@ import os
 
 from config import cfg
 from model import depvox_gan
-from util import DataProcess, scene_model_id_pair, onehot, scene_model_id_pair_test
+from util import DataProcess, onehot, id_models_test
 from sklearn.metrics import average_precision_score
 import copy
 
@@ -23,7 +23,48 @@ tf.compat.v1.disable_eager_execution()
 def IoU(on_gt, on_pd, vox_shape, IoU_compared=None):
     # calc_IoU
     epsilon = 0.1
-    if vox_shape[3] == 12:
+    if vox_shape[3] == 40:
+        name_list = ['wall'
+ , 'floor'
+ , 'cabinet'
+ , 'bed'
+ , 'chair'
+ , 'sofa'
+ , 'table'
+ , 'door'
+ , 'window'
+ , 'bookshelf'
+ , 'picture'
+ , 'counter'
+ , 'blinds'
+ , 'desk'
+ , 'shelves'
+ , 'curtain'
+ , 'dresser'
+ , 'pillow'
+ , 'mirror'
+ , 'floor mat'
+ , 'clothes'
+ , 'ceiling'
+ , 'books'
+ , 'refridgerator'
+ , 'television'
+ , 'paper'
+ , 'towel'
+ , 'shower curtain'
+ , 'box'
+ , 'whiteboard'
+ , 'person'
+ , 'night stand'
+ , 'toilet'
+ , 'sink'
+ , 'lamp'
+ , 'bathtub'
+ , 'bag'
+ , 'otherstructure'
+ , 'otherfurniture'
+ , 'otherprop']
+    elif vox_shape[3] == 12:
         name_list = [
             'emp', 'ceil', 'floor', 'wall', 'wind', 'chair', 'bed', 'sofa',
             'table', 'tvs', 'furn', 'obj'
@@ -62,7 +103,7 @@ def IoU(on_gt, on_pd, vox_shape, IoU_compared=None):
     return IoUs
 
 
-def evaluate(batch_size, checknum, mode, discriminative):
+def evaluate(batch_size, checknum, mode, discriminative, data_list):
 
     n_vox = cfg.CONST.N_VOX
     dim = cfg.NET.DIM
@@ -114,11 +155,11 @@ def evaluate(batch_size, checknum, mode, discriminative):
 
     if mode == 'recons':
         # evaluation for reconstruction
-        voxel_test, surf_test, part_test, num, data_paths = scene_model_id_pair_test(
-            dataset_portion=cfg.TRAIN.DATASET_PORTION)
+        voxel_test, surf_test, part_test, num, data_paths = id_models_test(
+            dataset_portion=cfg.TRAIN.DATASET_PORTION, data_list=data_list)
 
         # Evaluation masks
-        if cfg.TYPE_TASK == 'scene' or 'fusion':
+        if cfg.TYPE_TASK == 'scene' or 'fusion' or '3rscan':
             # occluded region
             space_effective = np.where(part_test > -1, 1, 0)
             """
@@ -194,8 +235,9 @@ def evaluate(batch_size, checknum, mode, discriminative):
         pd_part.astype('uint8').tofile(save_path + '/dec_part.bin')
 
         depsem_gt = np.multiply(voxel_test, np.clip(observed, 0, 1))
-        if cfg.TYPE_TASK == 'scene':
+        if cfg.TYPE_TASK == 'scene' or cfg.TYPE_TASK == '3rscan':
             depsem_gt[depsem_gt < 0] = 0
+            depsem_gt[depsem_gt > 39] = 39
         depsem_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
 
         # decoded
@@ -204,9 +246,9 @@ def evaluate(batch_size, checknum, mode, discriminative):
             results_pcds = np.argmax(pd_full, axis=4)
             for i in range(np.shape(results_pcds)[0]):
                 pcd_idx = np.where(results_pcds[i] > 0)
-                # pts_coord = np.float32(np.transpose(pcd_idx)) / 80 - 0.5
-                pts_coord = np.float32(np.transpose(pcd_idx))
-                pts_color = matplotlib.cm.Paired(
+                pts_coord = np.float32(np.transpose(pcd_idx)) / 64 - 0.5
+                # pts_coord = np.float32(np.transpose(pcd_idx))
+                pts_color = matplotlib.cm.rainbow(
                     np.float32(results_pcds[i][pcd_idx]) / 11 - 0.5 / 11)
                 output_name = os.path.join('results_pcds',
                                            '%s.pcd' % data_paths[i][1][:-4])
@@ -214,7 +256,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
                                              -1)
                 if data_paths[i][1][:-4].find('/') > 0:
                     synset_id, _ = data_paths[i][1][:-4].split('/')
-                    os.makedirs(os.path.join('results_pcds', synset_id), exist_ok=True)
+                    os.makedirs(
+                        os.path.join('results_pcds', synset_id), exist_ok=True)
                 save_pcd(output_name, output_pcds)
 
         np.argmax(
@@ -274,8 +317,8 @@ def evaluate(batch_size, checknum, mode, discriminative):
                         [z_surf_rnd_all, z_surf_rnd], axis=0)
                     z_full_rnd_all = np.concatenate(
                         [z_full_rnd_all, z_full_rnd], axis=0)
-                    print('Discrim score: ' + colored(
-                        np.mean(scores_samp), 'blue'))
+                    print('Discrim score: ' +
+                          colored(np.mean(scores_samp), 'blue'))
             gaussian_samp.astype('float32').tofile(save_path + '/sample_z.bin')
             np.argmax(
                 z_comp_rnd_all,

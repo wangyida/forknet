@@ -1,43 +1,48 @@
 import os
 import numpy as np
+import argparse
 
 from train import train
 from config import cfg
 import tensorflow as tf
 
-flags = tf.compat.v1.flags
-flags.DEFINE_integer("epoch", cfg.TRAIN.NUM_EPOCH,
-                     "Epoch to train [15]")  #n_epochs = cfg.TRAIN.NUM_EPOCH
-flags.DEFINE_float("learning_rate_G", cfg.LEARNING_RATE_G,
-                   "Learning rate for Generator of adam [0.0001]"
-                   )  #learning_rate_G = cfg.LEARNING_RATE_G
-flags.DEFINE_float("learning_rate_D", cfg.LEARNING_RATE_D,
-                   "Learning rate for Discriminator of adam [0.0001]"
-                   )  #learning_rate_D = cfg.LEARNING_RATE_D
-flags.DEFINE_integer(
-    "batch_size", cfg.CONST.BATCH_SIZE,
-    "The size of batch voxels [100]")  #batch_size = cfg.CONST.BATCH_SIZE
-flags.DEFINE_integer(
-    "batch_size_test", cfg.CONST.BATCH_SIZE_TEST,
-    "The size of batch voxels [100]")  #batch_size = cfg.CONST.BATCH_SIZE
+parser = argparse.ArgumentParser()
 
-flags.DEFINE_boolean("middle_start", False,
-                     "True for starting from the middle [False]")
-flags.DEFINE_integer(
-    "ini_epoch", 0,
-    "The number of initial epoch --if middle_start: False -> 0, True -> must assign the number [0]"
-)
-flags.DEFINE_string(
-    "mode", 'train',
-    "Execute mode: train/evaluate_recons/evaluate_interpolate/evaluate_noise")
-flags.DEFINE_boolean("discriminative", False,
-                     "Discriminative or not (True or False)")
-flags.DEFINE_integer(
-    "conf_epoch", 10000,
-    "The number of confirmation epoch to evaluate interpolate, reconstruction etc [100]"
-)
+parser.add_argument(
+    '--middle_start',
+    type=bool,
+    default=False,
+    help='Starting from the middle')
+parser.add_argument(
+    '--discriminative', type=bool, default=False, help='Discriminative or not')
+parser.add_argument('--epoch', type=int, default=15, help='Epoch to train')
+parser.add_argument(
+    '--batch_size', type=int, default=cfg.CONST.BATCH_SIZE, help='Batch size')
+parser.add_argument('--ini_epoch', type=int, default=0, help='Initial epoch')
+parser.add_argument(
+    '--conf_epoch',
+    type=int,
+    default=10000,
+    help='Confirmation epoch to evaluate interpolate, reconstruction')
+parser.add_argument(
+    '--mode', type=str, default='train', help='train or validate')
+parser.add_argument(
+    '--data_list',
+    type=str,
+    default='./train_3rscan.list',
+    help='train or validate')
+parser.add_argument(
+    '--learning_rate_G',
+    type=float,
+    default=cfg.LEARNING_RATE_G,
+    help='Learning rate for Generator of Adam')
+parser.add_argument(
+    '--learning_rate_D',
+    type=float,
+    default=cfg.LEARNING_RATE_D,
+    help='Learning rate for Discriminator of Adam')
 
-FLAGS = flags.FLAGS
+FLAGS = parser.parse_args()
 
 
 def main():
@@ -53,7 +58,7 @@ def main():
     if FLAGS.mode == 'train':
         train(FLAGS.epoch, FLAGS.learning_rate_G, FLAGS.learning_rate_D,
               FLAGS.batch_size, FLAGS.middle_start, FLAGS.ini_epoch,
-              FLAGS.discriminative)
+              FLAGS.discriminative, FLAGS.data_list)
     elif FLAGS.mode == 'evaluate_recons' or 'evaluate_interpolate' or 'evaluate_noise':
         from evaluate import evaluate
         if FLAGS.mode == 'evaluate_recons':
@@ -62,10 +67,9 @@ def main():
             mode = 'interpolate'
         else:
             mode = 'noise'
-        evaluate(FLAGS.batch_size_test, FLAGS.conf_epoch, mode,
-                 FLAGS.discriminative)
+        evaluate(8, FLAGS.conf_epoch, mode, FLAGS.discriminative,
+                 FLAGS.data_list)
 
 
 if __name__ == '__main__':
-    #tf.app.run()
     main()

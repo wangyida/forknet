@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from config import cfg
-from util import DataProcess, scene_model_id_pair
+from util import DataProcess, id_models_train
 from model import depvox_gan
 
 from colorama import init
@@ -21,7 +21,7 @@ def learning_rate(rate, step):
 
 
 def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
-          check_num, discriminative):
+          check_num, discriminative, data_list):
     beta_G = cfg.TRAIN.ADAM_BETA_G
     beta_D = cfg.TRAIN.ADAM_BETA_D
     n_vox = cfg.CONST.N_VOX
@@ -58,7 +58,8 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     sess = tf.compat.v1.Session(config=config_gpu)
     saver = tf.compat.v1.train.Saver(max_to_keep=cfg.SAVER_MAX)
 
-    data_paths = scene_model_id_pair(dataset_portion=cfg.TRAIN.DATASET_PORTION)
+    data_paths = id_models_train(
+        dataset_portion=cfg.TRAIN.DATASET_PORTION, data_list=data_list)
     print(colored('The amount of data: %d' % len(data_paths), 'green'))
     data_process = DataProcess(data_paths, batch_size, repeat=True)
 
@@ -169,7 +170,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
             # NOTICE that the target should never have negative values,
             # otherwise the one-hot coding never works for that region
             if cfg.TYPE_TASK == 'scene' or 'fusion':
-                space_effective = np.where( bth_tsdf > -1, 1, 0)
+                space_effective = np.where(bth_tsdf > -1, 1, 0)
                 """
                 bth_voxel *= space_effective
                 bth_tsdf *= space_effective

@@ -82,7 +82,7 @@ class DataProcess():
         return batch_surf
 
 
-def scene_model_id_pair(dataset_portion=[]):
+def id_models_train(dataset_portion=[], data_list='./train_3rscan.list'):
     '''
     Load sceneId, model names from a suncg dataset.
     '''
@@ -93,7 +93,7 @@ def scene_model_id_pair(dataset_portion=[]):
     """
     models = os.listdir(model_path)
     """
-    with open('./train_fusion.list') as file:
+    with open(data_list) as file:
         models = file.read().splitlines()
 
     scene_name_pair.extend([(model_path, model_id) for model_id in models])
@@ -105,17 +105,15 @@ def scene_model_id_pair(dataset_portion=[]):
     return portioned_scene_name_pair
 
 
-def scene_model_id_pair_test(dataset_portion=[]):
+def id_models_test(dataset_portion=[],
+                   data_list='./lists_infer/test_3rscan.list'):
 
     amount_of_test_sample = 50
 
     scene_name_pair = []  # full path of the objs files
 
     model_path = cfg.DIR.TSDF_PATH
-    """
-    models = os.listdir(model_path)
-    """
-    with open('./lists_infer/test_fusion_0050_02.list') as file:
+    with open(data_list) as file:
         models = file.read().splitlines()
 
     scene_name_pair.extend([(model_path, model_id) for model_id in models])
