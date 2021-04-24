@@ -67,7 +67,7 @@ def main():
             mode = 'interpolate'
         else:
             mode = 'noise'
-        evaluate(8, FLAGS.conf_epoch, mode, FLAGS.discriminative,
+        evaluate(4, FLAGS.conf_epoch, mode, FLAGS.discriminative,
                  FLAGS.data_list)
 
 

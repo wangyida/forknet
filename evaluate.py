@@ -160,7 +160,7 @@ def evaluate(batch_size, checknum, mode, discriminative, data_list):
             dataset_portion=cfg.TRAIN.DATASET_PORTION, data_list=data_list)
 
         # Evaluation masks
-        if cfg.TYPE_TASK == 'scene' or 'fusion' or '3rscan':
+        if cfg.dataset == 'scene' or 'fusion' or '3rscan':
             # occluded region
             space_effective = np.where(part_test > -1, 1, 0)
             """
@@ -221,7 +221,7 @@ def evaluate(batch_size, checknum, mode, discriminative, data_list):
 
         sdf_volume = np.round(10 * np.abs(np.array(part_test)))
         observed = np.array(part_test)
-        if cfg.TYPE_TASK == 'scene':
+        if cfg.dataset == 'scene':
             observed = np.abs(observed)
             observed *= 10
             observed -= 7
@@ -229,22 +229,21 @@ def evaluate(batch_size, checknum, mode, discriminative, data_list):
             pd_part = np.abs(pd_part)
             pd_part *= 10
             pd_part -= 7
-        elif cfg.TYPE_TASK == 'object':
+        elif cfg.dataset == 'object':
             observed = np.clip(observed, 0, 1)
             pd_part = np.clip(pd_part, 0, 1)
         sdf_volume.astype('uint8').tofile(save_path + '/surface.bin')
         pd_part.astype('uint8').tofile(save_path + '/dec_part.bin')
 
         depsem_gt = np.multiply(voxel_test, np.clip(observed, 0, 1))
-        if cfg.TYPE_TASK == 'scene' or cfg.TYPE_TASK == '3rscan':
+        if cfg.dataset == 'scene' or cfg.dataset == '3rscan':
             depsem_gt[depsem_gt < 0] = 0
         depsem_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
 
         # decoded
         do_save_pcd = True
         if do_save_pcd is True:
-            results_pcds = np.argmax(pd_full, axis=4)
-            results_pcds = voxel_test
+            results_pcds = np.argmax(pd_comp, axis=4)
             for i in range(np.shape(results_pcds)[0]):
                 pcd_idx = np.where(results_pcds[i] > 0)
                 pts_coord = np.float32(np.transpose(pcd_idx)) / 64 - 0.5
@@ -330,11 +329,11 @@ def evaluate(batch_size, checknum, mode, discriminative, data_list):
             np.argmax(
                 z_full_rnd_all,
                 axis=4).astype('uint8').tofile(save_path + '/gen_full.bin')
-            if cfg.TYPE_TASK == 'scene':
+            if cfg.dataset == 'scene':
                 z_part_rnd_all = np.abs(z_part_rnd_all)
                 z_part_rnd_all *= 10
                 z_part_rnd_all -= 7
-            elif cfg.TYPE_TASK == 'object':
+            elif cfg.dataset == 'object':
                 z_part_rnd_all[z_part_rnd_all <= 0.4] = 0
                 z_part_rnd_all[z_part_rnd_all > 0.4] = 1
                 z_part_rnd = np.squeeze(z_part_rnd)
@@ -495,11 +494,11 @@ def evaluate(batch_size, checknum, mode, discriminative, data_list):
                     full_models_cat.astype('uint8').tofile(
                         save_path + '/interpolate/interpolation_f' + str(l) +
                         '-' + str(r) + '.bin')
-                    if cfg.TYPE_TASK == 'scene':
+                    if cfg.dataset == 'scene':
                         pd_part = np.abs(pd_part)
                         pd_part *= 10
                         pd_part -= 7
-                    elif cfg.TYPE_TASK == 'object':
+                    elif cfg.dataset == 'object':
                         pd_part = np.argmax(pd_part, axis=4)
                     pd_part.astype('uint8').tofile(
                         save_path + '/interpolate/interpolation_p' + str(l) +
