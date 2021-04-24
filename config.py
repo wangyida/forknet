@@ -12,7 +12,7 @@ __C.TYPE_DATA = 'test'
 __C.SUB_CONFIG_FILE = []
 
 __C.CONST = edict()
-__C.CONST.BATCH_SIZE = 4
+__C.CONST.BATCH_SIZE = 8
 __C.CONST.BATCH_SIZE_TEST = 1
 __C.SAVER_MAX = 20000
 __C.CHECK_FREQ = 10000
@@ -42,7 +42,7 @@ elif __C.TYPE_TASK is 'fusion':
 elif __C.TYPE_TASK is '3rscan':
     __C.CONST.N_VOX = [64, 64, 64]
     __C.NET.START_VOX = [4, 4, 4]
-    __C.NET.DIM = [128, 64, 32, 16, 40]
+    __C.NET.DIM = [128, 64, 32, 16, 41]
 
 #
 # Directories

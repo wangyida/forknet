@@ -23,8 +23,9 @@ tf.compat.v1.disable_eager_execution()
 def IoU(on_gt, on_pd, vox_shape, IoU_compared=None):
     # calc_IoU
     epsilon = 0.1
-    if vox_shape[3] == 40:
-        name_list = ['wall'
+    if vox_shape[3] == 41:
+        name_list = ['empty'
+               , 'wall'
  , 'floor'
  , 'cabinet'
  , 'bed'
@@ -237,19 +238,19 @@ def evaluate(batch_size, checknum, mode, discriminative, data_list):
         depsem_gt = np.multiply(voxel_test, np.clip(observed, 0, 1))
         if cfg.TYPE_TASK == 'scene' or cfg.TYPE_TASK == '3rscan':
             depsem_gt[depsem_gt < 0] = 0
-            depsem_gt[depsem_gt > 39] = 39
         depsem_gt.astype('uint8').tofile(save_path + '/depth_seg_scene.bin')
 
         # decoded
         do_save_pcd = True
         if do_save_pcd is True:
             results_pcds = np.argmax(pd_full, axis=4)
+            results_pcds = voxel_test
             for i in range(np.shape(results_pcds)[0]):
                 pcd_idx = np.where(results_pcds[i] > 0)
                 pts_coord = np.float32(np.transpose(pcd_idx)) / 64 - 0.5
                 # pts_coord = np.float32(np.transpose(pcd_idx))
                 pts_color = matplotlib.cm.rainbow(
-                    np.float32(results_pcds[i][pcd_idx]) / 11 - 0.5 / 11)
+                    np.float32(results_pcds[i][pcd_idx]) / dim[4])
                 output_name = os.path.join('results_pcds',
                                            '%s.pcd' % data_paths[i][1][:-4])
                 output_pcds = np.concatenate((pts_coord, pts_color[:, 0:3]),
