@@ -418,7 +418,6 @@ class depvox_gan():
         batch_mean_full_gt = tf.reduce_mean(full_gt, [0, 1, 2, 3])
         ones = tf.ones_like(batch_mean_full_gt)
         inverse = tf.math.divide(ones, tf.add(batch_mean_full_gt, ones))
-
         weight_full = inverse * tf.math.divide(1., tf.reduce_sum(inverse))
 
         batch_mean_surf_gt = tf.reduce_mean(surf_gt, [0, 1, 2, 3])

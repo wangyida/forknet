@@ -243,12 +243,13 @@ def evaluate(batch_size, checknum, mode, discriminative, data_list):
         # decoded
         do_save_pcd = True
         if do_save_pcd is True:
-            results_pcds = np.argmax(pd_comp, axis=4)
+            # results_pcds = np.argmax(pd_comp, axis=4)
+            results_pcds = voxel_test
             for i in range(np.shape(results_pcds)[0]):
                 pcd_idx = np.where(results_pcds[i] > 0)
                 pts_coord = np.float32(np.transpose(pcd_idx)) / 64 - 0.5
                 # pts_coord = np.float32(np.transpose(pcd_idx))
-                pts_color = matplotlib.cm.rainbow(
+                pts_color = matplotlib.cm.gist_rainbow(
                     np.float32(results_pcds[i][pcd_idx]) / dim[4])
                 output_name = os.path.join('results_pcds',
                                            '%s.pcd' % data_paths[i][1][:-4])
