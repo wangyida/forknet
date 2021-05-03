@@ -17,7 +17,9 @@ def read_pcd(filename):
 
 def save_pcd(filename, points):
     # o3d.set_verbosity_level(VerbosityLevel.Error)
-    pcd = o3d.PointCloud()
-    pcd.points = o3d.Vector3dVector(points[:, 0:3])
-    pcd.colors = o3d.Vector3dVector(points[:, 3:6])
-    o3d.write_point_cloud(filename, pcd, compressed=True)
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points[:, 0:3])
+    pcd.colors = o3d.utility.Vector3dVector(points[:, 3:6])
+    o3d.io.write_point_cloud(filename, pcd,
+        write_ascii=True,
+        compressed=True)
