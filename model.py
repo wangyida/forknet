@@ -1,5 +1,4 @@
 import numpy as np
-
 from config import cfg
 import tensorflow as tf
 from util import *
@@ -9,8 +8,8 @@ from metric import sparse_ml
 def space_train(batch_size, vox_shape, comp_gt):
     air_mask = tf.random.uniform(
         shape=[batch_size, vox_shape[0], vox_shape[1], vox_shape[2]],
-        minval=-9,
-        maxval=1,
+        minval=-3,
+        maxval=2,
         dtype=tf.int32)
     air_mask = tf.clip_by_value(air_mask, clip_value_min=0, clip_value_max=1)
     air_mask = tf.dtypes.cast(

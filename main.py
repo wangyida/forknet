@@ -17,7 +17,9 @@ parser.add_argument(
     '--discriminative', type=bool, default=False, help='Discriminative or not')
 parser.add_argument('--epoch', type=int, default=15, help='Epoch to train')
 parser.add_argument(
-    '--batch_size', type=int, default=cfg.CONST.BATCH_SIZE, help='Batch size')
+    '--batch_size_train', type=int, default=cfg.CONST.BATCH_SIZE_TRAIN, help='Batch size')
+parser.add_argument(
+    '--batch_size_test', type=int, default=cfg.CONST.BATCH_SIZE_TEST, help='Batch size')
 parser.add_argument('--ini_epoch', type=int, default=0, help='Initial epoch')
 parser.add_argument(
     '--conf_epoch',
@@ -57,7 +59,7 @@ def main():
 
     if FLAGS.mode == 'train':
         train(FLAGS.epoch, FLAGS.learning_rate_G, FLAGS.learning_rate_D,
-              FLAGS.batch_size, FLAGS.middle_start, FLAGS.ini_epoch,
+              FLAGS.batch_size_train, FLAGS.middle_start, FLAGS.ini_epoch,
               FLAGS.discriminative, FLAGS.data_list)
     elif FLAGS.mode == 'evaluate_recons' or 'evaluate_interpolate' or 'evaluate_noise':
         from evaluate import evaluate
@@ -67,7 +69,7 @@ def main():
             mode = 'interpolate'
         else:
             mode = 'noise'
-        evaluate(4, FLAGS.conf_epoch, mode, FLAGS.discriminative,
+        evaluate(FLAGS.batch_size_test, FLAGS.conf_epoch, mode, FLAGS.discriminative,
                  FLAGS.data_list)
 
 
