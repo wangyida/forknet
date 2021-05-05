@@ -6,6 +6,22 @@ from util import *
 from metric import sparse_ml
 
 
+def space_train(batch_size, vox_shape, comp_gt):
+    air_mask = tf.random.uniform(
+        shape=[batch_size, vox_shape[0], vox_shape[1], vox_shape[2]],
+        minval=-9,
+        maxval=1,
+        dtype=tf.int32)
+    air_mask = tf.clip_by_value(air_mask, clip_value_min=0, clip_value_max=1)
+    air_mask = tf.dtypes.cast(
+        tf.clip_by_value(
+            air_mask + tf.dtypes.cast(comp_gt[:, :, :, :, 1], tf.int32),
+            clip_value_min=0,
+            clip_value_max=1), tf.float32)
+    air_mask = tf.expand_dims(air_mask, -1)
+    return air_mask
+
+
 def layernormalize(X, eps=1e-5, g=None, b=None):
     if X.get_shape().ndims == 5:
         mean, std = tf.nn.moments(X, [1, 2, 3, 4], keepdims=True)
@@ -13,7 +29,6 @@ def layernormalize(X, eps=1e-5, g=None, b=None):
 
         if g is not None and b is not None:
             X = X * g + b
-
     elif X.get_shape().ndims == 2:
         mean = tf.reduce_mean(X, 1)
         std = tf.reduce_mean(tf.square(X - mean), 1)
@@ -21,10 +36,8 @@ def layernormalize(X, eps=1e-5, g=None, b=None):
 
         if g is not None and b is not None:
             X = X * g + b
-
     else:
         raise NotImplementedError
-
     return X
 
 
@@ -41,11 +54,10 @@ def softmax(X, batch_size, vox_shape):
     expsum = tf.reshape(
         expsum, [batch_size, vox_shape[0], vox_shape[1], vox_shape[2], 1])
     soft = tf.math.divide(exp, expsum)
-
     return soft
 
 
-class depvox_gan():
+class network():
     def __init__(self,
                  batch_size=16,
                  vox_shape=[80, 48, 80, 12],
@@ -408,6 +420,16 @@ class depvox_gan():
             clip_value_max=1)
         comp_gt = tf.one_hot(comp_gt_, 2)
         comp_gt = tf.cast(comp_gt, tf.float32)
+        """
+        air_mask = tf.random.uniform(shape=[64, 64, 64], minval=-10, maxval=1, dtype=tf.int32)
+        air_mask = tf.clip_by_value(air_mask, clip_value_min=0, clip_value_max=1)
+        air_mask = tf.dtypes.cast(tf.clip_by_value(
+            air_mask + tf.dtypes.cast(comp_gt[:,:,:,:,1], tf.int32),
+            clip_value_min=0,
+            clip_value_max=1), tf.float32)
+        air_mask = tf.expand_dims(air_mask, -1)
+        """
+        air_mask = space_train(self.batch_size, self.vox_shape, comp_gt)
 
         Z = tf.compat.v1.placeholder(tf.float32, [
             None, self.start_vox_size[0], self.start_vox_size[1],
@@ -528,10 +550,11 @@ class depvox_gan():
         # complete
         recons_com_loss = tf.reduce_sum(
             -tf.reduce_sum(
-                self.lamda_gamma * comp_gt * tf.math.log(1e-6 + comp_dec) +
-                (1 - self.lamda_gamma) *
-                (1 - comp_gt) * tf.math.log(1e-6 + 1 - comp_dec), [1, 2, 3]) *
-            weight_complete, 1)
+                air_mask *
+                (self.lamda_gamma * comp_gt * tf.math.log(1e-6 + comp_dec) +
+                 (1 - self.lamda_gamma) *
+                 (1 - comp_gt) * tf.math.log(1e-6 + 1 - comp_dec)), [1, 2, 3])
+            * weight_complete, 1)
         """
         recons_com_loss += tf.reduce_sum(
             -tf.reduce_sum(
@@ -543,27 +566,30 @@ class depvox_gan():
         # geometric semantic scene completion (sscnet ops)
         recons_ssc_loss = tf.reduce_sum(
             -tf.reduce_sum(
-                self.lamda_gamma * full_gt * tf.math.log(1e-6 + sscnet) +
-                self.lamda_gamma * surf_gt * tf.math.log(1e-6 + sscnet) +
-                (1 - self.lamda_gamma) *
-                (1 - full_gt) * tf.math.log(1e-6 + 1 - sscnet), [1, 2, 3]) *
+                air_mask *
+                (self.lamda_gamma * full_gt * tf.math.log(1e-6 + sscnet) +
+                 self.lamda_gamma * surf_gt * tf.math.log(1e-6 + sscnet) +
+                 (1 - self.lamda_gamma) *
+                 (1 - full_gt) * tf.math.log(1e-6 + 1 - sscnet)), [1, 2, 3]) *
             weight_full, 1)
         # generative semantic scene completion (from latent features)
         recons_sem_loss = tf.reduce_sum(
             -tf.reduce_sum(
-                self.lamda_gamma * full_gt * tf.math.log(1e-6 + surf_dec) +
-                self.lamda_gamma * surf_gt * tf.math.log(1e-6 + surf_dec) +
-                (1 - self.lamda_gamma) *
-                (1 - surf_gt) * tf.math.log(1e-6 + 1 - surf_dec), [1, 2, 3]) *
-            weight_surf, 1)
+                air_mask *
+                (self.lamda_gamma * full_gt * tf.math.log(1e-6 + surf_dec) +
+                 self.lamda_gamma * surf_gt * tf.math.log(1e-6 + surf_dec) +
+                 (1 - self.lamda_gamma) *
+                 (1 - surf_gt) * tf.math.log(1e-6 + 1 - surf_dec)), [1, 2, 3])
+            * weight_surf, 1)
         # refine for segmentation
         refine_loss = tf.reduce_mean(
             tf.reduce_sum(
                 -tf.reduce_sum(
-                    self.lamda_gamma * full_gt * tf.math.log(1e-6 + full_dec) +
-                    self.lamda_gamma * surf_gt * tf.math.log(1e-6 + full_dec) +
-                    (1 - self.lamda_gamma) *
-                    (1 - full_gt) * tf.math.log(1e-6 + 1 - full_dec),
+                    air_mask *
+                    (self.lamda_gamma * full_gt * tf.math.log(1e-6 + full_dec)
+                     + self.lamda_gamma * surf_gt *
+                     tf.math.log(1e-6 + full_dec) + (1 - self.lamda_gamma) *
+                     (1 - full_gt) * tf.math.log(1e-6 + 1 - full_dec)),
                     [1, 2, 3]) * weight_full, 1))
         """
         recons_loss += tf.reduce_sum(

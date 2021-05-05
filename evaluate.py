@@ -4,7 +4,7 @@ import matplotlib
 import os
 
 from config import cfg
-from model import depvox_gan
+from model import network
 from util import DataProcess, onehot, id_models_test
 from sklearn.metrics import average_precision_score
 import copy
@@ -24,47 +24,16 @@ def IoU(on_gt, on_pd, vox_shape, IoU_compared=None):
     # calc_IoU
     epsilon = 0.1
     if vox_shape[3] == 41:
-        name_list = ['empty'
-               , 'wall'
- , 'floor'
- , 'cabinet'
- , 'bed'
- , 'chair'
- , 'sofa'
- , 'table'
- , 'door'
- , 'window'
- , 'bookshelf'
- , 'picture'
- , 'counter'
- , 'blinds'
- , 'desk'
- , 'shelves'
- , 'curtain'
- , 'dresser'
- , 'pillow'
- , 'mirror'
- , 'floor mat'
- , 'clothes'
- , 'ceiling'
- , 'books'
- , 'refridgerator'
- , 'television'
- , 'paper'
- , 'towel'
- , 'shower curtain'
- , 'box'
- , 'whiteboard'
- , 'person'
- , 'night stand'
- , 'toilet'
- , 'sink'
- , 'lamp'
- , 'bathtub'
- , 'bag'
- , 'otherstructure'
- , 'otherfurniture'
- , 'otherprop']
+        name_list = [
+            'empty', 'wall', 'floor', 'cabinet', 'bed', 'chair', 'sofa',
+            'table', 'door', 'window', 'bookshelf', 'picture', 'counter',
+            'blinds', 'desk', 'shelves', 'curtain', 'dresser', 'pillow',
+            'mirror', 'floor mat', 'clothes', 'ceiling', 'books',
+            'refridgerator', 'television', 'paper', 'towel', 'shower curtain',
+            'box', 'whiteboard', 'person', 'night stand', 'toilet', 'sink',
+            'lamp', 'bathtub', 'bag', 'otherstructure', 'otherfurniture',
+            'otherprop'
+        ]
     elif vox_shape[3] == 12:
         name_list = [
             'emp', 'ceil', 'floor', 'wall', 'wind', 'chair', 'bed', 'sofa',
@@ -124,7 +93,7 @@ def evaluate(batch_size, checknum, mode, discriminative, data_list):
         model_path = cfg.DIR.CHECK_POINT_PATH
     chckpt_path = model_path + '/checkpoint' + str(checknum)
 
-    depvox_gan_model = depvox_gan(
+    network_model = network(
         batch_size=batch_size,
         vox_shape=vox_shape,
         com_shape=com_shape,
@@ -140,9 +109,9 @@ def evaluate(batch_size, checknum, mode, discriminative, data_list):
 
     Z_tf, z_enc_tf, surf_tf, full_tf, full_gen_tf, surf_dec_tf, full_dec_tf,\
     gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    space_effective_tf, part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, ssc_tf, scores_tf = depvox_gan_model.build_model()
+    space_effective_tf, part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, ssc_tf, scores_tf = network_model.build_model()
     if discriminative is True:
-        Z_tf_samp, comp_tf_samp, surf_tf_samp, full_tf_samp, part_tf_samp, scores_tf_samp = depvox_gan_model.samples_generator(
+        Z_tf_samp, comp_tf_samp, surf_tf_samp, full_tf_samp, part_tf_samp, scores_tf_samp = network_model.samples_generator(
             visual_size=batch_size)
     config_gpu = tf.compat.v1.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -243,7 +212,7 @@ def evaluate(batch_size, checknum, mode, discriminative, data_list):
         # decoded
         do_save_pcd = True
         if do_save_pcd is True:
-            results_pcds = np.argmax(pd_full, axis=4)
+            results_pcds = np.argmax(pd_ssc, axis=4)
             # results_pcds = voxel_test
             for i in range(np.shape(results_pcds)[0]):
                 pcd_idx = np.where(results_pcds[i] > 0)

@@ -20,6 +20,4 @@ def save_pcd(filename, points):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points[:, 0:3])
     pcd.colors = o3d.utility.Vector3dVector(points[:, 3:6])
-    o3d.io.write_point_cloud(filename, pcd,
-        write_ascii=True,
-        compressed=True)
+    o3d.io.write_point_cloud(filename, pcd, write_ascii=True, compressed=True)

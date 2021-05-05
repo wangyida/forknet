@@ -3,7 +3,7 @@ import tensorflow as tf
 
 from config import cfg
 from util import DataProcess, id_models_train
-from model import depvox_gan
+from model import network
 
 from colorama import init
 from termcolor import colored
@@ -36,7 +36,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
     freq = cfg.CHECK_FREQ
     record_vox_num = cfg.RECORD_VOX_NUM
 
-    depvox_gan_model = depvox_gan(
+    network_model = network(
         batch_size=batch_size,
         vox_shape=vox_shape,
         com_shape=com_shape,
@@ -51,7 +51,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
 
     Z_tf, z_part_enc_tf, surf_tf, full_tf, full_gen_tf, surf_dec_tf, full_dec_tf,\
     gen_loss_tf, discrim_loss_tf, recons_ssc_loss_tf, recons_com_loss_tf, recons_sem_loss_tf, encode_loss_tf, refine_loss_tf, summary_tf,\
-    space_effective_tf, part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, sscnet_tf, scores_tf = depvox_gan_model.build_model()
+    space_effective_tf, part_tf, part_dec_tf, comp_gt_tf, comp_gen_tf, comp_dec_tf, sscnet_tf, scores_tf = network_model.build_model()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     config_gpu = tf.compat.v1.ConfigProto()
     config_gpu.gpu_options.allow_growth = True
@@ -133,7 +133,7 @@ def train(n_epochs, learning_rate_G, learning_rate_D, batch_size, mid_flag,
                 var_list=dis_sem_vars,
                 global_step=global_step)
 
-        Z_tf_samp, comp_tf_samp, full_tf_samp, full_ref_tf_samp, part_tf_samp, scores_tf_samp = depvox_gan_model.samples_generator(
+        Z_tf_samp, comp_tf_samp, full_tf_samp, full_ref_tf_samp, part_tf_samp, scores_tf_samp = network_model.samples_generator(
             visual_size=batch_size)
 
         model_path = cfg.DIR.CHECK_POINT_PATH + '-d'
