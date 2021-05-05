@@ -7,7 +7,7 @@ cfg = __C
 #
 __C.dataset = '3rscan'
 __C.type = 'synthetic'
-__C.tvt = 'test'
+__C.tvt = 'train'
 
 __C.SUB_CONFIG_FILE = []
 
